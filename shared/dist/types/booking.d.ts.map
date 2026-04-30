@@ -1,0 +1,1 @@
+{"version":3,"file":"booking.d.ts","sourceRoot":"","sources":["../../types/booking.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,WAAW,EAAE,MAAM,uBAAuB,CAAA;AAEnD,MAAM,WAAW,OAAO;IACtB,EAAE,EAAE,MAAM,CAAA;IACV,MAAM,EAAE,MAAM,CAAA;IACd,YAAY,EAAE,MAAM,CAAA;IACpB,IAAI,EAAE,MAAM,CAAA;IACZ,MAAM,EAAE,WAAW,CAAA;CACpB"}

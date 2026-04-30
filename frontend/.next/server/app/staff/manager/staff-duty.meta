@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/staff/layout,_N_T_/staff/manager/layout,_N_T_/staff/manager/staff-duty/layout,_N_T_/staff/manager/staff-duty/page,_N_T_/staff/manager/staff-duty"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/staff/manager/staff-duty/__PAGE__",
+    "/staff/manager/staff-duty",
+    "/staff/manager",
+    "/staff",
+    "/_index",
+    "/_head"
+  ]
+}

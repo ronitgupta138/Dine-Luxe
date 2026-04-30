@@ -1,1 +1,0 @@
-/* Frontend page placeholder */

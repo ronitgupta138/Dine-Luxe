@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/customer/layout,_N_T_/customer/order/layout,_N_T_/customer/order/cart/layout,_N_T_/customer/order/cart/page,_N_T_/customer/order/cart"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/customer/order/cart/__PAGE__",
+    "/customer/order/cart",
+    "/customer/order",
+    "/customer",
+    "/_index",
+    "/_head"
+  ]
+}

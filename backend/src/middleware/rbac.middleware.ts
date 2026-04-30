@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
 
+interface AuthenticatedRequest extends Request {
+  user?: {
+    role?: string
+  }
+}
+
 const roleRouteMap: Record<string, string[]> = {
   '/api/admin': ['admin'],
   '/api/owner': ['owner'],
@@ -11,7 +17,7 @@ const roleRouteMap: Record<string, string[]> = {
 }
 
 export function requireRole(role: string) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     if (req.user?.role === role) {
       return next()
     }
@@ -19,7 +25,7 @@ export function requireRole(role: string) {
   }
 }
 
-export function rbacGuard(req: Request, res: Response, next: NextFunction) {
+export function rbacGuard(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const path = req.path
   const userRole = req.user?.role
 

@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/customer/layout,_N_T_/customer/qr-scan/layout,_N_T_/customer/qr-scan/page,_N_T_/customer/qr-scan"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/customer/qr-scan/__PAGE__",
+    "/customer/qr-scan",
+    "/customer",
+    "/_index",
+    "/_head"
+  ]
+}

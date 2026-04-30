@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 const roleRouteMap: Record<string, string[]> = {
-  '/(admin)': ['admin'],
-  '/(owner)': ['owner'],
-  '/(staff)/manager': ['manager'],
-  '/(staff)/host': ['host'],
-  '/(staff)/waiter': ['waiter'],
-  '/(staff)/chef': ['chef'],
-  '/(staff)/cashier': ['cashier'],
+  '/admin': ['admin'],
+  '/owner': ['owner'],
+  '/staff/manager': ['manager'],
+  '/staff/host': ['host'],
+  '/staff/waiter': ['waiter'],
+  '/staff/chef': ['chef'],
+  '/staff/cashier': ['cashier'],
 }
 
-const publicPaths = ['/', '/(auth)']
+const publicPaths = ['/', '/auth']
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -22,7 +22,7 @@ export function middleware(req: NextRequest) {
   }
 
   if (!role) {
-    return NextResponse.redirect(new URL('/(auth)/login', req.url))
+    return NextResponse.redirect(new URL('/auth/login', req.url))
   }
 
   for (const routePrefix of Object.keys(roleRouteMap)) {

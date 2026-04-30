@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin/layout,_N_T_/admin/reports/layout,_N_T_/admin/reports/page,_N_T_/admin/reports"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin/reports/__PAGE__",
+    "/admin/reports",
+    "/admin",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/staff/layout,_N_T_/staff/cashier/layout,_N_T_/staff/cashier/tables/layout,_N_T_/staff/cashier/tables/page,_N_T_/staff/cashier/tables"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/staff/cashier/tables/__PAGE__",
+    "/staff/cashier/tables",
+    "/staff/cashier",
+    "/staff",
+    "/_index",
+    "/_head"
+  ]
+}

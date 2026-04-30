@@ -1,1 +1,1 @@
--- Core tables for Restaurant OS
+-- Core tables for DineLuxe

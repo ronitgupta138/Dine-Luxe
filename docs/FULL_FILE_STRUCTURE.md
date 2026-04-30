@@ -1,4 +1,4 @@
-# Restaurant OS Full File Structure
+# DineLuxe Full File Structure
 
 > Stack: Next.js 14 · Express.js · Supabase · Tailwind · shadcn/ui
 > Author: Priyanshu Kumar Gupta & Ronit Gupta | Version 1.0 — 2025
@@ -8,7 +8,7 @@
 ## MONOREPO ROOT
 
 ```
-restaurant-os/
+DineLuxe/
 ├── frontend/                        ← Next.js 14 App (UI only)
 ├── backend/                         ← Express.js API Server
 ├── shared/                          ← Shared TypeScript types & utils

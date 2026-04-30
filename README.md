@@ -1,5 +1,4 @@
-# Restaurant OS Monorepo
+# DineLuxe Monorepo
 
 Monorepo with frontend, backend, shared types, and Supabase schema.
 
-# DineLuxe

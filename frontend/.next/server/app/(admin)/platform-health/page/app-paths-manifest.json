@@ -1,0 +1,3 @@
+{
+  "/(admin)/platform-health/page": "app/(admin)/platform-health/page.js"
+}

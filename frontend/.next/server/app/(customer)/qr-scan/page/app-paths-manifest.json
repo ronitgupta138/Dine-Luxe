@@ -1,0 +1,3 @@
+{
+  "/(customer)/qr-scan/page": "app/(customer)/qr-scan/page.js"
+}

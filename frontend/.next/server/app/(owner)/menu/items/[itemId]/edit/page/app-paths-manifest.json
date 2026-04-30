@@ -1,0 +1,3 @@
+{
+  "/(owner)/menu/items/[itemId]/edit/page": "app/(owner)/menu/items/[itemId]/edit/page.js"
+}

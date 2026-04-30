@@ -1,0 +1,1 @@
+/* Verify Supabase JWT auth */

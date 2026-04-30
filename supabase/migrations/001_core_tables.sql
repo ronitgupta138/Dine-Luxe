@@ -1,0 +1,1 @@
+-- Core tables for Restaurant OS

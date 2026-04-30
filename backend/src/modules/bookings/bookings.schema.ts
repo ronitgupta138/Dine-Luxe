@@ -1,0 +1,1 @@
+/* Backend bookings bookings.schema.ts */

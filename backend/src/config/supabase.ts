@@ -1,0 +1,1 @@
+/* Supabase admin client setup */

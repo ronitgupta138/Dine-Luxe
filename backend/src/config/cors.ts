@@ -1,0 +1,1 @@
+/* CORS policy for frontend origin */

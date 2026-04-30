@@ -1,0 +1,1 @@
+/* Backend restaurants restaurants.schema.ts */

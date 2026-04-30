@@ -1,0 +1,1 @@
+/* Resend email client setup */

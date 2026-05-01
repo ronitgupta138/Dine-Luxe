@@ -1,1 +1,254 @@
-/* Backend orders orders.service.ts */
+import { supabaseAdmin } from '../../config/supabase';
+import { redis } from '../../config/redis';
+import { findLeastBusyWaiter } from '../../utils/waiter-assign';
+import type { CreateOrderInput } from './orders.schema';
+
+// ─── Create Order ────────────────────────────────────────────────────────────
+
+export async function createOrder(
+  input: CreateOrderInput,
+  restaurantId: string,
+  branchId: string,
+  createdBy: string
+) {
+  const { table_id, order_type, items, special_instructions } = input;
+
+  // 1. Validate table belongs to this branch
+  const { data: table, error: tableErr } = await supabaseAdmin
+    .from('tables')
+    .select('id, branch_id, status')
+    .eq('id', table_id)
+    .eq('branch_id', branchId)
+    .single();
+
+  if (tableErr || !table) {
+    throw Object.assign(new Error('Table not found or does not belong to this branch'), { status: 404 });
+  }
+
+  // 2. Validate all menu items belong to this branch and are available
+  const menuItemIds = items.map((i) => i.menu_item_id);
+  const { data: menuItems, error: menuErr } = await supabaseAdmin
+    .from('menu_items')
+    .select('id, name, price, status, branch_id')
+    .in('id', menuItemIds)
+    .eq('branch_id', branchId);
+
+  if (menuErr) throw menuErr;
+
+  if (!menuItems || menuItems.length !== menuItemIds.length) {
+    throw Object.assign(new Error('One or more menu items not found in this branch'), { status: 422 });
+  }
+
+  const unavailable = menuItems.filter((m) => m.status !== 'available');
+  if (unavailable.length > 0) {
+    throw Object.assign(
+      new Error(`Items not available: ${unavailable.map((m) => m.name).join(', ')}`),
+      { status: 422 }
+    );
+  }
+
+  // 3. Build price map and validate addons
+  const priceMap = Object.fromEntries(menuItems.map((m) => [m.id, m.price]));
+  const addonIds = items.flatMap((i) => (i.addons ?? []).map((a) => a.addon_id));
+  let addonPriceMap: Record<string, number> = {};
+
+  if (addonIds.length > 0) {
+    const { data: addons, error: addonErr } = await supabaseAdmin
+      .from('menu_addons')
+      .select('id, price')
+      .in('id', addonIds);
+    if (addonErr) throw addonErr;
+    addonPriceMap = Object.fromEntries((addons ?? []).map((a) => [a.id, a.price]));
+  }
+
+  // 4. Calculate total
+  let total = 0;
+  for (const item of items) {
+    const unitPrice = priceMap[item.menu_item_id];
+    let addonTotal = 0;
+    for (const addon of item.addons ?? []) {
+      addonTotal += (addonPriceMap[addon.addon_id] ?? 0) * addon.quantity;
+    }
+    total += (unitPrice + addonTotal) * item.quantity;
+  }
+
+  // 5. Auto-assign waiter
+  const assignedWaiterId = await findLeastBusyWaiter(branchId);
+
+  // 6. Create order (Supabase handles transaction via RPC or sequential inserts)
+  const { data: order, error: orderErr } = await supabaseAdmin
+    .from('orders')
+    .insert({
+      restaurant_id: restaurantId,
+      branch_id: branchId,
+      table_id,
+      order_type,
+      special_instructions,
+      status: 'pending',
+      total_amount: total,
+      assigned_waiter_id: assignedWaiterId,
+      created_by: createdBy,
+    })
+    .select()
+    .single();
+
+  if (orderErr || !order) throw orderErr ?? new Error('Failed to create order');
+
+  // 7. Insert order items
+  const orderItemsPayload = items.flatMap((item) => {
+    const unitPrice = priceMap[item.menu_item_id];
+    return {
+      order_id: order.id,
+      menu_item_id: item.menu_item_id,
+      quantity: item.quantity,
+      unit_price: unitPrice,
+      notes: item.notes ?? null,
+      status: 'pending',
+      addons: item.addons ?? [],
+    };
+  });
+
+  const { error: itemsErr } = await supabaseAdmin.from('order_items').insert(orderItemsPayload);
+  if (itemsErr) {
+    // Rollback order
+    await supabaseAdmin.from('orders').delete().eq('id', order.id);
+    throw itemsErr;
+  }
+
+  // 8. Emit Realtime events to kitchen and cashier channels
+  const realtimePayload = {
+    event: 'order_created',
+    order_id: order.id,
+    branch_id: branchId,
+    restaurant_id: restaurantId,
+    table_id,
+    total,
+    status: 'pending',
+  };
+
+  await supabaseAdmin.channel(`branch:${branchId}:kitchen`).send({
+    type: 'broadcast',
+    event: 'order_created',
+    payload: realtimePayload,
+  });
+
+  await supabaseAdmin.channel(`branch:${branchId}:cashier`).send({
+    type: 'broadcast',
+    event: 'order_created',
+    payload: realtimePayload,
+  });
+
+  // 9. Trigger inventory deduction (fire-and-forget)
+  deductInventory(branchId, items).catch((err) =>
+    console.error('[inventory] deduction failed:', err)
+  );
+
+  return { ...order, items: orderItemsPayload };
+}
+
+// ─── Inventory Deduction (internal) ─────────────────────────────────────────
+
+async function deductInventory(
+  branchId: string,
+  items: CreateOrderInput['items']
+) {
+  for (const item of items) {
+    await supabaseAdmin.rpc('deduct_inventory_for_item', {
+      p_branch_id: branchId,
+      p_menu_item_id: item.menu_item_id,
+      p_quantity: item.quantity,
+    });
+  }
+}
+
+// ─── Get Order by ID ─────────────────────────────────────────────────────────
+
+export async function getOrderById(orderId: string, branchId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .select('*, order_items(*, menu_items(name, price))')
+    .eq('id', orderId)
+    .eq('branch_id', branchId)
+    .single();
+
+  if (error || !data) {
+    throw Object.assign(new Error('Order not found'), { status: 404 });
+  }
+  return data;
+}
+
+// ─── Get Active Orders for Table ─────────────────────────────────────────────
+
+export async function getOrdersByTable(tableId: string, branchId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .select('*, order_items(*, menu_items(name, price))')
+    .eq('table_id', tableId)
+    .eq('branch_id', branchId)
+    .not('status', 'in', '("paid","cancelled")')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Get Active Orders for Branch ────────────────────────────────────────────
+
+export async function getActiveBranchOrders(branchId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .select('*, order_items(id, status, menu_items(name)), tables(table_number)')
+    .eq('branch_id', branchId)
+    .not('status', 'in', '("paid","cancelled")')
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ─── Cancel Order ─────────────────────────────────────────────────────────────
+
+export async function cancelOrder(
+  orderId: string,
+  branchId: string,
+  reason?: string
+) {
+  // Fetch order with items
+  const { data: order, error: fetchErr } = await supabaseAdmin
+    .from('orders')
+    .select('*, order_items(id, status)')
+    .eq('id', orderId)
+    .eq('branch_id', branchId)
+    .single();
+
+  if (fetchErr || !order) {
+    throw Object.assign(new Error('Order not found'), { status: 404 });
+  }
+
+  if (['paid', 'cancelled'].includes(order.status)) {
+    throw Object.assign(new Error(`Cannot cancel order with status: ${order.status}`), { status: 422 });
+  }
+
+  // Check if any items are already served
+  const servedItems = (order.order_items ?? []).filter(
+    (i: { status: string }) => i.status === 'served'
+  );
+  if (servedItems.length > 0) {
+    throw Object.assign(
+      new Error('Cannot cancel order — some items have already been served'),
+      { status: 422 }
+    );
+  }
+
+  // TODO: if order.payment_status === 'paid', trigger refund via payments service
+
+  const { data: updated, error: updateErr } = await supabaseAdmin
+    .from('orders')
+    .update({ status: 'cancelled', cancellation_reason: reason ?? null, cancelled_at: new Date().toISOString() })
+    .eq('id', orderId)
+    .select()
+    .single();
+
+  if (updateErr) throw updateErr;
+  return updated;
+}

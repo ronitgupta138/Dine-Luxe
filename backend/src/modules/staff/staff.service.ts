@@ -1,1 +1,255 @@
-/* Backend staff staff.service.ts */
+import { supabaseAdmin } from '../../config/supabase';
+import { redis } from '../../config/redis';
+import { generateEmployeeId } from '../../utils/employee-id';
+import { generateDOBPassword } from '../../utils/password';
+import { insertAuditLog } from '../../utils/audit-log';
+import { sendEmail } from '../../email/send';
+import { CreateStaffInput, UpdateStaffInput } from './staff.schema';
+
+// ─── Get All Staff for a Branch ───────────────────────────────────────────────
+export async function getByBranch(branchId: string, restaurantId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select(`
+      id, first_name, last_name, email, phone, role,
+      employee_id, is_active, avatar_url, created_at,
+      branches!branch_id ( name )
+    `)
+    .eq('branch_id', branchId)
+    .eq('restaurant_id', restaurantId)
+    .order('created_at');
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ─── Create Staff ─────────────────────────────────────────────────────────────
+export async function create(
+  input: CreateStaffInput,
+  restaurantId: string,
+  actorId: string,
+  actorBranchId: string,
+  actorRole: string,
+  ipAddress: string
+) {
+  // Manager can only create staff for their OWN branch
+  if (actorRole === 'manager' && input.branch_id !== actorBranchId) {
+    throw new Error('Managers can only create staff for their own branch');
+  }
+
+  // Verify the branch belongs to this restaurant
+  const { data: branch, error: branchErr } = await supabaseAdmin
+    .from('branches')
+    .select('id, name')
+    .eq('id', input.branch_id)
+    .eq('restaurant_id', restaurantId)
+    .single();
+
+  if (branchErr || !branch) throw new Error('Branch not found or unauthorized');
+
+  // Generate default password from DOB (format: DDMMYYYY)
+  const defaultPassword = generateDOBPassword(input.dob);
+
+  // Create Supabase Auth user
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email: input.email,
+    password: defaultPassword,
+    email_confirm: true, // auto-confirm staff emails
+  });
+  if (authError) throw new Error(`Auth creation failed: ${authError.message}`);
+
+  const staffId = authData.user.id;
+
+  try {
+    // Generate employee ID: EMP-{BRANCHCODE}-{SEQ}
+    const employeeId = await generateEmployeeId(branch.name, input.branch_id);
+
+    // Create profile
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .insert({
+        id: staffId,
+        first_name: input.first_name,
+        last_name: input.last_name,
+        email: input.email,
+        phone: input.phone,
+        dob: input.dob,
+        gender: input.gender,
+        role: input.role,
+        restaurant_id: restaurantId,
+        branch_id: input.branch_id,
+        employee_id: employeeId,
+        is_active: true,
+        force_password_change: true, // must change DOB password on first login
+      })
+      .select()
+      .single();
+
+    if (profileError) throw new Error(`Profile creation failed: ${profileError.message}`);
+
+    // Send credentials email (fire and forget — never await in request handler)
+    sendEmail({
+      to: input.email,
+      templateName: 'welcome',
+      data: {
+        name: input.first_name,
+        restaurantName: '',
+        loginUrl: `${process.env.FRONTEND_URL}/first-login`,
+      },
+    }).catch(console.error);
+
+    await insertAuditLog({
+      actorId,
+      action: 'STAFF_CREATED',
+      targetType: 'staff',
+      targetId: staffId,
+      newValue: { role: input.role, branch_id: input.branch_id, employee_id: employeeId },
+      ipAddress,
+    });
+
+    // Remove password from returned object
+    const { ...safeProfile } = profile;
+    return { ...safeProfile, temp_password: defaultPassword };
+  } catch (err) {
+    // Rollback auth user on failure
+    await supabaseAdmin.auth.admin.deleteUser(staffId).catch(() => {});
+    throw err;
+  }
+}
+
+// ─── Get Staff by ID ──────────────────────────────────────────────────────────
+export async function getById(staffId: string, restaurantId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select(`
+      id, first_name, last_name, email, phone, dob, gender, role,
+      employee_id, is_active, avatar_url, force_password_change, created_at,
+      branches!branch_id ( id, name )
+    `)
+    .eq('id', staffId)
+    .eq('restaurant_id', restaurantId)
+    .single();
+
+  if (error) throw new Error(`Staff not found: ${error.message}`);
+  return data;
+}
+
+// ─── Update Staff ─────────────────────────────────────────────────────────────
+export async function update(
+  staffId: string,
+  restaurantId: string,
+  input: UpdateStaffInput
+) {
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq('id', staffId)
+    .eq('restaurant_id', restaurantId)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Update failed: ${error.message}`);
+  return data;
+}
+
+// ─── Toggle Access (activate / deactivate) ────────────────────────────────────
+export async function toggleAccess(
+  staffId: string,
+  restaurantId: string,
+  actorId: string,
+  ipAddress: string
+) {
+  // Get current status
+  const { data: current } = await supabaseAdmin
+    .from('profiles')
+    .select('is_active, first_name, email')
+    .eq('id', staffId)
+    .eq('restaurant_id', restaurantId)
+    .single();
+
+  if (!current) throw new Error('Staff not found');
+
+  const newStatus = !current.is_active;
+
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .update({ is_active: newStatus, updated_at: new Date().toISOString() })
+    .eq('id', staffId)
+    .eq('restaurant_id', restaurantId)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Toggle failed: ${error.message}`);
+
+  // If deactivating: invalidate all active sessions in Redis
+  if (!newStatus) {
+    try {
+      // Store a blacklist key — auth middleware checks this
+      await redis.setex(`blacklisted_user:${staffId}`, 60 * 60 * 24 * 7, '1');
+    } catch {
+      // Non-fatal — user will still be blocked on next profile check
+    }
+  } else {
+    // Re-activating — remove from blacklist
+    try {
+      await redis.del(`blacklisted_user:${staffId}`);
+    } catch {}
+  }
+
+  await insertAuditLog({
+    actorId,
+    action: newStatus ? 'STAFF_ACTIVATED' : 'STAFF_DEACTIVATED',
+    targetType: 'staff',
+    targetId: staffId,
+    newValue: { is_active: newStatus },
+    ipAddress,
+  });
+
+  return data;
+}
+
+// ─── Get Performance Metrics ───────────────────────────────────────────────────
+export async function getPerformance(staffId: string, restaurantId: string) {
+  const today = new Date().toISOString().split('T')[0];
+
+  const [ordersToday, ratings, tablesThisWeek] = await Promise.all([
+    // Orders handled today
+    supabaseAdmin
+      .from('orders')
+      .select('id, total_amount', { count: 'exact' })
+      .eq('waiter_id', staffId)
+      .eq('restaurant_id', restaurantId)
+      .gte('created_at', `${today}T00:00:00`)
+      .in('status', ['served', 'paid', 'closed']),
+
+    // Average customer rating from reviews
+    supabaseAdmin
+      .from('reviews')
+      .select('waiter_rating')
+      .eq('waiter_id', staffId)
+      .eq('restaurant_id', restaurantId)
+      .not('waiter_rating', 'is', null),
+
+    // Tables served this week
+    supabaseAdmin
+      .from('orders')
+      .select('table_id', { count: 'exact' })
+      .eq('waiter_id', staffId)
+      .eq('restaurant_id', restaurantId)
+      .gte('created_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()),
+  ]);
+
+  const ratingValues = (ratings.data ?? []).map((r) => r.waiter_rating);
+  const avgRating =
+    ratingValues.length > 0
+      ? ratingValues.reduce((s, v) => s + v, 0) / ratingValues.length
+      : null;
+
+  return {
+    orders_today: ordersToday.count ?? 0,
+    revenue_today: (ordersToday.data ?? []).reduce((s, o) => s + (o.total_amount ?? 0), 0),
+    avg_rating: avgRating ? Math.round(avgRating * 100) / 100 : null,
+    rating_count: ratingValues.length,
+    tables_served_this_week: tablesThisWeek.count ?? 0,
+  };
+}

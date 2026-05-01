@@ -10,6 +10,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/staff/chef":     ["chef", "manager", "owner"],
   "/staff/cashier":  ["cashier", "manager", "owner"],
   "/staff":          ["manager", "host", "waiter", "chef", "cashier", "owner"],
+  "/delivery":       ["delivery_partner"],
 };
 
 function getRoleRequirement(pathname: string): string[] | null {
@@ -17,6 +18,26 @@ function getRoleRequirement(pathname: string): string[] | null {
     if (pathname.startsWith(prefix)) return roles;
   }
   return null;
+}
+
+function demoAuthEnabled() {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return process.env.NODE_ENV !== "production" || !key || key === "anon-key";
+}
+
+function dashboardForRole(role: string) {
+  const dashboardMap: Record<string, string> = {
+    super_admin: "/admin/dashboard",
+    owner:       "/owner/dashboard",
+    manager:     "/staff/manager/dashboard",
+    host:        "/staff/host",
+    waiter:      "/staff/waiter",
+    chef:        "/staff/chef/kitchen",
+    cashier:     "/staff/cashier",
+    customer:    "/customer/home",
+    delivery_partner: "/delivery",
+  };
+  return dashboardMap[role] ?? "/auth/login";
 }
 
 export async function middleware(request: NextRequest) {
@@ -29,6 +50,17 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname === "/favicon.ico"
   ) {
+    return response;
+  }
+
+  if (demoAuthEnabled() && request.cookies.get("dineluxe_demo_session")?.value === "1") {
+    const demoRole = request.cookies.get("dineluxe_demo_role")?.value;
+    const requiredRoles = getRoleRequirement(pathname);
+
+    if (requiredRoles && demoRole && !requiredRoles.includes(demoRole)) {
+      return NextResponse.redirect(new URL(dashboardForRole(demoRole), request.url));
+    }
+
     return response;
   }
 
@@ -59,17 +91,7 @@ export async function middleware(request: NextRequest) {
   const requiredRoles = getRoleRequirement(pathname);
 
   if (requiredRoles && userRole && !requiredRoles.includes(userRole)) {
-    const dashboardMap: Record<string, string> = {
-      super_admin: "/admin/dashboard",
-      owner:       "/owner/dashboard",
-      manager:     "/staff/dashboard",
-      host:        "/staff/dashboard",
-      waiter:      "/staff/dashboard",
-      chef:        "/staff/dashboard",
-      cashier:     "/staff/dashboard",
-      customer:    "/home",
-    };
-    return NextResponse.redirect(new URL(dashboardMap[userRole] ?? "/auth/login", request.url));
+    return NextResponse.redirect(new URL(dashboardForRole(userRole), request.url));
   }
 
   return response;

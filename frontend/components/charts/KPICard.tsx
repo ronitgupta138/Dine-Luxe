@@ -38,7 +38,7 @@ export function KPICard({
 
   const formatValue = (val: number) => {
     if (format === 'currency') {
-      return `₹${val.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
+      return `${val.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
     }
     if (format === 'percentage') {
       return `${val.toFixed(decimals)}%`

@@ -104,7 +104,7 @@ export function OrderTicket({ order, onStatusChange, className }: OrderTicketPro
         {order.items.map((item, index) => (
           <div key={index} className="flex items-start gap-2">
             <span className="text-lg font-bold text-gray-300 min-w-[24px]">
-              {item.quantity}×
+              {item.quantity}
             </span>
             <div>
               <p className="text-lg font-medium">{item.name}</p>

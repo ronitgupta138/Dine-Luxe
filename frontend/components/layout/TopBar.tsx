@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import {
   Bell,
   Search,
@@ -23,7 +24,7 @@ interface TopBarProps {
 export function TopBar({ onMenuClick, className }: TopBarProps) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const { user, signOut } = useAuth()
+  const { user, role, signOut } = useAuth()
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -32,11 +33,11 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
   }
 
   // Mock notifications
-  const notifications = [
+  const [notifications, setNotifications] = useState([
     { id: 1, title: "New order received", message: "Table 5 placed an order", time: "2 min ago", read: false },
     { id: 2, title: "Booking confirmed", message: "Reservation for 4 at 7:00 PM", time: "15 min ago", read: false },
     { id: 3, title: "Inventory alert", message: "Tomatoes running low", time: "1 hour ago", read: true },
-  ]
+  ])
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -98,17 +99,27 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
               >
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                   <h3 className="font-semibold text-sm">Notifications</h3>
-                  <button className="text-xs text-brand-primary hover:underline">
+                  <button
+                    onClick={() => {
+                      setNotifications((items) => items.map((item) => ({ ...item, read: true })))
+                      toast.success("Notifications marked as read")
+                    }}
+                    className="text-xs text-brand-primary hover:underline"
+                  >
                     Mark all read
                   </button>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   {notifications.map((notification) => (
-                    <motion.div
+                    <motion.button
                       key={notification.id}
                       whileHover={{ backgroundColor: "#F9FAFB" }}
+                      onClick={() => {
+                        setNotifications((items) => items.map((item) => item.id === notification.id ? { ...item, read: true } : item))
+                        toast.info(notification.title)
+                      }}
                       className={cn(
-                        "px-4 py-3 border-b border-gray-50 cursor-pointer",
+                        "w-full text-left px-4 py-3 border-b border-gray-50 cursor-pointer",
                         !notification.read && "bg-blue-50/50"
                       )}
                     >
@@ -123,7 +134,7 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
                           <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
                         </div>
                       </div>
-                    </motion.div>
+                    </motion.button>
                   ))}
                 </div>
               </motion.div>
@@ -155,10 +166,10 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
               >
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900">
-                    {(user as any)?.user_metadata?.first_name || user?.email}
+                    {user?.name || user?.email || "Team member"}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">
-                    {(user as any)?.user_metadata?.role?.replace("_", " ")}
+                    {role?.replace("_", " ") || "Signed in"}
                   </p>
                 </div>
                 <div className="py-1">
@@ -188,3 +199,5 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
     </header>
   )
 }
+
+export default TopBar

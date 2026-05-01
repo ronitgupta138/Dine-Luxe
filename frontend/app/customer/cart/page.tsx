@@ -92,7 +92,7 @@ export default function CustomerCartPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-4"
+                  className="bg-white rounded-md p-4 border border-gray-100 flex items-center gap-4"
                 >
 {/* Image placeholder */}
                   <div className="w-20 h-20 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
@@ -102,7 +102,7 @@ export default function CustomerCartPage() {
                   {/* Details */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                    <p className="text-sm text-gray-500">₹{item.price}</p>
+                    <p className="text-sm text-gray-500">Rs {item.price}</p>
                   </div>
 
                   {/* Quantity controls */}
@@ -126,7 +126,7 @@ export default function CustomerCartPage() {
 
                   {/* Price */}
                   <div className="text-right min-w-15">
-                    <p className="font-semibold text-gray-900">₹{item.price * item.quantity}</p>
+                    <p className="font-semibold text-gray-900">Rs {item.price * item.quantity}</p>
                   </div>
 
                   {/* Remove */}
@@ -147,19 +147,19 @@ export default function CustomerCartPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl p-6 border border-gray-100 space-y-3"
+            className="bg-white rounded-md p-6 border border-gray-100 space-y-3"
           >
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">Subtotal</span>
-              <span className="text-gray-900">₹{subtotal}</span>
+              <span className="text-gray-900">Rs {subtotal}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">Tax (5%)</span>
-              <span className="text-gray-900">₹{tax}</span>
+              <span className="text-gray-900">Rs {tax}</span>
             </div>
             <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
               <span className="font-semibold text-gray-900">Total</span>
-              <span className="text-xl font-bold text-gray-900">₹{total}</span>
+              <span className="text-xl font-bold text-gray-900">Rs {total}</span>
             </div>
           </motion.div>
 

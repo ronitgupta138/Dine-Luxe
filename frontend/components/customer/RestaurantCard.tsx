@@ -18,8 +18,8 @@ export default function RestaurantCard({
 	tag,
 }: RestaurantCardProps) {
 	return (
-		<div className="rounded-3xl border border-ink/10 bg-paper/90 p-4 shadow-soft">
-			<div className="relative h-40 w-full overflow-hidden rounded-2xl bg-ink/10">
+		<div className="rounded-md border border-ink/10 bg-paper/90 p-4 shadow-soft">
+			<div className="relative h-40 w-full overflow-hidden rounded-md bg-ink/10">
 				{imageUrl ? (
 					<img src={imageUrl} alt={name} className="h-full w-full object-cover" />
 				) : (

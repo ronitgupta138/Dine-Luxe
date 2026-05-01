@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -59,7 +59,7 @@ export default function StaffPage() {
       : apiClient.post(`/restaurant/${restaurantId}/staff`, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey:["owner","staff"] });
-      toast.success(editStaff ? "Staff updated" : "Staff invited — login credentials sent via email");
+      toast.success(editStaff ? "Staff updated" : "Staff invited  login credentials sent via email");
       setShowForm(false); setEdit(null); reset();
     },
     onError: () => toast.error("Operation failed"),

@@ -98,3 +98,5 @@ export function TableUnit({ table, onPress, mode = 'live', className }: TableUni
     </motion.button>
   )
 }
+
+export default TableUnit

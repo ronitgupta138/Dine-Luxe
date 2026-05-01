@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient }   from "@/lib/api-client";
@@ -42,12 +42,12 @@ function Ticket({ order, onAction }: { order:KitchenOrder; onAction:(id:string,s
  
       <ul className="space-y-1">
         {order.items.map(i => (
-          <li key={i.id} className="text-white text-lg font-medium">{i.quantity}× {i.name}</li>
+          <li key={i.id} className="text-white text-lg font-medium">{i.quantity} {i.name}</li>
         ))}
       </ul>
  
       {order.specialInstructions && (
-        <p className="text-amber-300 text-sm border-t border-amber-400/30 pt-2">⚠ {order.specialInstructions}</p>
+        <p className="text-amber-300 text-sm border-t border-amber-400/30 pt-2"> {order.specialInstructions}</p>
       )}
  
       {order.status === "pending" && (

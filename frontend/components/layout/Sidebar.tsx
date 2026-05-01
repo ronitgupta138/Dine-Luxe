@@ -52,11 +52,15 @@ const navItems: NavItem[] = [
   { label: "Settings", href: "/owner/settings", icon: <Settings size={20} />, roles: ["owner"] },
 
   // Staff (Manager, Host, Waiter, Chef, Cashier)
-  { label: "Dashboard", href: "/staff/dashboard", icon: <LayoutDashboard size={20} />, roles: ["manager", "host", "waiter", "chef", "cashier"] },
-  { label: "Floor Map", href: "/staff/host", icon: <QrCode size={20} />, roles: ["manager", "host"] },
-  { label: "Queue", href: "/staff/host", icon: <ClipboardList size={20} />, roles: ["manager", "host"] },
+  { label: "Dashboard", href: "/staff/manager/dashboard", icon: <LayoutDashboard size={20} />, roles: ["manager"] },
+  { label: "Dashboard", href: "/staff/host", icon: <LayoutDashboard size={20} />, roles: ["host"] },
+  { label: "Dashboard", href: "/staff/waiter", icon: <LayoutDashboard size={20} />, roles: ["waiter"] },
+  { label: "Dashboard", href: "/staff/chef/kitchen", icon: <LayoutDashboard size={20} />, roles: ["chef"] },
+  { label: "Dashboard", href: "/staff/cashier", icon: <LayoutDashboard size={20} />, roles: ["cashier"] },
+  { label: "Floor Map", href: "/staff/host/floor", icon: <QrCode size={20} />, roles: ["manager", "host"] },
+  { label: "Queue", href: "/staff/host/queue", icon: <ClipboardList size={20} />, roles: ["manager", "host"] },
   { label: "Orders", href: "/staff/waiter", icon: <Utensils size={20} />, roles: ["manager", "waiter"] },
-  { label: "Kitchen", href: "/staff/chef", icon: <ChefHat size={20} />, roles: ["manager", "chef"] },
+  { label: "Kitchen", href: "/staff/chef/kitchen", icon: <ChefHat size={20} />, roles: ["manager", "chef"] },
   { label: "POS", href: "/staff/cashier", icon: <CreditCard size={20} />, roles: ["manager", "cashier"] },
   { label: "Reports", href: "/staff/manager", icon: <BarChart3 size={20} />, roles: ["manager"] },
 ]
@@ -65,11 +69,10 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const { user, signOut } = useAuth()
-  const role = (user as any)?.user_metadata?.role as string
+  const { user, role, signOut } = useAuth()
 
 
-  const filteredNavItems = navItems.filter((item) => item.roles.includes(role))
+  const filteredNavItems = role ? navItems.filter((item) => item.roles.includes(role)) : []
 
   const handleLogout = async () => {
     await signOut()
@@ -137,7 +140,7 @@ export function Sidebar() {
         {!collapsed && (
           <div className="px-3 py-2 mb-2">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {(user as any)?.user_metadata?.first_name || user?.email}
+              {user?.name || user?.email || "Team member"}
             </p>
 
             <p className="text-xs text-gray-500 capitalize">{role?.replace("_", " ")}</p>

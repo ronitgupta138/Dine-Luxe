@@ -14,7 +14,7 @@ const variantClasses: Record<string, string> = {
 
 export function Toast({ title, description, variant = 'default' }: ToastProps) {
 	return (
-		<div className={cn('rounded-2xl border px-4 py-3 shadow-soft', variantClasses[variant])}>
+		<div className={cn('rounded-md border px-4 py-3 shadow-soft', variantClasses[variant])}>
 			<p className="text-sm font-semibold">{title}</p>
 			{description && <p className="mt-1 text-xs text-muted">{description}</p>}
 		</div>

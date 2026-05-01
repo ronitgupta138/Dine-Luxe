@@ -1,4 +1,4 @@
-﻿﻿"use client";
+"use client";
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -61,7 +61,7 @@ export default function OrderTrackingPage() {
  
   if (isLoading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="skeleton w-full max-w-md h-96 mx-4 rounded-2xl"/>
+      <div className="skeleton w-full max-w-md h-96 mx-4 rounded-md"/>
     </div>;
   }
  
@@ -82,7 +82,7 @@ export default function OrderTrackingPage() {
  
       <div className="px-4 -mt-10 space-y-4">
         {/* Stepper */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-md shadow-sm border border-gray-100 p-5">
           <div className="flex items-center">
             {steps.map((step, i) => {
               const Icon = step.icon;
@@ -114,14 +114,14 @@ export default function OrderTrackingPage() {
         </div>
  
         {/* Order Items */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-md shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100">
             <h2 className="text-sm font-semibold text-gray-700">Your Order</h2>
           </div>
           <div className="divide-y divide-gray-50">
             {order.items.map((item, i) => (
               <div key={i} className="flex items-center justify-between px-5 py-3 text-sm">
-                <span className="text-gray-800">{item.quantity}× {item.name}</span>
+                <span className="text-gray-800">{item.quantity} {item.name}</span>
                 <span className="text-gray-600">{formatCurrency(item.unitPrice * item.quantity)}</span>
               </div>
             ))}
@@ -134,7 +134,7 @@ export default function OrderTrackingPage() {
         </div>
  
         {/* Meta */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-2 text-sm text-gray-600">
+        <div className="bg-white rounded-md shadow-sm border border-gray-100 p-5 space-y-2 text-sm text-gray-600">
           {order.tableLabel && <div className="flex justify-between"><span>Table</span><span className="font-medium text-gray-800">{order.tableLabel}</span></div>}
           {order.deliveryAddress && <div className="flex justify-between"><span>Deliver to</span><span className="font-medium text-gray-800 text-right max-w-[60%]">{order.deliveryAddress}</span></div>}
           <div className="flex justify-between"><span>Placed</span><span className="font-medium text-gray-800">{formatDateTime(order.createdAt)}</span></div>

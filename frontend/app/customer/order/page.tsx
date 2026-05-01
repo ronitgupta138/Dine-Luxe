@@ -115,7 +115,7 @@ export default function CustomerOrderPage() {
                 key={order.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl border border-gray-100 p-6"
+                className="bg-white rounded-md border border-gray-100 p-6"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
@@ -164,7 +164,7 @@ export default function CustomerOrderPage() {
                       <span className="text-gray-600">
                         {item.quantity}x {item.name}
                       </span>
-                      <span className="text-gray-900">₹{item.price}</span>
+                      <span className="text-gray-900">Rs {item.price}</span>
                     </div>
                   ))}
                 </div>
@@ -172,7 +172,7 @@ export default function CustomerOrderPage() {
                 {/* Total */}
                 <div className="flex justify-between font-semibold text-lg border-t border-gray-100 pt-4">
                   <span>Total</span>
-                  <span>₹{order.total}</span>
+                  <span>Rs {order.total}</span>
                 </div>
               </motion.div>
             ))
@@ -183,7 +183,7 @@ export default function CustomerOrderPage() {
               key={order.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl border border-gray-100 p-6"
+              className="bg-white rounded-md border border-gray-100 p-6"
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
@@ -202,7 +202,7 @@ export default function CustomerOrderPage() {
                     <span className="text-gray-600">
                       {item.quantity}x {item.name}
                     </span>
-                    <span className="text-gray-900">₹{item.price}</span>
+                    <span className="text-gray-900">Rs {item.price}</span>
                   </div>
                 ))}
               </div>
@@ -210,7 +210,7 @@ export default function CustomerOrderPage() {
               {/* Total */}
               <div className="flex justify-between font-semibold border-t border-gray-100 pt-4">
                 <span>Total</span>
-                <span>₹{order.total}</span>
+                <span>Rs {order.total}</span>
               </div>
 
               {/* Reorder Button */}

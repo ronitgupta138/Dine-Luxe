@@ -5,6 +5,12 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { getBrowserSupabase } from "@/lib/supabase-client"
 
+function isSupabaseConfigured() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  return Boolean(url?.startsWith("https://") && key && key !== "anon-key" && key.length > 40)
+}
+
 // Simple food-themed SVG animation as fallback (since we may not have Lottie files yet)
 const FoodAnimation = () => (
   <motion.svg
@@ -107,6 +113,11 @@ export function SplashScreen() {
 
   const navigateToNext = useCallback(async () => {
     try {
+      if (!isSupabaseConfigured()) {
+        router.replace('/auth/login')
+        return
+      }
+
       const supabase = await getBrowserSupabase()
 
       const { data: { session } } = await supabase.auth.getSession()
@@ -116,12 +127,13 @@ export function SplashScreen() {
         switch (role) {
           case 'super_admin': router.replace('/admin/dashboard'); break
           case 'owner': router.replace('/owner/dashboard'); break
-          case 'manager':
-          case 'host':
-          case 'waiter':
-          case 'chef':
-          case 'cashier': router.replace('/staff/dashboard'); break
+          case 'manager': router.replace('/staff/manager/dashboard'); break
+          case 'host': router.replace('/staff/host'); break
+          case 'waiter': router.replace('/staff/waiter'); break
+          case 'chef': router.replace('/staff/chef/kitchen'); break
+          case 'cashier': router.replace('/staff/cashier'); break
           case 'customer': router.replace('/customer/home'); break
+          case 'delivery_partner': router.replace('/delivery'); break
           default: router.replace('/auth/login')
         }
       } else {

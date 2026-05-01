@@ -8,7 +8,7 @@ interface ErrorPageProps {
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   return (
     <div className="flex min-h-screen items-center justify-center p-8">
-      <div className="w-full max-w-lg rounded-3xl border border-ink/10 bg-paper/90 p-8 text-ink shadow-soft">
+      <div className="w-full max-w-lg rounded-md border border-ink/10 bg-paper/90 p-8 text-ink shadow-soft">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">System alert</p>
         <h1 className="mt-4 font-display text-3xl">Something slipped off the pass.</h1>
         <p className="mt-3 text-sm text-muted">

@@ -42,13 +42,13 @@ export function QueueBoard({ branchId, showFullList = false }: QueueBoardProps) 
     <div className="space-y-4">
       {/* Now Serving */}
       {called.length > 0 && (
-        <div className="bg-[#1A3C5E] rounded-2xl p-6 text-center text-white">
+        <div className="bg-[#1A3C5E] rounded-md p-6 text-center text-white">
           <p className="text-sm font-medium opacity-70 uppercase tracking-widest mb-2">Now Serving</p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             {called.map(entry => (
               <div key={entry.id} className="flex flex-col items-center">
                 <span className="text-6xl font-black tracking-tight">{entry.token}</span>
-                <span className="text-sm opacity-80 mt-1">{entry.name} · {entry.partySize}p</span>
+                <span className="text-sm opacity-80 mt-1">{entry.name}  {entry.partySize}p</span>
               </div>
             ))}
           </div>

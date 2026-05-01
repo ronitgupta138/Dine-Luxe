@@ -77,14 +77,14 @@ export default function ReportsPage() {
           { label:"Total Revenue",    val:formatCurrency(data?.summary.totalRevenue ?? 0),       icon:TrendingUp,  color:"bg-[#1A3C5E]" },
           { label:"Total Orders",     val:String(data?.summary.totalOrders ?? 0),                icon:ShoppingBag, color:"bg-[#E8A020]" },
           { label:"Avg Order Value",  val:formatCurrency(data?.summary.avgOrderValue ?? 0),      icon:TrendingUp,  color:"bg-emerald-500" },
-          { label:"Avg Rating",       val:(data?.summary.avgRating ?? 0).toFixed(1) + " ★",     icon:Star,        color:"bg-purple-500" },
+          { label:"Avg Rating",       val:(data?.summary.avgRating ?? 0).toFixed(1) + " ",     icon:Star,        color:"bg-purple-500" },
         ].map(c => (
           <div key={c.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-gray-500">{c.label}</span>
               <div className={`p-2 rounded-lg ${c.color}`}><c.icon size={14} className="text-white"/></div>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{isLoading ? "—" : c.val}</p>
+            <p className="text-2xl font-bold text-gray-900">{isLoading ? "" : c.val}</p>
           </div>
         ))}
       </div>
@@ -102,7 +102,7 @@ export default function ReportsPage() {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
             <XAxis dataKey="date" tick={{ fontSize:11 }}/>
-            <YAxis tickFormatter={v => `₹${v/1000}k`} tick={{ fontSize:11 }}/>
+            <YAxis tickFormatter={v => `${v/1000}k`} tick={{ fontSize:11 }}/>
             <Tooltip formatter={(v:number) => formatCurrency(v)}/>
             <Area type="monotone" dataKey="revenue" stroke="#1A3C5E" strokeWidth={2} fill="url(#rev)"/>
           </AreaChart>

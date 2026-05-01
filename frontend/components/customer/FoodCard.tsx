@@ -72,7 +72,7 @@ export function FoodCard({ item, quantity = 0, onAddToCart, className }: FoodCar
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-50">
-            <span className="text-4xl">🍽️</span>
+            <span className="text-4xl"></span>
           </div>
         )}
 
@@ -119,7 +119,7 @@ export function FoodCard({ item, quantity = 0, onAddToCart, className }: FoodCar
               exit={{ opacity: 0, scale: 0.9 }}
               className="absolute top-10 right-2 bg-amber-50 border border-amber-200 text-amber-800 text-xs p-2 rounded-lg shadow-lg max-w-[200px] z-10"
             >
-              <p className="font-semibold mb-1">⚠️ Contains:</p>
+              <p className="font-semibold mb-1"> Contains:</p>
               <p>{item.allergens.join(", ")}</p>
             </motion.div>
           )}
@@ -135,10 +135,10 @@ export function FoodCard({ item, quantity = 0, onAddToCart, className }: FoodCar
         <div className="flex items-center justify-between mt-3">
           <div className="flex items-center gap-2">
             <span className="font-bold text-gray-900">
-              ₹{hasDiscount ? item.discountedPrice : item.price}
+              Rs {hasDiscount ? item.discountedPrice : item.price}
             </span>
             {hasDiscount && (
-              <span className="text-xs text-gray-400 line-through">₹{item.price}</span>
+              <span className="text-xs text-gray-400 line-through">Rs {item.price}</span>
             )}
           </div>
 
@@ -187,7 +187,7 @@ export function FoodCard({ item, quantity = 0, onAddToCart, className }: FoodCar
 
         {item.prepTimeMinutes && (
           <p className="text-xs text-gray-400 mt-2">
-            ⏱️ {item.prepTimeMinutes} min
+             {item.prepTimeMinutes} min
           </p>
         )}
       </div>

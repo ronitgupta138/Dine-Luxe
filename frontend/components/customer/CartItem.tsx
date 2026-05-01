@@ -21,7 +21,7 @@ export default function CartItem({
 	onRemove,
 }: CartItemProps) {
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-3xl border border-ink/10 bg-paper/90 p-4 shadow-soft">
+		<div className="flex items-center justify-between gap-4 rounded-md border border-ink/10 bg-paper/90 p-4 shadow-soft">
 			<div>
 				<p className="font-semibold text-ink">{name}</p>
 				{description && <p className="text-xs text-muted">{description}</p>}

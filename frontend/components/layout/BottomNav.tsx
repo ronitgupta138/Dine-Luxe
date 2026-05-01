@@ -32,7 +32,7 @@ const customerNavItems: NavItem[] = [
   },
   {
     label: "Explore",
-    href: "/customer/restaurant",
+    href: "/customer",
     icon: <Search size={24} strokeWidth={1.5} />,
     activeIcon: <Search size={24} strokeWidth={2.5} />,
   },
@@ -59,10 +59,8 @@ const customerNavItems: NavItem[] = [
 export function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user } = useAuth()
+  const { role } = useAuth()
   const [cartCount] = useState(2) // Mock cart count
-
-  const role = (user as any)?.user_metadata?.role as string
 
   // Only show for customers
   if (role !== "customer") return null

@@ -103,7 +103,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   <td key={String(col.key)}
                     className={cn("px-5 py-3 text-gray-700",
                       col.align === "center" ? "text-center" : col.align === "right" ? "text-right" : "")}>
-                    {col.render ? col.render(row) : String(row[String(col.key) as keyof T] ?? "—")}
+                    {col.render ? col.render(row) : String(row[String(col.key) as keyof T] ?? "-")}
                   </td>
                 ))}
               </tr>
@@ -113,14 +113,14 @@ export function DataTable<T extends Record<string, unknown>>({
       </div>
  
       {!loading && data.length === 0 && (
-        <EmptyState icon="📋" title={emptyTitle} description={emptyDesc}/>
+        <EmptyState title={emptyTitle} message={emptyDesc}/>
       )}
  
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
           <p className="text-xs text-gray-400">
-            {(page-1)*pageSize+1}–{Math.min(page*pageSize, data.length)} of {data.length}
+            {(page-1)*pageSize+1}-{Math.min(page*pageSize, data.length)} of {data.length}
           </p>
           <div className="flex items-center gap-1">
             <button disabled={page === 1} onClick={() => setPage(p => p-1)}

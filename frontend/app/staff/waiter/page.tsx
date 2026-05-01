@@ -92,7 +92,7 @@ export default function WaiterPage() {
           <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <div>
               <h2 className="font-semibold text-gray-900">
-                {order ? `Order — ${order.tableLabel}` : "No active order"}
+                {order ? `Order  ${order.tableLabel}` : "No active order"}
               </h2>
               {order && <p className="text-xs text-gray-400 mt-0.5">{elapsedMinutes(order.createdAt)}m ago</p>}
             </div>
@@ -105,7 +105,7 @@ export default function WaiterPage() {
                 {order.items.map(item => (
                   <li key={item.id} className="px-5 py-3 flex items-center justify-between gap-3">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">{item.quantity}× {item.name}</p>
+                      <p className="text-sm font-medium text-gray-800">{item.quantity} {item.name}</p>
                       {item.notes && <p className="text-xs text-amber-600">{item.notes}</p>}
                     </div>
                     <StatusBadge status={item.status} size="sm"/>
@@ -134,7 +134,7 @@ export default function WaiterPage() {
               </div>
             </>
           ) : (
-            <div className="px-5 py-10 text-center text-gray-400 text-sm">Table is free — no current order</div>
+            <div className="px-5 py-10 text-center text-gray-400 text-sm">Table is free  no current order</div>
           )}
         </div>
       )}

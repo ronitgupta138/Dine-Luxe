@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,7 +54,7 @@ export default function RestaurantDetailPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{restaurant.name}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{restaurant.ownerName} · {restaurant.city}</p>
+          <p className="text-sm text-gray-500 mt-0.5">{restaurant.ownerName}  {restaurant.city}</p>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={restaurant.isActive ? "active" : "inactive"}/>

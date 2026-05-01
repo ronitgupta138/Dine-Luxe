@@ -13,13 +13,14 @@ export const ROLES = {
 export type Role = (typeof ROLES)[keyof typeof ROLES];
  
 export const ORDER_STATUS = {
-  CREATED:   "created",
-  CONFIRMED: "confirmed",
+  CREATED:    "created",
+  CONFIRMED:  "confirmed",
   PREPARING: "preparing",
   READY:     "ready",
   SERVED:    "served",
   PAID:      "paid",
   CLOSED:    "closed",
+  CANCELLED:  "cancelled",
 } as const;
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
  
@@ -81,6 +82,7 @@ export const TABLE_STATUS_COLORS: Record<TableStatus, string> = {
 export const WS_EVENTS = {
   ORDER_CREATED:          "order_created",
   ORDER_CANCELLED:        "order_cancelled",
+  ORDER_STATUS_UPDATED:   "order_status_updated",
   KITCHEN_STATUS_UPDATED: "kitchen_status_updated",
   FOOD_READY:             "food_ready",
   TABLE_STATUS_CHANGED:   "table_status_changed",

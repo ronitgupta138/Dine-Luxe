@@ -83,7 +83,7 @@ export function FloorMap({ tables, branchId, readOnly = false, onTableClick }: F
   const activeTable = activeId ? tables.find(t => t.id === activeId) : null;
  
   return (
-    <div className="relative bg-[#F5F3EE] rounded-2xl border border-gray-200 overflow-hidden"
+    <div className="relative bg-[#F5F3EE] rounded-md border border-gray-200 overflow-hidden"
       style={{ width:"100%", height:600 }}>
       {/* Grid lines */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">

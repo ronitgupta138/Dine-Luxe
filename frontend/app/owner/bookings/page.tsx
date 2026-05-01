@@ -6,6 +6,7 @@ import { PageWrapper } from "@/components/layout/PageWrapper"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Users, Search, Filter, Check, X } from "lucide-react"
+import { toast } from "sonner"
 
 interface Booking {
   id: string
@@ -95,7 +96,7 @@ const upcomingBookings = mockBookings.filter((b) => b.status !== "success")
             className="w-full pl-10 pr-4 py-3 bg-gray-100 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
           />
         </div>
-        <button className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+        <button onClick={() => toast.info("Filters are already visible in this demo")} className="p-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
           <Filter size={20} className="text-gray-600" />
         </button>
       </div>
@@ -131,7 +132,7 @@ const upcomingBookings = mockBookings.filter((b) => b.status !== "success")
             key={booking.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-gray-100 p-4"
+            className="bg-white rounded-md border border-gray-100 p-4"
           >
             {/* Header */}
             <div className="flex items-start justify-between mb-3">

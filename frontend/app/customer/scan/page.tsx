@@ -1,4 +1,4 @@
-﻿﻿"use client"
+"use client"
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
@@ -50,7 +50,7 @@ export default function CustomerScanPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden bg-gray-900"
+          className="relative aspect-square max-w-sm mx-auto rounded-md overflow-hidden bg-gray-900"
         >
           {isScanning ? (
             <>
@@ -88,7 +88,7 @@ export default function CustomerScanPage() {
                 onClick={stopScanning}
                 className="absolute top-4 right-4 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"
               >
-                ✕
+                ?
               </button>
             </>
           ) : (
@@ -170,10 +170,10 @@ export default function CustomerScanPage() {
         >
           <h3 className="font-medium text-gray-900 mb-2">Scanning Tips</h3>
           <ul className="text-sm text-gray-600 space-y-1">
-            <li>• Hold your phone steady while scanning</li>
-            <li>• Make sure the QR code is well-lit</li>
-            <li>• Clean your camera lens for better scanning</li>
-            <li>• The QR code should fill about 30% of the screen</li>
+            <li> Hold your phone steady while scanning</li>
+            <li> Make sure the QR code is well-lit</li>
+            <li> Clean your camera lens for better scanning</li>
+            <li> The QR code should fill about 30% of the screen</li>
           </ul>
         </motion.div>
       </div>

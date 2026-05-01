@@ -73,13 +73,13 @@ body {
   }
 }
 
-/* ── Kitchen dark mode ───────────────────────────── */
+/* -- Kitchen dark mode ----------------------------- */
 .kitchen-dark { 
   background: #111111; 
   color: #ffffff; 
 }
 
-/* ── Status color utilities ──────────────────────── */
+/* -- Status color utilities ------------------------ */
 .bg-status-success  { background-color: var(--color-success); }
 .bg-status-warning  { background-color: var(--color-warning); }
 .bg-status-danger   { background-color: var(--color-danger); }
@@ -101,56 +101,56 @@ body {
 .border-status-neutral  { border-color: var(--color-neutral); }
 .border-status-cleaning { border-color: var(--color-cleaning); }
 
-/* ── Overdue pulse (KDS) ─────────────────────────── */
+/* -- Overdue pulse (KDS) --------------------------- */
 @keyframes pulse-red {
   0%, 100% { border-color: #c0392b; box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
   50%       { box-shadow: 0 0 0 8px rgba(192,57,43,0); }
 }
 .animate-pulse-red { animation: pulse-red 1.5s ease infinite; }
 
-/* ── Green pulse (arrival) ───────────────────────── */
+/* -- Green pulse (arrival) ------------------------- */
 @keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 0 0 rgba(30,126,52,0.4); }
   50%       { box-shadow: 0 0 0 8px rgba(30,126,52,0); }
 }
 .animate-pulse-green { animation: pulse-green 1.5s ease infinite; }
 
-/* ── New ticket slide-in (KDS) ───────────────────── */
+/* -- New ticket slide-in (KDS) --------------------- */
 @keyframes slide-in-right {
   from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 .animate-slide-in { animation: slide-in-right 0.4s cubic-bezier(0.34,1.56,0.64,1); }
 
-/* ── Slide out (KDS ticket removal) ──────────────── */
+/* -- Slide out (KDS ticket removal) ---------------- */
 @keyframes slide-out-right {
   from { transform: translateX(0); opacity: 1; }
   to   { transform: translateX(100%); opacity: 0; }
 }
 .animate-slide-out { animation: slide-out-right 0.3s ease-in forwards; }
 
-/* ── Slide up (bottom sheets, modals) ────────────── */
+/* -- Slide up (bottom sheets, modals) -------------- */
 @keyframes slide-up {
   from { transform: translateY(100%); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
 .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.34,1.56,0.64,1); }
 
-/* ── Fade in ─────────────────────────────────────── */
+/* -- Fade in --------------------------------------- */
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 .animate-fade-in { animation: fade-in 0.3s ease-out; }
 
-/* ── Scale in ────────────────────────────────────── */
+/* -- Scale in -------------------------------------- */
 @keyframes scale-in {
   from { transform: scale(0.95); opacity: 0; }
   to   { transform: scale(1); opacity: 1; }
 }
 .animate-scale-in { animation: scale-in 0.3s ease-out; }
 
-/* ── Form shake on error ─────────────────────────── */
+/* -- Form shake on error --------------------------- */
 @keyframes shake {
   0%,100% { transform: translateX(0); }
   20%     { transform: translateX(-8px); }
@@ -160,7 +160,7 @@ body {
 }
 .animate-shake { animation: shake 0.4s ease; }
 
-/* ── Skeleton shimmer ────────────────────────────── */
+/* -- Skeleton shimmer ------------------------------ */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
@@ -172,19 +172,19 @@ body {
   border-radius: 6px;
 }
 
-/* ── Table color transitions ─────────────────────── */
+/* -- Table color transitions ----------------------- */
 .table-unit { 
   transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease; 
 }
 
-/* ── Brand utilities ─────────────────────────────── */
+/* -- Brand utilities ------------------------------- */
 .bg-brand-primary    { background-color: var(--brand-primary); }
 .bg-brand-secondary  { background-color: var(--brand-secondary); }
 .text-brand-primary  { color: var(--brand-primary); }
 .text-brand-secondary{ color: var(--brand-secondary); }
 .border-brand-primary{ border-color: var(--brand-primary); }
 
-/* ── Touch targets (mobile accessibility) ────────── */
+/* -- Touch targets (mobile accessibility) ---------- */
 .touch-target {
   min-width: 48px;
   min-height: 48px;
@@ -195,13 +195,13 @@ body {
   min-height: 60px;
 }
 
-/* ── Kitchen touch targets (gloved hands) ────────── */
+/* -- Kitchen touch targets (gloved hands) ---------- */
 .kitchen-touch {
   min-width: 60px;
   min-height: 60px;
 }
 
-/* ── Scrollbar styling ───────────────────────────── */
+/* -- Scrollbar styling ----------------------------- */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -217,13 +217,13 @@ body {
   background: #9ca3af;
 }
 
-/* ── Focus styles for accessibility ──────────────── */
+/* -- Focus styles for accessibility ---------------- */
 :focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
-/* ── Selection color ─────────────────────────────── */
+/* -- Selection color ------------------------------- */
 ::selection {
   background: rgba(26, 60, 94, 0.2);
   color: inherit;

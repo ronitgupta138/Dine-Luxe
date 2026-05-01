@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 import { PageWrapper } from "@/components/layout/PageWrapper"
 import { KPICard } from "@/components/charts/KPICard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -19,7 +20,7 @@ const kpiData = [
   {
     title: "Today's Revenue",
     value: 45230,
-    prefix: "₹",
+    prefix: "Rs ",
     change: 12,
     changeType: "increase" as const,
     icon: <DollarSign size={20} />,
@@ -73,6 +74,8 @@ const staffPerformance = [
 ]
 
 export default function OwnerDashboardPage() {
+  const router = useRouter()
+
   return (
     <PageWrapper title="Dashboard" subtitle="Overview of your restaurant performance">
       {/* KPI Cards */}
@@ -95,11 +98,11 @@ export default function OwnerDashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl border border-gray-100 p-6"
+          className="bg-white rounded-md border border-gray-100 p-6"
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
-            <button className="text-sm text-brand-primary hover:underline">View All</button>
+            <button onClick={() => router.push("/owner/bookings")} className="text-sm text-brand-primary hover:underline">View All</button>
           </div>
           <div className="space-y-3">
             {recentOrders.map((order) => (
@@ -109,10 +112,10 @@ export default function OwnerDashboardPage() {
               >
                 <div>
                   <p className="font-medium text-gray-900 text-sm">{order.customer}</p>
-                  <p className="text-xs text-gray-500">{order.items} items • {order.time}</p>
+                  <p className="text-xs text-gray-500">{order.items} items - {order.time}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold text-gray-900">₹{order.total}</span>
+                  <span className="font-semibold text-gray-900">Rs {order.total}</span>
                   <StatusBadge status={order.status} size="sm" />
                 </div>
               </div>
@@ -125,11 +128,11 @@ export default function OwnerDashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-2xl border border-gray-100 p-6"
+          className="bg-white rounded-md border border-gray-100 p-6"
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Top Selling Items</h2>
-            <button className="text-sm text-brand-primary hover:underline">View All</button>
+            <button onClick={() => router.push("/owner/menu")} className="text-sm text-brand-primary hover:underline">View All</button>
           </div>
           <div className="space-y-3">
             {topItems.map((item, index) => (
@@ -146,7 +149,7 @@ export default function OwnerDashboardPage() {
                     <p className="text-xs text-gray-500">{item.orders} orders</p>
                   </div>
                 </div>
-                <span className="font-semibold text-gray-900">₹{item.revenue}</span>
+                <span className="font-semibold text-gray-900">Rs {item.revenue}</span>
               </div>
             ))}
           </div>
@@ -158,11 +161,11 @@ export default function OwnerDashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl border border-gray-100 p-6"
+        className="bg-white rounded-md border border-gray-100 p-6"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Staff Performance</h2>
-          <button className="text-sm text-brand-primary hover:underline">View All</button>
+          <button onClick={() => router.push("/owner/staff")} className="text-sm text-brand-primary hover:underline">View All</button>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
           {staffPerformance.map((staff) => (

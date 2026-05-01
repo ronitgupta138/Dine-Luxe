@@ -1,9 +1,10 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { PageWrapper } from "@/components/layout/PageWrapper"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 import { 
   User, Mail, Phone, MapPin, Calendar, 
   Star, Settings, LogOut, Edit, Shield,
@@ -11,13 +12,14 @@ import {
 } from "lucide-react"
 
 const menuItems = [
-  { icon: CreditCard, label: "Payment Methods", value: "2 saved", href: "/customer/payment" },
-  { icon: Bell, label: "Notifications", value: "", href: "/customer/notifications" },
-  { icon: Shield, label: "Privacy & Security", value: "", href: "/customer/security" },
-  { icon: Settings, label: "Settings", value: "", href: "/customer/settings" },
+  { icon: CreditCard, label: "Payment Methods", value: "2 saved", href: "/customer/payment/success" },
+  { icon: Bell, label: "Notifications", value: "", href: "/customer/profile/support" },
+  { icon: Shield, label: "Privacy & Security", value: "", href: "/customer/profile/edit" },
+  { icon: Settings, label: "Settings", value: "", href: "/customer/profile/edit" },
 ]
 
 export default function CustomerProfilePage() {
+  const router = useRouter()
   const [user] = useState({
     name: "John Doe",
     email: "john.doe@example.com",
@@ -35,7 +37,7 @@ export default function CustomerProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-gray-100 p-6 text-center"
+          className="bg-white rounded-md border border-gray-100 p-6 text-center"
         >
           {/* Avatar */}
           <div className="w-24 h-24 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -60,7 +62,7 @@ export default function CustomerProfilePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-linear-to-br from-brand-primary to-brand-primary/80 rounded-2xl p-6 text-white"
+          className="bg-linear-to-br from-brand-primary to-brand-primary/80 rounded-md p-6 text-white"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -75,7 +77,7 @@ export default function CustomerProfilePage() {
               <p className="text-sm text-white/70">Orders</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">₹12,500</p>
+              <p className="text-2xl font-bold">?12,500</p>
               <p className="text-sm text-white/70">Spent</p>
             </div>
             <div>
@@ -90,7 +92,7 @@ export default function CustomerProfilePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4"
+          className="bg-white rounded-md border border-gray-100 p-6 space-y-4"
         >
           <h3 className="font-semibold text-gray-900">Contact Information</h3>
           
@@ -115,11 +117,12 @@ export default function CustomerProfilePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
+          className="bg-white rounded-md border border-gray-100 overflow-hidden"
         >
           {menuItems.map((item, index) => (
             <button
               key={item.label}
+              onClick={() => router.push(item.href)}
               className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
             >
               <div className="flex items-center gap-3">

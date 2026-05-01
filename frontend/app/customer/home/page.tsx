@@ -120,7 +120,7 @@ export default function CustomerHomePage() {
             onClick={() => router.push(action.href)}
             className="flex flex-col items-center gap-2"
           >
-            <div className={`w-14 h-14 ${action.color} rounded-2xl flex items-center justify-center text-white shadow-lg`}>
+            <div className={`w-14 h-14 ${action.color} rounded-md flex items-center justify-center text-white shadow-lg`}>
               {action.icon}
             </div>
             <span className="text-xs font-medium text-gray-700">{action.label}</span>
@@ -133,7 +133,7 @@ export default function CustomerHomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
+          className="bg-white rounded-md p-4 shadow-sm border border-gray-100"
         >
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900">Active Order</h2>
@@ -146,7 +146,7 @@ export default function CustomerHomePage() {
                 <Clock size={14} />
                 <span>Ready in {activeOrders[0].estimatedTime}</span>
               </div>
-              <span className="font-semibold text-gray-900">₹{activeOrders[0].total}</span>
+              <span className="font-semibold text-gray-900">Rs {activeOrders[0].total}</span>
             </div>
           </div>
         </motion.div>
@@ -186,7 +186,7 @@ export default function CustomerHomePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-gradient-to-r from-brand-primary to-brand-secondary rounded-2xl p-5 text-white"
+        className="bg-gradient-to-r from-brand-primary to-brand-secondary rounded-md p-5 text-white"
       >
         <div className="flex items-center justify-between">
           <div>

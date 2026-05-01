@@ -189,7 +189,7 @@ export default function MenuManagementPage() {
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1A3C5E]/30"/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Price (₹) *</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Price () *</label>
                 <input {...register("price")} type="number" step="0.01" min="0"
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1A3C5E]/30"/>
                 {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>}

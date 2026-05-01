@@ -67,7 +67,7 @@ export function ConfirmDialog({
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={cn(
-              "bg-white rounded-2xl shadow-xl max-w-md w-full p-6",
+              "bg-white rounded-md shadow-xl max-w-md w-full p-6",
               className
             )}
             onClick={(e) => e.stopPropagation()}

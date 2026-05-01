@@ -9,24 +9,24 @@ import { Home, Search, ShoppingCart, User, UtensilsCrossed, ChefHat, CreditCard,
 interface TabItem { label:string; href:string; icon:React.ElementType; badge?:()=>number; }
  
 const CUSTOMER_TABS: TabItem[] = [
-  { label:"Home",     href:"/home",              icon:Home },
-  { label:"Search",   href:"/customer/search",   icon:Search },
+  { label:"Home",     href:"/customer/home",     icon:Home },
+  { label:"Search",   href:"/customer",          icon:Search },
   { label:"Cart",     href:"/customer/cart",      icon:ShoppingCart, badge:() => useCart.getState().itemCount() },
   { label:"Profile",  href:"/customer/profile",  icon:User },
 ];
  
 const STAFF_TABS: Record<string, TabItem[]> = {
   manager: [
-    { label:"Overview", href:"/staff/manager",        icon:LayoutDashboard },
+    { label:"Overview", href:"/staff/manager/dashboard", icon:LayoutDashboard },
     { label:"Orders",   href:"/staff/manager/orders", icon:ShoppingCart },
     { label:"Tables",   href:"/staff/manager/floor",  icon:UtensilsCrossed },
   ],
   waiter: [
     { label:"Tables",   href:"/staff/waiter",          icon:UtensilsCrossed },
-    { label:"Orders",   href:"/staff/waiter/orders",   icon:ShoppingCart },
+    { label:"Orders",   href:"/staff/waiter/tables",   icon:ShoppingCart },
   ],
   chef: [
-    { label:"Kitchen",  href:"/staff/chef/kds",        icon:ChefHat },
+    { label:"Kitchen",  href:"/staff/chef/kitchen",    icon:ChefHat },
   ],
   cashier: [
     { label:"Bills",    href:"/staff/cashier",         icon:CreditCard },

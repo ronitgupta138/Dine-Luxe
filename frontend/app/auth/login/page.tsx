@@ -20,7 +20,7 @@ export default function LoginPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            className="w-16 h-16 bg-brand-primary rounded-2xl flex items-center justify-center mx-auto mb-4"
+            className="w-16 h-16 bg-brand-primary rounded-md flex items-center justify-center mx-auto mb-4"
           >
             <Utensils size={32} className="text-white" />
           </motion.div>
@@ -29,7 +29,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-md shadow-sm border border-gray-100 p-6">
           <LoginForm />
         </div>
 

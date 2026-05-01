@@ -53,7 +53,7 @@ export default function Page() {
           />
         ))}
       </div>
-      <div className="mt-8 flex items-center justify-between rounded-3xl border border-ink/10 bg-paper/90 p-6 shadow-soft">
+      <div className="mt-8 flex items-center justify-between rounded-md border border-ink/10 bg-paper/90 p-6 shadow-soft">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">Subtotal</p>
           <p className="mt-2 text-2xl font-semibold text-ink">${subtotal.toFixed(2)}</p>

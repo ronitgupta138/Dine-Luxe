@@ -279,7 +279,7 @@ export function SignupWizard() {
                   password === confirmPassword ? "text-green-600" : "text-red-500"
                 }`}
               >
-                {password === confirmPassword ? "✓ Passwords match" : "✗ Passwords do not match"}
+                {password === confirmPassword ? " Passwords match" : " Passwords do not match"}
               </motion.div>
             )}
           </motion.div>

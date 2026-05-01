@@ -49,7 +49,7 @@ export function PaymentModal({ orderId, total, onClose, onSuccess }: PaymentModa
       toast.success("Payment successful!");
       onSuccess();
     },
-    onError: () => toast.error("Payment failed — please try again"),
+    onError: () => toast.error("Payment failed - please try again"),
   });
  
   const splitTotal = split.cash + split.card + split.upi;
@@ -57,7 +57,7 @@ export function PaymentModal({ orderId, total, onClose, onSuccess }: PaymentModa
  
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl">
+      <div className="bg-white w-full sm:max-w-md sm:rounded-md rounded-t-2xl shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900 text-base">Process Payment</h2>
@@ -120,7 +120,7 @@ export function PaymentModal({ orderId, total, onClose, onSuccess }: PaymentModa
               ))}
               {!splitValid && splitTotal > 0 && (
                 <p className="text-xs text-red-500">
-                  Split total {formatCurrency(splitTotal)} ≠ Bill {formatCurrency(finalTotal)}
+                  Split total {formatCurrency(splitTotal)} != Bill {formatCurrency(finalTotal)}
                 </p>
               )}
             </div>
@@ -130,9 +130,9 @@ export function PaymentModal({ orderId, total, onClose, onSuccess }: PaymentModa
         {/* Confirm Button */}
         <div className="px-5 pb-6">
           <button onClick={() => pay()} disabled={isPending || !splitValid}
-            className="w-full py-4 bg-[#1A3C5E] hover:bg-[#15304d] text-white rounded-2xl font-bold text-sm transition flex items-center justify-center gap-2 disabled:opacity-50">
+            className="w-full py-4 bg-[#1A3C5E] hover:bg-[#15304d] text-white rounded-md font-bold text-sm transition flex items-center justify-center gap-2 disabled:opacity-50">
             {isPending && <Loader2 size={16} className="animate-spin"/>}
-            Confirm Payment · {formatCurrency(finalTotal)}
+            Confirm Payment  {formatCurrency(finalTotal)}
           </button>
         </div>
       </div>

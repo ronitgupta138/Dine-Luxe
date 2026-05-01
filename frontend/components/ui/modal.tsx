@@ -14,7 +14,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-6 backdrop-blur">
-			<div className="w-full max-w-lg rounded-3xl border border-ink/10 bg-paper p-6 shadow-soft">
+			<div className="w-full max-w-lg rounded-md border border-ink/10 bg-paper p-6 shadow-soft">
 				<div className="flex items-start justify-between gap-4">
 					{title && <h3 className="font-display text-xl text-ink">{title}</h3>}
 					<button

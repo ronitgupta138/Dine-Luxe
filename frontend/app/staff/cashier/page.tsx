@@ -42,10 +42,10 @@ export default function CashierPage() {
       apiClient.post(`/orders/${orderId}/payment`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey:["cashier","queue"] });
-      toast.success("Payment processed — receipt sent");
+      toast.success("Payment processed  receipt sent");
       setSelected(null);
     },
-    onError: () => toast.error("Payment failed — try again"),
+    onError: () => toast.error("Payment failed - try again"),
   });
  
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function CashierPage() {
  
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <h1 className="text-xl font-bold text-gray-900 mb-5">Cashier — Bill Queue</h1>
+      <h1 className="text-xl font-bold text-gray-900 mb-5">Cashier Bill Queue</h1>
  
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Queue List */}
@@ -96,14 +96,14 @@ export default function CashierPage() {
         {selected && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col">
             <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Process Payment — {selected.tableLabel}</h2>
+              <h2 className="font-semibold text-gray-900">Process Payment  {selected.tableLabel}</h2>
             </div>
  
             {/* Bill Breakdown */}
             <div className="px-5 py-4 space-y-1.5 border-b border-gray-100">
               {selected.items.map((i,idx) => (
                 <div key={idx} className="flex justify-between text-sm text-gray-600">
-                  <span>{i.quantity}× {i.name}</span>
+                  <span>{i.quantity} {i.name}</span>
                   <span>{formatCurrency(i.unitPrice * i.quantity)}</span>
                 </div>
               ))}

@@ -60,6 +60,8 @@ export function useAuth() {
     setIsAuthenticated(false);
     localStorage.removeItem("userData");
     localStorage.removeItem("userRole");
+    document.cookie = "dineluxe_demo_session=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "dineluxe_demo_role=; path=/; max-age=0; SameSite=Lax";
   };
 
   const signOut = logout;

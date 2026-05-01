@@ -32,3 +32,5 @@ export function PageWrapper({ children, className, title, subtitle, action }: Pa
     </motion.div>
   )
 }
+
+export default PageWrapper

@@ -1,1 +1,0 @@
-// Edge function generate-receipt

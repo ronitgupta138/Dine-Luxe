@@ -1,10 +1,38 @@
+import PageWrapper from '@/components/layout/PageWrapper'
+import RestaurantCard from '@/components/customer/RestaurantCard'
+
+const restaurants = [
+  {
+    name: 'Citrus & Ember',
+    cuisine: 'Modern Indian',
+    distance: '0.8 mi',
+    rating: 4.7,
+    tag: 'Hot now',
+  },
+  {
+    name: 'North Shore Oyster',
+    cuisine: 'Seafood lounge',
+    distance: '1.2 mi',
+    rating: 4.5,
+    tag: 'New',
+  },
+  {
+    name: 'Velvet Tandoor',
+    cuisine: 'Tasting menu',
+    distance: '1.9 mi',
+    rating: 4.9,
+    tag: 'Editors pick',
+  },
+]
+
 export default function Page() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-slate-50 text-slate-900">
-      <div className="max-w-xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
-        <h1 className="text-2xl font-semibold">Placeholder page</h1>
-        <p className="mt-4 text-slate-600">customer/page.tsx</p>
+    <PageWrapper title="Nearby favorites" subtitle="Customer home">
+      <div className="grid gap-6 md:grid-cols-2">
+        {restaurants.map((restaurant) => (
+          <RestaurantCard key={restaurant.name} {...restaurant} />
+        ))}
       </div>
-    </div>
+    </PageWrapper>
   )
 }

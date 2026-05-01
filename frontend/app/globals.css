@@ -1,0 +1,230 @@
+@import "tailwindcss";
+ 
+:root {
+  /* Brand colors */
+  --brand-primary:   #1a3c5e;
+  --brand-secondary: #e8a020;
+  
+  /* Base colors */
+  --background: #ffffff;
+  --foreground: #111111;
+  --paper: #ffffff;
+  --surface: #f8f9fa;
+  --ink: #111111;
+  --muted: #6b7280;
+  
+  /* Status colors */
+  --color-success:  #1e7e34;
+  --color-warning:  #f39c12;
+  --color-danger:   #c0392b;
+  --color-info:     #2980b9;
+  --color-neutral:  #7f8c8d;
+  --color-cleaning: #f1c40f;
+  
+  /* Shadows */
+  --shadow: 0 0 0;
+  
+  /* Typography */
+  --font-sans: var(--font-geist-sans), 'Inter', Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  --font-display: var(--font-geist-sans), 'Inter', Arial, sans-serif;
+  
+  /* Spacing base */
+  --space-unit: 8px;
+  
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+  --transition-slow: 500ms ease;
+}
+
+/* Dark mode for kitchen staff */
+.dark-mode {
+  --background: #111111;
+  --foreground: #ffffff;
+  --paper: #1a1a1a;
+  --surface: #1a1a1a;
+  --ink: #ffffff;
+  --muted: #aaaaaa;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Kitchen dark mode ───────────────────────────── */
+.kitchen-dark { 
+  background: #111111; 
+  color: #ffffff; 
+}
+
+/* ── Status color utilities ──────────────────────── */
+.bg-status-success  { background-color: var(--color-success); }
+.bg-status-warning  { background-color: var(--color-warning); }
+.bg-status-danger   { background-color: var(--color-danger); }
+.bg-status-info     { background-color: var(--color-info); }
+.bg-status-neutral  { background-color: var(--color-neutral); }
+.bg-status-cleaning { background-color: var(--color-cleaning); }
+
+.text-status-success  { color: var(--color-success); }
+.text-status-warning  { color: var(--color-warning); }
+.text-status-danger   { color: var(--color-danger); }
+.text-status-info     { color: var(--color-info); }
+.text-status-neutral  { color: var(--color-neutral); }
+.text-status-cleaning { color: var(--color-cleaning); }
+
+.border-status-success  { border-color: var(--color-success); }
+.border-status-warning  { border-color: var(--color-warning); }
+.border-status-danger   { border-color: var(--color-danger); }
+.border-status-info     { border-color: var(--color-info); }
+.border-status-neutral  { border-color: var(--color-neutral); }
+.border-status-cleaning { border-color: var(--color-cleaning); }
+
+/* ── Overdue pulse (KDS) ─────────────────────────── */
+@keyframes pulse-red {
+  0%, 100% { border-color: #c0392b; box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(192,57,43,0); }
+}
+.animate-pulse-red { animation: pulse-red 1.5s ease infinite; }
+
+/* ── Green pulse (arrival) ───────────────────────── */
+@keyframes pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(30,126,52,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(30,126,52,0); }
+}
+.animate-pulse-green { animation: pulse-green 1.5s ease infinite; }
+
+/* ── New ticket slide-in (KDS) ───────────────────── */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.animate-slide-in { animation: slide-in-right 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+
+/* ── Slide out (KDS ticket removal) ──────────────── */
+@keyframes slide-out-right {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+.animate-slide-out { animation: slide-out-right 0.3s ease-in forwards; }
+
+/* ── Slide up (bottom sheets, modals) ────────────── */
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+
+/* ── Fade in ─────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.3s ease-out; }
+
+/* ── Scale in ────────────────────────────────────── */
+@keyframes scale-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.animate-scale-in { animation: scale-in 0.3s ease-out; }
+
+/* ── Form shake on error ─────────────────────────── */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-8px); }
+  40%     { transform: translateX(8px); }
+  60%     { transform: translateX(-4px); }
+  80%     { transform: translateX(4px); }
+}
+.animate-shake { animation: shake 0.4s ease; }
+
+/* ── Skeleton shimmer ────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ── Table color transitions ─────────────────────── */
+.table-unit { 
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease; 
+}
+
+/* ── Brand utilities ─────────────────────────────── */
+.bg-brand-primary    { background-color: var(--brand-primary); }
+.bg-brand-secondary  { background-color: var(--brand-secondary); }
+.text-brand-primary  { color: var(--brand-primary); }
+.text-brand-secondary{ color: var(--brand-secondary); }
+.border-brand-primary{ border-color: var(--brand-primary); }
+
+/* ── Touch targets (mobile accessibility) ────────── */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.touch-target-lg {
+  min-width: 60px;
+  min-height: 60px;
+}
+
+/* ── Kitchen touch targets (gloved hands) ────────── */
+.kitchen-touch {
+  min-width: 60px;
+  min-height: 60px;
+}
+
+/* ── Scrollbar styling ───────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ── Focus styles for accessibility ──────────────── */
+:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+/* ── Selection color ─────────────────────────────── */
+::selection {
+  background: rgba(26, 60, 94, 0.2);
+  color: inherit;
+}

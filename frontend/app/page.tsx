@@ -1,10 +1,24 @@
-export default function Page() {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-8 bg-slate-50 text-slate-900">
-      <div className="max-w-xl rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
-        <h1 className="text-2xl font-semibold">Placeholder page</h1>
-        <p className="mt-4 text-slate-600">page.tsx</p>
-      </div>
-    </div>
-  )
+import { redirect } from "next/navigation";
+import { getServerSupabase } from "@/lib/supabase-server";
+ 
+export default async function RootPage() {
+  const supabase = await getServerSupabase();
+
+  const { data: { session } } = await supabase.auth.getSession();
+ 
+  if (!session) redirect("/auth/login");
+ 
+  const role = session.user.user_metadata?.role as string | undefined;
+ 
+  switch (role) {
+    case "super_admin":   redirect("/admin/dashboard");
+    case "owner":         redirect("/owner/dashboard");
+    case "manager":
+    case "host":
+    case "waiter":
+    case "chef":
+    case "cashier":       redirect("/staff/dashboard");
+    case "customer":      redirect("/home");
+    default:              redirect("/auth/login");
+  }
 }

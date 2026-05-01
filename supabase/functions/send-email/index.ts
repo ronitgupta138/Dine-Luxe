@@ -1,1 +1,0 @@
-// Edge function send-email

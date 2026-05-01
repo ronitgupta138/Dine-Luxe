@@ -1,41 +1,24 @@
-import { Request, Response, NextFunction } from 'express'
+import { Request, Response, NextFunction } from 'express';
+import { error } from '../utils/response';
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    role?: string
-  }
-}
+/**
+ * Factory that returns middleware enforcing role-based access.
+ * Usage: router.get('/admin', authenticate, requireRole('admin', 'owner'), handler)
+ */
+export function requireRole(...roles: string[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const userRole = req.user?.role;
 
-const roleRouteMap: Record<string, string[]> = {
-  '/api/admin': ['admin'],
-  '/api/owner': ['owner'],
-  '/api/staff/manager': ['manager'],
-  '/api/staff/host': ['host'],
-  '/api/staff/waiter': ['waiter'],
-  '/api/staff/chef': ['chef'],
-  '/api/staff/cashier': ['cashier'],
-}
-
-export function requireRole(role: string) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (req.user?.role === role) {
-      return next()
+    if (!userRole || !roles.includes(userRole)) {
+      res.status(403).json(
+        error(
+          'FORBIDDEN',
+          `Access denied. Required role(s): ${roles.join(', ')}. Your role: ${userRole ?? 'none'}.`,
+        ),
+      );
+      return;
     }
-    return res.status(403).json({ error: 'Forbidden' })
-  }
-}
 
-export function rbacGuard(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  const path = req.path
-  const userRole = req.user?.role
-
-  for (const prefix in roleRouteMap) {
-    if (path.startsWith(prefix)) {
-      if (!userRole || !roleRouteMap[prefix].includes(userRole)) {
-        return res.status(403).json({ error: 'Forbidden' })
-      }
-    }
-  }
-
-  next()
+    next();
+  };
 }

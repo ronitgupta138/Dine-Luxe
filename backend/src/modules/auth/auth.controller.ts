@@ -31,7 +31,7 @@ export async function loginController(req: Request, res: Response, next: NextFun
 
 export async function logoutController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    await authService.logout(req.user.id);
+    await authService.logout((req as any).user.id);
     res.status(200).json(success(null, 'Logged out successfully.'));
   } catch (err) {
     next(err);

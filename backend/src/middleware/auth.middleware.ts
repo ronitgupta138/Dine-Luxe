@@ -26,13 +26,14 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
   try {
     const decoded = jwt.verify(token, config.SUPABASE_JWT_SECRET) as JwtPayload;
 
-    req.user = {
+    // assign to any to avoid augmenting Express Request type here
+    (req as any).user = {
+      ...decoded,
       id: decoded.sub,
       email: decoded.email ?? '',
       role: decoded.role ?? 'customer',
       restaurant_id: decoded.restaurant_id,
       branch_id: decoded.branch_id,
-      ...decoded,
     };
 
     next();

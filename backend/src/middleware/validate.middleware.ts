@@ -23,7 +23,8 @@ export function validate(schema: ZodSchema, target: ValidationTarget = 'body') {
     }
 
     // Replace the target with the parsed (and coerced) value
-    (req as Record<string, unknown>)[target] = result.data;
+    // cast to any to satisfy TypeScript index signature for express Request
+    (req as any)[target] = result.data;
     next();
   };
 }

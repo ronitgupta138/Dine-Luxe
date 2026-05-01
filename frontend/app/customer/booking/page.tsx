@@ -3,9 +3,13 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { Calendar, Clock, Users, Check } from "lucide-react"
 import { PageWrapper } from "@/components/layout/PageWrapper"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, Users, MapPin, Check } from "lucide-react"
+import CustomerTableSelector from "@/components/floor/CustomerTableSelector"
+import ThemeToggle from "@/components/ui/ThemeToggle"
+import { useCart } from "@/hooks/useCart"
 
 const timeSlots = [
   "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", 
@@ -15,6 +19,8 @@ const timeSlots = [
 
 export default function CustomerBookingPage() {
   const router = useRouter()
+  const branchId = useCart((state) => state.branchId) ?? "demo-branch"
+  const selectedTableId = useCart((state) => state.tableId)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [partySize, setPartySize] = useState(2)
@@ -37,30 +43,64 @@ export default function CustomerBookingPage() {
   }
 
   const handleBook = async () => {
-    if (!selectedDate || !selectedTime) return
+    if (!selectedDate || !selectedTime) {
+      toast.error("Select a date and time first")
+      return
+    }
+
+    if (!selectedTableId) {
+      toast.error("Select a table first")
+      return
+    }
 
     setIsSubmitting(true)
     // Mock API call
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    router.push("/customer/home")
+    toast.success("Booking details saved")
+    router.push("/customer/cart")
   }
 
   return (
     <PageWrapper title="Book a Table" subtitle="Reserve your dining experience">
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          {selectedTableId ? `Selected table: ${selectedTableId}` : "Select a table below to continue"}
+        </div>
+        <ThemeToggle />
+      </div>
+
       <div className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-surface-700 dark:bg-surface-900"
+        >
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Select a table</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Choose an available table before confirming your booking.
+              </p>
+            </div>
+          </div>
+
+          <CustomerTableSelector branchId={branchId} />
+        </motion.div>
+
         {/* Date Selection */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
         >
-          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
             <Calendar size={18} />
             Select Date
           </h3>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {dates.map((date) => {
               const formatted = formatDate(date)
-const isSelected = selectedDate === date
+              const isSelected = selectedDate === date
               return (
                 <button
                   key={date}
@@ -88,7 +128,7 @@ const isSelected = selectedDate === date
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
             <Clock size={18} />
             Select Time
           </h3>
@@ -118,26 +158,26 @@ const isSelected = selectedDate === date
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
             <Users size={18} />
             Party Size
           </h3>
-          <div className="flex items-center justify-center gap-4 p-4 bg-gray-50 rounded-xl">
+          <div className="flex items-center justify-center gap-4 rounded-xl bg-gray-50 p-4 dark:bg-surface-800">
             <button
               onClick={() => setPartySize(Math.max(1, partySize - 1))}
-              className="w-12 h-12 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors"
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white transition-colors hover:bg-gray-100 dark:border-surface-700 dark:bg-surface-900 dark:hover:bg-surface-700"
             >
               -
             </button>
             <div className="text-center">
-              <p className="text-3xl font-bold text-gray-900">{partySize}</p>
-              <p className="text-sm text-gray-500">
+              <p className="text-3xl font-bold text-gray-900 dark:text-white">{partySize}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {partySize === 1 ? "Guest" : "Guests"}
               </p>
             </div>
             <button
               onClick={() => setPartySize(Math.min(10, partySize + 1))}
-              className="w-12 h-12 bg-white rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors"
+              className="flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white transition-colors hover:bg-gray-100 dark:border-surface-700 dark:bg-surface-900 dark:hover:bg-surface-700"
             >
               +
             </button>
@@ -150,10 +190,10 @@ const isSelected = selectedDate === date
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h3 className="font-semibold text-gray-900 mb-3">Special Requests</h3>
+          <h3 className="mb-3 font-semibold text-gray-900 dark:text-white">Special Requests</h3>
           <textarea
             placeholder="Any special occasions or seating preferences..."
-            className="w-full h-24 p-4 bg-gray-50 rounded-xl border-0 resize-none focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
+            className="h-24 w-full resize-none rounded-xl border-0 bg-gray-50 p-4 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 dark:bg-surface-800 dark:text-white"
           />
         </motion.div>
 
@@ -165,12 +205,12 @@ const isSelected = selectedDate === date
         >
           <Button
             onClick={handleBook}
-            disabled={!selectedDate || !selectedTime || isSubmitting}
-            className="w-full h-14 bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold text-lg rounded-xl disabled:opacity-50"
+            disabled={!selectedDate || !selectedTime || !selectedTableId || isSubmitting}
+            className="h-14 w-full rounded-xl bg-brand-primary text-lg font-semibold text-white hover:bg-brand-primary/90 disabled:opacity-50"
           >
             {isSubmitting ? (
               "Booking..."
-            ) : !selectedDate || !selectedTime ? (
+            ) : !selectedDate || !selectedTime || !selectedTableId ? (
               "Select date and time"
             ) : (
               <>

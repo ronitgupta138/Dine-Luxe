@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+
+// In development we short-circuit middleware to avoid importing server SDKs
+// which can cause issues in the edge runtime during local dev.
 
 const ROLE_ROUTES: Record<string, string[]> = {
   "/admin":          ["super_admin"],
@@ -43,6 +45,9 @@ function dashboardForRole(role: string) {
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const { pathname } = request.nextUrl;
+
+  // Quick bypass for local development to avoid edge runtime import issues
+  if (process.env.NODE_ENV !== 'production') return response;
 
   if (
     pathname.startsWith("/auth") ||

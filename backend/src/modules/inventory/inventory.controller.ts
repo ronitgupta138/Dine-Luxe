@@ -47,9 +47,9 @@ export async function deductInventory(req: Request, res: Response, next: NextFun
 export async function wasteLog(req: Request, res: Response, next: NextFunction) {
   try {
     const authReq = req as AuthenticatedRequest;
-    const { ingredient_id, quantity, reason } = req.body;
+    const { inventory_item_id, quantity, reason } = req.body;
     const data = await inventoryService.logWaste(
-      ingredient_id,
+      inventory_item_id,
       quantity,
       reason,
       authReq.user!.id,

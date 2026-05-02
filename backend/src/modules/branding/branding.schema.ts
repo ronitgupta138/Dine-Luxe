@@ -49,9 +49,16 @@ export const uploadUrlSchema = z.object({
   file_type: z.enum(['logo', 'banner', 'favicon'], {
     errorMap: () => ({ message: 'file_type must be logo, banner, or favicon' }),
   }),
-  content_type: z.enum(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'], {
-    errorMap: () => ({ message: 'Only JPEG, PNG, WebP, SVG images are allowed' }),
-  }),
+  // BUG FIX: Added 'image/x-icon' to match service-side extMap so favicon .ico
+  // uploads are fully supported end-to-end (schema → service → storage path).
+  content_type: z.enum(
+    ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'image/x-icon'],
+    {
+      errorMap: () => ({
+        message: 'Only JPEG, PNG, WebP, SVG, or ICO images are allowed',
+      }),
+    }
+  ),
 });
 
 export type UpdateBrandingInput = z.infer<typeof updateBrandingSchema>;

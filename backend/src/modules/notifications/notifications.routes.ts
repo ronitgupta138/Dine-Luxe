@@ -17,11 +17,11 @@ router.use(authenticate);
 // GET /notifications
 router.get('/', getNotifications);
 
+// PATCH /notifications/read-all  ← MUST be before /:id/read or Express matches "read-all" as :id
+router.patch('/read-all', markAllRead);
+
 // PATCH /notifications/:id/read
 router.patch('/:id/read', markRead);
-
-// PATCH /notifications/read-all
-router.patch('/read-all', markAllRead);
 
 // POST /notifications/register-device
 router.post('/register-device', validate(registerDeviceSchema), registerDevice);

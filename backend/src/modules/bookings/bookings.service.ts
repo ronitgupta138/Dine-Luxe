@@ -34,7 +34,7 @@ export async function createBooking(input: CreateBookingInput, userId: string) {
   // Fetch branch + operating hours
   const { data: branch } = await supabaseAdmin
     .from('branches')
-    .select('id, operating_hours, restaurant_id')
+    .select('id, operating_hours, restaurant_id:restaurant_id')
     .eq('id', input.branch_id)
     .single();
 
@@ -196,10 +196,18 @@ export async function cancelBooking(bookingId: string, input: CancelBookingInput
     }
   }
 
+  // FIX: bookings has no cancellation_reason or cancelled_at — just update status
   const { error } = await supabaseAdmin
     .from('bookings')
-    .update({ status: 'cancelled', cancellation_reason: input.reason ?? null, cancelled_at: new Date().toISOString() })
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() })
     .eq('id', bookingId);
+
+  if (error) throw error;
+
+  // Cache cancellation reason in Redis for UI display
+  if (input.reason) {
+    await redis.setex(`booking_cancel_reason:${bookingId}`, 60 * 60 * 24 * 7, input.reason);
+  }
 
   if (error) throw error;
 

@@ -33,7 +33,12 @@ export async function createTable(input: CreateTableInput) {
     .eq('label', input.label)
     .maybeSingle();
 
-  if (existing) throw Object.assign(new Error(`Label "${input.label}" already exists in this branch`), { statusCode: 409 });
+  if (existing) {
+    throw Object.assign(
+      new Error(`Label "${input.label}" already exists in this branch`),
+      { statusCode: 409 },
+    );
+  }
 
   const { data, error } = await supabaseAdmin
     .from('tables')
@@ -47,7 +52,11 @@ export async function createTable(input: CreateTableInput) {
 
 // ─── Update table status (state machine) ─────────────────────────────────────
 
-export async function updateTableStatus(tableId: string, input: UpdateStatusInput, actorId: string) {
+export async function updateTableStatus(
+  tableId: string,
+  input: UpdateStatusInput,
+  actorId: string,
+) {
   const { data: table, error: fetchError } = await supabaseAdmin
     .from('tables')
     .select('id, status, branch_id')
@@ -59,10 +68,13 @@ export async function updateTableStatus(tableId: string, input: UpdateStatusInpu
   const current = table.status as TableStatusType;
   const allowed = VALID_TRANSITIONS[current];
 
-  if (!allowed.includes(input.new_status)) {
+  if (!allowed || !allowed.includes(input.new_status)) {
     throw Object.assign(
       new Error(`Invalid transition: ${current} → ${input.new_status}`),
-      { statusCode: 422, meta: { current_status: current, allowed_transitions: allowed } },
+      {
+        statusCode: 422,
+        meta: { current_status: current, allowed_transitions: allowed ?? [] },
+      },
     );
   }
 
@@ -76,8 +88,19 @@ export async function updateTableStatus(tableId: string, input: UpdateStatusInpu
   if (error) throw error;
 
   // Emit realtime event
-  await supabaseAdmin.channel(`branch:${table.branch_id}`)
-    .send({ type: 'broadcast', event: 'table_status_changed', payload: { table_id: tableId, status: input.new_status, reason: input.reason } });
+  try {
+    await supabaseAdmin.channel(`branch:${table.branch_id}`).send({
+      type: 'broadcast',
+      event: 'table_status_changed',
+      payload: {
+        table_id: tableId,
+        status: input.new_status,
+        reason: input.reason,
+      },
+    });
+  } catch (broadcastErr: any) {
+    console.warn('[tables] broadcast failed:', broadcastErr.message);
+  }
 
   // Invalidate live layout cache
   await redis.del(`live_layout:${table.branch_id}`);
@@ -103,7 +126,7 @@ export async function mergeTables(input: MergeInput, actorId: string) {
     throw Object.assign(new Error('Tables must belong to the same branch'), { statusCode: 422 });
   }
 
-  // Both tables must be free or reserved
+  // Both tables must be free or reserved to be mergeable
   const allowedForMerge: TableStatusType[] = ['free', 'reserved'];
   for (const t of [t1, t2]) {
     if (!allowedForMerge.includes(t.status as TableStatusType)) {
@@ -114,24 +137,46 @@ export async function mergeTables(input: MergeInput, actorId: string) {
     }
   }
 
-  // Atomic: update both tables + create merged_tables record
+  // Insert merged record first
   const { data: merged, error: mergeError } = await supabaseAdmin
     .from('merged_tables')
-    .insert({ table_id_1: input.table_id_1, table_id_2: input.table_id_2, merged_by: actorId, branch_id: t1.branch_id })
+    .insert({
+      table_id_1: input.table_id_1,
+      table_id_2: input.table_id_2,
+      merged_by: actorId,
+      branch_id: t1.branch_id,
+    })
     .select()
     .single();
 
   if (mergeError) throw mergeError;
 
+  // FIX: merged tables are effectively 'occupied' by the merge — setting them
+  // to 'reserved' allowed them to be booked again or transition back to free
+  // without going through unmerge logic first. Use 'occupied' to block that.
   const { error: updateError } = await supabaseAdmin
     .from('tables')
-    .update({ status: 'reserved', merged_table_id: merged.id })
+    .update({ status: 'occupied', merged_table_id: merged.id })
     .in('id', [input.table_id_1, input.table_id_2]);
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    // Rollback: delete the merged record we just created
+    await supabaseAdmin.from('merged_tables').delete().eq('id', merged.id);
+    throw updateError;
+  }
 
-  await supabaseAdmin.channel(`branch:${t1.branch_id}`)
-    .send({ type: 'broadcast', event: 'tables_merged', payload: { merged_id: merged.id, table_ids: [input.table_id_1, input.table_id_2] } });
+  try {
+    await supabaseAdmin.channel(`branch:${t1.branch_id}`).send({
+      type: 'broadcast',
+      event: 'tables_merged',
+      payload: { merged_id: merged.id, table_ids: [input.table_id_1, input.table_id_2] },
+    });
+  } catch {
+    // non-fatal
+  }
+
+  // Invalidate layout cache after merge
+  await redis.del(`live_layout:${t1.branch_id}`);
 
   return merged;
 }
@@ -141,13 +186,36 @@ export async function mergeTables(input: MergeInput, actorId: string) {
 export async function deleteTable(tableId: string) {
   const { data: table } = await supabaseAdmin
     .from('tables')
-    .select('status')
+    .select('status, branch_id')
     .eq('id', tableId)
     .single();
 
   if (!table) throw Object.assign(new Error('Table not found'), { statusCode: 404 });
-  if (table.status === 'occupied') throw Object.assign(new Error('Cannot delete an occupied table'), { statusCode: 422 });
+  if (table.status === 'occupied') {
+    throw Object.assign(new Error('Cannot delete an occupied table'), { statusCode: 422 });
+  }
+
+  // FIX: also block deleting tables that are part of an active merge
+  const { data: activeMerge } = await supabaseAdmin
+    .from('merged_tables')
+    .select('id')
+    .or(`table_id_1.eq.${tableId},table_id_2.eq.${tableId}`)
+    .is('unmerged_at', null)
+    .maybeSingle();
+
+  if (activeMerge) {
+    throw Object.assign(
+      new Error('Cannot delete a table that is part of an active merge'),
+      { statusCode: 422 },
+    );
+  }
 
   const { error } = await supabaseAdmin.from('tables').delete().eq('id', tableId);
   if (error) throw error;
+
+  // FIX: invalidate layout cache after deletion
+  await redis.del(`live_layout:${table.branch_id}`);
+
+  // FIX: return confirmation object so controller can respond meaningfully
+  return { deleted: true };
 }

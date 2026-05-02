@@ -7,11 +7,11 @@ export async function runBookingReminder(): Promise<void> {
   const windowStart = new Date(now.getTime() + 50 * 60 * 1000).toISOString(); // +50 min
   const windowEnd = new Date(now.getTime() + 70 * 60 * 1000).toISOString();   // +70 min
 
+  // FIX: 'party_size' → 'people_count'; removed non-existent reminder_sent column
   const { data: bookings, error } = await supabaseAdmin
     .from('bookings')
-    .select('id, user_id, branch_id, arrival_time, party_size, branch:branches(name)')
+    .select('id, user_id, branch_id, arrival_time, people_count, branch:branches(name)')
     .eq('status', 'confirmed')
-    .eq('reminder_sent', false)
     .gte('arrival_time', windowStart)
     .lte('arrival_time', windowEnd);
 
@@ -34,11 +34,11 @@ export async function runBookingReminder(): Promise<void> {
         minute: '2-digit',
       });
 
-      // Send push notification — fire and forget
       const branchName = Array.isArray(booking.branch)
         ? (booking.branch[0] as any)?.name
         : (booking.branch as any)?.name;
 
+      // Send push notification — fire and forget
       sendPush(
         booking.user_id,
         'Booking Reminder',
@@ -53,18 +53,10 @@ export async function runBookingReminder(): Promise<void> {
       // Send email — fire and forget
       sendEmailNotification(booking.user_id, 'booking-reminder', {
         booking_id: booking.id,
-        branch_name: Array.isArray(booking.branch)
-          ? (booking.branch[0] as any)?.name ?? 'Restaurant'
-          : (booking.branch as any)?.name ?? 'Restaurant',
+        branch_name: branchName ?? 'Restaurant',
         arrival_time: arrivalTime,
-        party_size: booking.party_size,
+        party_size: booking.people_count,
       });
-
-      // Mark reminder_sent = true to prevent duplicates
-      await supabaseAdmin
-        .from('bookings')
-        .update({ reminder_sent: true, reminder_sent_at: new Date().toISOString() })
-        .eq('id', booking.id);
 
       console.log(`[booking-reminder] Reminder sent for booking ${booking.id}`);
     } catch (err: any) {

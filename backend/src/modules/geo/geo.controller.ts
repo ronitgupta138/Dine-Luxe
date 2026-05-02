@@ -18,7 +18,7 @@ export async function checkArrival(req: Request, res: Response, next: NextFuncti
     const data = await arrivalCheck(parsed.data, req.user!.id);
     res.json(success(data));
   } catch (err: any) {
-    if (err.statusCode) return res.status(err.statusCode).json(error(err.message));
+    if (err.statusCode) return res.status(err.statusCode).json(error('GEO_ERROR', err.message));
     next(err);
   }
 }

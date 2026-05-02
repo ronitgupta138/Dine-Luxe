@@ -146,7 +146,7 @@ export async function getRestaurants(page: number, limit: number, status?: strin
   const { from, to } = paginate(page, limit);
   let query = supabaseAdmin
     .from('restaurants')
-    .select('*, owner:users(id, full_name, email)', { count: 'exact' })
+    .select('*, owner:users(id, name, email)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -178,12 +178,14 @@ export async function getCustomers(page: number, limit: number, status?: string)
   const { from, to } = paginate(page, limit);
   let query = supabaseAdmin
     .from('users')
-    .select('id, full_name, email, phone, status, created_at', { count: 'exact' })
+    .select('id, name, email, phone, is_active, created_at', { count: 'exact' })
     .eq('role', 'customer')
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  if (status) query = query.eq('status', status);
+  // status param maps to is_active: 'active' -> true, 'inactive' -> false
+  if (status === 'active') query = query.eq('is_active', true);
+  else if (status === 'inactive') query = query.eq('is_active', false);
 
   const { data, error, count } = await query;
   if (error) throw error;
@@ -192,9 +194,11 @@ export async function getCustomers(page: number, limit: number, status?: string)
 
 // ─── Update customer status ───────────────────────────────────────────────────
 export async function updateCustomerStatus(id: string, status: string) {
+  // Map 'active'/'inactive' to the boolean is_active column
+  const is_active = status === 'active';
   const { data, error } = await supabaseAdmin
     .from('users')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ is_active, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();

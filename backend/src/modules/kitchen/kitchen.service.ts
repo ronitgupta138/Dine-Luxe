@@ -15,6 +15,7 @@ export async function getKitchenTickets(branchId: string) {
       id,
       status,
       created_at,
+      preparation_started_at,
       table_id,
       tables(label, floor_number),
       order_items(
@@ -27,10 +28,18 @@ export async function getKitchenTickets(branchId: string) {
     `)
     .eq('branch_id', branchId)
     .in('status', ['confirmed', 'preparing'])
-    .order('created_at', { ascending: true }); // oldest first
+    .order('created_at', { ascending: true }); // oldest first (FIFO)
 
   if (error) throw error;
-  return data;
+
+  // FIX: enrich each ticket with elapsed time so KDS can show urgency indicators
+  const now = Date.now();
+  return (data ?? []).map((order) => ({
+    ...order,
+    elapsed_minutes: Math.round(
+      (now - new Date(order.preparation_started_at ?? order.created_at).getTime()) / 60000,
+    ),
+  }));
 }
 
 // ─── Update order status (chef role only) ────────────────────────────────────
@@ -50,14 +59,23 @@ export async function updateKitchenStatus(orderId: string, newStatus: string) {
   if (!allowedNext) {
     throw Object.assign(
       new Error(`Chef cannot transition order from "${currentStatus}"`),
-      { statusCode: 422, meta: { current_status: currentStatus, allowed: Object.keys(CHEF_TRANSITIONS) } },
+      {
+        statusCode: 422,
+        meta: {
+          current_status: currentStatus,
+          allowed: Object.keys(CHEF_TRANSITIONS),
+        },
+      },
     );
   }
 
   if (newStatus !== allowedNext) {
     throw Object.assign(
       new Error(`Invalid transition: ${currentStatus} → ${newStatus}. Expected: ${allowedNext}`),
-      { statusCode: 422, meta: { current_status: currentStatus, allowed_next: allowedNext } },
+      {
+        statusCode: 422,
+        meta: { current_status: currentStatus, allowed_next: allowedNext },
+      },
     );
   }
 
@@ -82,14 +100,31 @@ export async function updateKitchenStatus(orderId: string, newStatus: string) {
 
   if (error) throw error;
 
-  // Emit 'food_ready' event to branch channel so waiters are notified
+  // FIX: broadcast is non-fatal — wrap in try/catch so a failed WS publish
+  // never causes the status update to roll back from the chef's perspective
   if (newStatus === 'ready') {
-    await supabaseAdmin.channel(`branch:${order.branch_id}`)
-      .send({
+    try {
+      await supabaseAdmin.channel(`branch:${order.branch_id}`).send({
         type: 'broadcast',
         event: 'food_ready',
         payload: { order_id: orderId, branch_id: order.branch_id },
       });
+    } catch (broadcastErr: any) {
+      console.warn('[kitchen] broadcast failed:', broadcastErr.message);
+    }
+  }
+
+  // FIX: also broadcast preparing so front-of-house knows order is being worked on
+  if (newStatus === 'preparing') {
+    try {
+      await supabaseAdmin.channel(`branch:${order.branch_id}`).send({
+        type: 'broadcast',
+        event: 'order_preparing',
+        payload: { order_id: orderId, branch_id: order.branch_id },
+      });
+    } catch {
+      // non-fatal
+    }
   }
 
   return data;
@@ -98,10 +133,14 @@ export async function updateKitchenStatus(orderId: string, newStatus: string) {
 // ─── Get overdue orders ───────────────────────────────────────────────────────
 
 export async function getOverdueOrders(branchId: string) {
-  // Default threshold: 30 minutes. Ideally pull from restaurant settings.
-  const thresholdMinutes = Number(process.env.KITCHEN_OVERDUE_THRESHOLD_MINUTES ?? 30);
+  const thresholdMinutes = Number(process.env['KITCHEN_OVERDUE_THRESHOLD_MINUTES'] ?? 30);
   const cutoff = new Date(Date.now() - thresholdMinutes * 60 * 1000).toISOString();
 
+  // FIX: original used `created_at` as the overdue cutoff, but the prep clock
+  // starts when the chef presses "Start" (preparation_started_at). Orders that
+  // were confirmed but not yet started should NOT appear as overdue — they are
+  // simply queued. Only orders actively in 'preparing' state that started > threshold
+  // minutes ago are truly overdue.
   const { data, error } = await supabaseAdmin
     .from('orders')
     .select(`
@@ -111,18 +150,21 @@ export async function getOverdueOrders(branchId: string) {
       preparation_started_at,
       table_id,
       tables(label),
-      order_items(id, quantity, menu_items(name))
+      order_items(id, quantity, menu_items(name, prep_time_minutes))
     `)
     .eq('branch_id', branchId)
     .eq('status', 'preparing')
-    .lt('created_at', cutoff)
-    .order('created_at', { ascending: true });
+    .not('preparation_started_at', 'is', null)       // FIX: only started orders
+    .lt('preparation_started_at', cutoff)             // FIX: use prep start time
+    .order('preparation_started_at', { ascending: true });
 
   if (error) throw error;
 
-  // Enrich with elapsed time
-  return (data ?? []).map(order => ({
+  // Enrich with elapsed time since prep started
+  return (data ?? []).map((order) => ({
     ...order,
-    elapsed_minutes: Math.round((Date.now() - new Date(order.created_at).getTime()) / 60000),
+    elapsed_minutes: Math.round(
+      (Date.now() - new Date(order.preparation_started_at!).getTime()) / 60000,
+    ),
   }));
 }

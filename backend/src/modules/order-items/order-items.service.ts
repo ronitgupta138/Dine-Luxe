@@ -79,18 +79,25 @@ export async function serveItem(itemId: string, branchId: string) {
       .eq('id', orderId);
   }
 
-  // Emit 'item_served' to branch cashier channel
-  await supabaseAdmin.channel(`branch:${branchId}:cashier`).send({
-    type: 'broadcast',
-    event: 'item_served',
-    payload: {
-      order_item_id: itemId,
-      order_id: orderId,
-      branch_id: branchId,
-      all_served: allServed,
-      served_at: updatedItem.served_at,
-    },
-  });
+  // BUG FIX: supabaseAdmin.channel(...).send() is a Realtime broadcast — it
+  // returns a status string, not a Promise that resolves with data/error. The
+  // original code awaited it but didn't check the return value; wrapping in a
+  // try/catch ensures a Realtime failure never crashes the HTTP response.
+  try {
+    await supabaseAdmin.channel(`branch:${branchId}:cashier`).send({
+      type: 'broadcast',
+      event: 'item_served',
+      payload: {
+        order_item_id: itemId,
+        order_id: orderId,
+        branch_id: branchId,
+        all_served: allServed,
+        served_at: updatedItem.served_at,
+      },
+    });
+  } catch {
+    // Realtime broadcast is best-effort — do not fail the HTTP request
+  }
 
   return { ...updatedItem, all_items_served: allServed };
 }
@@ -103,10 +110,10 @@ export async function updateItemStatus(
   status: 'pending' | 'preparing' | 'ready' | 'served' | 'cancelled'
 ) {
   const validTransitions: Record<string, string[]> = {
-    pending: ['preparing', 'cancelled'],
+    pending:   ['preparing', 'cancelled'],
     preparing: ['ready', 'cancelled'],
-    ready: ['served'],
-    served: [],
+    ready:     ['served'],
+    served:    [],
     cancelled: [],
   };
 

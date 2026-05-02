@@ -98,10 +98,20 @@ export async function getAdminTrends(req: Request, res: Response, next: NextFunc
 export async function exportReport(req: Request, res: Response, next: NextFunction) {
   try {
     const authReq = req as AuthenticatedRequest;
+
+    // BUG FIX: original used `authReq.user!.restaurant_id` (non-null assertion)
+    // but restaurant_id is optional on the JWT type — guard it explicitly.
+    const restaurant_id = authReq.user?.restaurant_id;
+    if (!restaurant_id) {
+      return res
+        .status(400)
+        .json(error('VALIDATION_ERROR', 'Restaurant context is required for export'));
+    }
+
     const result = await reportsService.exportReport({
       ...req.body,
-      restaurant_id: authReq.user!.restaurant_id,
-      requested_by: authReq.user!.id,
+      restaurant_id,
+      requested_by: authReq.user.id,
     });
     res.json(success(result));
   } catch (err) {

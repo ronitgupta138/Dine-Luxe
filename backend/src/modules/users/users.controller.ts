@@ -34,7 +34,18 @@ export async function updateMe(req: Request, res: Response, next: NextFunction) 
 export async function getUserById(req: Request, res: Response, next: NextFunction) {
   try {
     const authReq = req as AuthenticatedRequest;
-    const user = await usersService.getUserById(req.params.id, authReq.restaurantId!);
+
+    // BUG FIX: restaurantId came from req.restaurantId (set by injectTenant),
+    // but the routes file does NOT apply injectTenant for /:id — the route only
+    // uses authenticate + requireRole. Fall back to user.restaurant_id from JWT.
+    const restaurantId = authReq.restaurantId || authReq.user?.restaurant_id;
+    if (!restaurantId) {
+      return res
+        .status(400)
+        .json(error('VALIDATION_ERROR', 'Restaurant context is required'));
+    }
+
+    const user = await usersService.getUserById(req.params.id, restaurantId);
     res.json(success(user, 'User fetched'));
   } catch (err) {
     next(err);
@@ -45,7 +56,15 @@ export async function getUserById(req: Request, res: Response, next: NextFunctio
 export async function checkEmail(req: Request, res: Response, next: NextFunction) {
   try {
     const email = req.query.email as string;
-    if (!email) return res.status(400).json(error('Email query param required'));
+
+    // BUG FIX: original returned a plain string error (not the ErrorResponse
+    // shape) — use the error() helper for a consistent API response shape.
+    if (!email || !email.trim()) {
+      return res
+        .status(400)
+        .json(error('VALIDATION_ERROR', 'email query parameter is required'));
+    }
+
     const result = await usersService.checkEmail(email);
     res.json(success(result));
   } catch (err) {

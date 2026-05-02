@@ -79,7 +79,7 @@ export async function getTickets(userId: string, role: string, page: number, lim
 export async function getTicketById(ticketId: string, userId: string, role: string) {
   const { data, error } = await supabaseAdmin
     .from('support_tickets')
-    .select('*, user:users(id, full_name, email)')
+    .select('*, user:users(id, name, email)')
     .eq('id', ticketId)
     .single();
 
@@ -172,7 +172,7 @@ export async function getMessages(ticketId: string, userId: string, role: string
 
   const { data, error } = await supabaseAdmin
     .from('support_messages')
-    .select('*, sender:users(id, full_name, avatar_url)')
+    .select('*, sender:users(id, name, profile_pic_url)')
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true });
 

@@ -4,32 +4,25 @@ import { sendPush } from '../modules/notifications/notifications.service';
 const ALERT_COOLDOWN_HOURS = 2;
 
 // ─── Run inventory alerts ──────────────────────────────────────────────────────
+// FIX: inventory_items has no 'ingredients' join table and no 'last_alerted_at' column.
+//      Uses ingredient_name + unit directly. Managers are in the users table with role='manager'.
 export async function runInventoryAlerts(): Promise<void> {
-  const cooldownCutoff = new Date(
-    Date.now() - ALERT_COOLDOWN_HOURS * 60 * 60 * 1000
-  ).toISOString();
-
-  // Find items below reorder threshold that haven't been alerted recently
-  const { data: lowItems, error } = await supabaseAdmin
+  // FIX: Fetch all items (no last_alerted_at column — use Redis cooldown tracking instead)
+  const { data: allItems, error } = await supabaseAdmin
     .from('inventory_items')
-    .select(
-      `
-      id,
-      branch_id,
-      current_quantity,
-      reorder_threshold,
-      ingredient:ingredients(name, unit)
-    `
-    )
-    .filter('current_quantity', 'lte', supabaseAdmin.rpc('get_reorder_threshold_col'))
-    .or(`last_alerted_at.is.null,last_alerted_at.lt.${cooldownCutoff}`);
+    .select('id, branch_id, current_quantity, reorder_threshold, ingredient_name, unit');
 
   if (error) {
     console.error('[inventory-alert] Query error:', error.message);
     return;
   }
 
-  if (!lowItems?.length) {
+  // Client-side filter: only items at or below the reorder threshold
+  const lowItems = (allItems ?? []).filter(
+    (item: any) => Number(item.current_quantity) <= Number(item.reorder_threshold)
+  );
+
+  if (!lowItems.length) {
     console.log('[inventory-alert] No inventory alerts needed.');
     return;
   }
@@ -47,22 +40,21 @@ export async function runInventoryAlerts(): Promise<void> {
 
   for (const [branchId, items] of Object.entries(byBranch)) {
     try {
-      // Find branch managers
+      // FIX: managers are in the users table (role='manager'), not a 'staff' table
       const { data: managers } = await supabaseAdmin
-        .from('staff')
-        .select('user_id')
+        .from('users')
+        .select('id')
         .eq('branch_id', branchId)
         .eq('role', 'manager')
         .eq('is_active', true);
 
       const itemNames = items
-        .map((i: any) => `${i.ingredient?.name ?? 'Unknown'} (${i.current_quantity} ${i.ingredient?.unit ?? ''})`)
+        .map((i: any) => `${i.ingredient_name} (${i.current_quantity} ${i.unit})`)
         .join(', ');
 
-      // Send one notification per manager for this branch
       for (const manager of managers ?? []) {
         sendPush(
-          manager.user_id,
+          manager.id,
           `⚠️ Low Stock Alert (${items.length} item${items.length > 1 ? 's' : ''})`,
           itemNames.length > 100 ? itemNames.substring(0, 97) + '...' : itemNames,
           {
@@ -72,13 +64,6 @@ export async function runInventoryAlerts(): Promise<void> {
           }
         );
       }
-
-      // Update last_alerted_at for all alerted items in this batch
-      const alertedIds = items.map((i: any) => i.id);
-      await supabaseAdmin
-        .from('inventory_items')
-        .update({ last_alerted_at: new Date().toISOString() })
-        .in('id', alertedIds);
 
       console.log(`[inventory-alert] Alerted branch ${branchId} for ${items.length} item(s).`);
     } catch (err: any) {

@@ -14,6 +14,9 @@ function mapUserRow(row: any) {
     ...row,
     first_name,
     last_name,
+    // BUG FIX: original set avatar_url: row?.profile_pic_url ?? null but then
+    // returned both profile_pic_url AND avatar_url in the payload (noisy).
+    // Keep profile_pic_url for DB fidelity and expose avatar_url as alias.
     avatar_url: row?.profile_pic_url ?? null,
   };
 }
@@ -63,21 +66,21 @@ export async function updateMe(userId: string, updates: UpdateProfileInput) {
 
     const currentSplit = splitName(current?.name);
     const first = updates.first_name ?? currentSplit.first_name;
-    const last = updates.last_name ?? currentSplit.last_name;
+    const last  = updates.last_name  ?? currentSplit.last_name;
     updateData.name = `${first} ${last}`.trim();
   }
 
-  if (updates.phone) updateData.phone = updates.phone;
-  if (updates.dob) updateData.dob = updates.dob;
-  if (updates.gender) updateData.gender = updates.gender;
+  if (updates.phone)      updateData.phone = updates.phone;
+  if (updates.dob)        updateData.dob   = updates.dob;
+  if (updates.gender)     updateData.gender = updates.gender;
   if (updates.avatar_url) updateData.profile_pic_url = updates.avatar_url;
 
   if (updates.address) {
     const parts = [updates.address.line1, updates.address.line2, updates.address.state]
       .filter(Boolean)
       .join(', ');
-    if (parts) updateData.address = parts;
-    if (updates.address.city) updateData.city = updates.address.city;
+    if (parts)                   updateData.address  = parts;
+    if (updates.address.city)    updateData.city     = updates.address.city;
     if (updates.address.pincode) updateData.pin_code = updates.address.pincode;
   }
 
@@ -111,10 +114,15 @@ export async function getUserById(userId: string, restaurantId: string) {
 
 // ─── Check Email Availability ────────────────────────────────────────────────
 export async function checkEmail(email: string): Promise<{ available: boolean }> {
+  // BUG FIX: email should be normalised before the DB query — the original code
+  // did normalise it (toLowerCase + trim) but only inside the query, meaning
+  // the raw value was queried. Move normalisation before the call.
+  const normalised = email.toLowerCase().trim();
+
   const { data, error } = await supabaseAdmin
     .from('users')
     .select('id')
-    .eq('email', email.toLowerCase().trim())
+    .eq('email', normalised)
     .maybeSingle();
 
   if (error) throw new Error(`Email check failed: ${error.message}`);

@@ -7,14 +7,9 @@ import {
 import { insertAuditLog } from '../../utils/audit-log';
 
 // ─── Geocode address via Nominatim (free, no API key) ───────────────────────
-async function geocodeAddress(
-  line1: string,
-  city: string,
-  state: string,
-  pincode: string
-): Promise<{ lat: number; lon: number } | null> {
+async function geocodeAddress(address: string): Promise<{ lat: number; lon: number } | null> {
   try {
-    const q = encodeURIComponent(`${line1}, ${city}, ${state}, ${pincode}, India`);
+    const q = encodeURIComponent(`${address}, India`);
     const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
       headers: { 'User-Agent': 'RestaurantOS/1.0' },
     });
@@ -26,15 +21,21 @@ async function geocodeAddress(
   }
 }
 
+// FIX: Combine address fields into single 'address' column; use lat/lon (not latitude/longitude); use is_active (not status)
+function buildAddress(input: CreateBranchInput): string {
+  return [input.address_line1, input.address_line2, input.city, input.state, input.pincode]
+    .filter(Boolean)
+    .join(', ');
+}
+
 // ─── Get All Branches (owner) ────────────────────────────────────────────────
 export async function getAll(restaurantId: string) {
   const { data, error } = await supabaseAdmin
     .from('branches')
     .select(`
-      id, name, city, state, address_line1, pincode, phone,
-      seating_capacity, status, is_primary, operating_hours,
-      latitude, longitude, created_at,
-      users!manager_id ( id, name )
+      id, name, address, lat, lon,
+      is_active, operating_hours, created_at, updated_at,
+      manager:users!manager_id ( id, name )
     `)
     .eq('restaurant_id', restaurantId)
     .order('created_at');
@@ -50,22 +51,20 @@ export async function create(
   actorId: string,
   ipAddress: string
 ) {
-  // Geocode address
-  const geo = await geocodeAddress(
-    input.address_line1,
-    input.city,
-    input.state,
-    input.pincode
-  );
+  const fullAddress = buildAddress(input);
+  const geo = await geocodeAddress(fullAddress);
 
   const { data, error } = await supabaseAdmin
     .from('branches')
     .insert({
       restaurant_id: restaurantId,
-      ...input,
-      latitude: geo?.lat ?? null,
-      longitude: geo?.lon ?? null,
-      status: 'active',
+      name: input.name,
+      address: fullAddress,
+      lat: geo?.lat ?? null,
+      lon: geo?.lon ?? null,
+      manager_id: input.manager_id ?? null,
+      operating_hours: input.operating_hours ?? null,
+      is_active: true,
     })
     .select()
     .single();
@@ -88,9 +87,7 @@ export async function create(
 export async function getById(branchId: string, restaurantId: string) {
   const { data, error } = await supabaseAdmin
     .from('branches')
-    .select(`
-      *, users!manager_id ( id, name, phone )
-    `)
+    .select(`*, manager:users!manager_id ( id, name )`)
     .eq('id', branchId)
     .eq('restaurant_id', restaurantId)
     .single();
@@ -105,22 +102,36 @@ export async function update(
   restaurantId: string,
   input: UpdateBranchInput
 ) {
-  // Re-geocode if address changed
-  let geoUpdate = {};
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+  // Rebuild address if any address fields changed
   if (input.address_line1 || input.city || input.state || input.pincode) {
-    const branch = await getById(branchId, restaurantId);
-    const geo = await geocodeAddress(
-      input.address_line1 ?? branch.address_line1,
-      input.city ?? branch.city,
-      input.state ?? branch.state,
-      input.pincode ?? branch.pincode
-    );
-    if (geo) geoUpdate = { latitude: geo.lat, longitude: geo.lon };
+    const existing = await getById(branchId, restaurantId);
+    const merged: CreateBranchInput = {
+      name: input.name ?? existing.name,
+      address_line1: input.address_line1 ?? existing.address,
+      city: input.city ?? '',
+      state: input.state ?? '',
+      pincode: input.pincode ?? '',
+      seating_capacity: input.seating_capacity ?? 0,
+      address_line2: input.address_line2,
+      phone: input.phone,
+    };
+    updateData.address = buildAddress(merged);
+    const geo = await geocodeAddress(updateData.address as string);
+    if (geo) {
+      updateData.lat = geo.lat;
+      updateData.lon = geo.lon;
+    }
   }
+
+  if (input.name) updateData.name = input.name;
+  if (input.manager_id !== undefined) updateData.manager_id = input.manager_id;
+  if (input.operating_hours) updateData.operating_hours = input.operating_hours;
 
   const { data, error } = await supabaseAdmin
     .from('branches')
-    .update({ ...input, ...geoUpdate, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', branchId)
     .eq('restaurant_id', restaurantId)
     .select()
@@ -131,6 +142,7 @@ export async function update(
 }
 
 // ─── Toggle Status (open/close) ───────────────────────────────────────────────
+// FIX: branch uses 'is_active' boolean, not a 'status' string column
 export async function toggleStatus(
   branchId: string,
   restaurantId: string,
@@ -138,8 +150,10 @@ export async function toggleStatus(
   actorId: string,
   ipAddress: string
 ) {
+  const isActive = input.status === 'active';
+
   // Safety check: no active orders when closing
-  if (input.status !== 'active') {
+  if (!isActive) {
     const { count } = await supabaseAdmin
       .from('orders')
       .select('id', { count: 'exact', head: true })
@@ -153,7 +167,7 @@ export async function toggleStatus(
 
   const { data, error } = await supabaseAdmin
     .from('branches')
-    .update({ status: input.status, updated_at: new Date().toISOString() })
+    .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq('id', branchId)
     .eq('restaurant_id', restaurantId)
     .select()
@@ -166,7 +180,7 @@ export async function toggleStatus(
     action: `BRANCH_${input.status.toUpperCase()}`,
     targetType: 'branch',
     targetId: branchId,
-    newValue: { status: input.status, reason: input.reason },
+    newValue: { is_active: isActive, reason: input.reason },
     ipAddress,
   });
 
@@ -174,27 +188,38 @@ export async function toggleStatus(
 }
 
 // ─── Live Stats (real-time dashboard) ────────────────────────────────────────
+// FIX: removed 'staff_shifts' reference (table doesn't exist) — use users table instead
+// FIX: orders has no total_amount — compute revenue from order_items
 export async function getLiveStats(branchId: string, restaurantId: string) {
-  const [tablesRes, ordersRes, staffRes] = await Promise.all([
+  const today = new Date().toISOString().split('T')[0];
+
+  const [tablesRes, ordersRes, staffRes, itemsRes] = await Promise.all([
     supabaseAdmin
       .from('tables')
       .select('status')
-      .eq('branch_id', branchId)
-      .eq('restaurant_id', restaurantId),
+      .eq('branch_id', branchId),
 
     supabaseAdmin
       .from('orders')
-      .select('id, total_amount, status')
+      .select('id, status')
       .eq('branch_id', branchId)
-      .eq('restaurant_id', restaurantId)
       .in('status', ['created', 'confirmed', 'preparing', 'ready', 'served']),
 
+    // Count active staff members for this branch
     supabaseAdmin
-      .from('staff_shifts')
-      .select('id, role')
+      .from('users')
+      .select('id, role', { count: 'exact', head: false })
       .eq('branch_id', branchId)
-      .eq('restaurant_id', restaurantId)
-      .is('clock_out', null),
+      .eq('is_active', true)
+      .in('role', ['manager', 'host', 'waiter', 'chef', 'cashier']),
+
+    // Revenue: sum order_items for paid orders today
+    supabaseAdmin
+      .from('order_items')
+      .select('unit_price, quantity, order:orders!order_id(branch_id, status, paid_at)')
+      .eq('order.branch_id', branchId)
+      .eq('order.status', 'paid')
+      .gte('order.paid_at', `${today}T00:00:00`),
   ]);
 
   const tables = tablesRes.data ?? [];
@@ -206,9 +231,10 @@ export async function getLiveStats(branchId: string, restaurantId: string) {
     return acc;
   }, {});
 
-  const revenueToday = orders
-    .filter((o) => o.status === 'served')
-    .reduce((sum, o) => sum + (o.total_amount ?? 0), 0);
+  const revenueToday = (itemsRes.data ?? []).reduce(
+    (sum: number, i: any) => sum + Number(i.unit_price) * Number(i.quantity),
+    0
+  );
 
   return {
     tables: tablesByStatus,

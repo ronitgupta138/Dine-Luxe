@@ -24,7 +24,7 @@ export async function assignDelivery(orderId: string, branchId: string, restaura
   // Partners must have last_location populated and status = 'online'
   const { data: branch } = await supabaseAdmin
     .from('branches')
-    .select('latitude, longitude')
+    .select('current_lat, current_lon')
     .eq('id', branchId)
     .single();
 
@@ -32,9 +32,9 @@ export async function assignDelivery(orderId: string, branchId: string, restaura
   // For now: pick first available online partner in the same area
   const { data: partners, error: partnerErr } = await supabaseAdmin
     .from('delivery_partners')
-    .select('id, name, fcm_token, last_location')
+    .select('id, name')
     .eq('branch_id', branchId)
-    .eq('status', 'online')
+    .eq('is_online', true)
     .is('active_delivery_id', null)
     .limit(1);
 
@@ -80,7 +80,7 @@ export async function assignDelivery(orderId: string, branchId: string, restaura
 export async function getDelivery(deliveryId: string, partnerId: string) {
   const { data, error } = await supabaseAdmin
     .from('deliveries')
-    .select('*, orders(*, order_items(*, menu_items(name))), branches(name, address, latitude, longitude)')
+    .select('*, orders(*, order_items(*, menu_items(name))), branches(name, address, lat, lon)')
     .eq('id', deliveryId)
     .eq('partner_id', partnerId)
     .single();
@@ -205,8 +205,7 @@ export async function updatePartnerLocation(
   const { error } = await supabaseAdmin
     .from('delivery_partners')
     .update({
-      last_location: { lat, lon },
-      last_location_updated_at: new Date().toISOString(),
+      current_lat: lat, current_lon: lon,
     })
     .eq('id', partnerId);
 
@@ -245,7 +244,7 @@ export async function getActiveDelivery(partnerId: string) {
 export async function getPartnerEarnings(partnerId: string) {
   const { data, error } = await supabaseAdmin
     .from('deliveries')
-    .select('id, delivered_at, earning_amount, orders(total_amount)')
+    .select('id, delivered_at, earning')
     .eq('partner_id', partnerId)
     .eq('status', 'delivered')
     .order('delivered_at', { ascending: false });
@@ -253,7 +252,7 @@ export async function getPartnerEarnings(partnerId: string) {
   if (error) throw error;
 
   const total = (data ?? []).reduce(
-    (acc: number, d: { earning_amount?: number }) => acc + (d.earning_amount ?? 0),
+    (acc: number, d: any) => acc + (Number(d.earning) || 0),
     0
   );
 

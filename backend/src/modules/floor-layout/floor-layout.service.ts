@@ -149,9 +149,16 @@ export async function publishLayout(branchId: string, layoutVersion: number) {
   // Invalidate cache
   await redis.del(`live_layout:${branchId}`);
 
-  // Broadcast event
-  await supabaseAdmin.channel(`branch:${branchId}`)
-    .send({ type: 'broadcast', event: 'floor_layout_updated', payload: { layout_id: draft.id, version: draft.layout_version } });
+  // Broadcast event via Supabase REST broadcast (no subscribe needed server-side)
+  supabaseAdmin
+    .channel(`branch:${branchId}`)
+    .send({
+      type: 'broadcast',
+      event: 'floor_layout_updated',
+      payload: { layout_id: draft.id, version: draft.layout_version },
+    })
+    .then(() => {})
+    .catch(() => {}); // Non-fatal: clients will catch up on next poll
 
   return published;
 }
@@ -159,18 +166,29 @@ export async function publishLayout(branchId: string, layoutVersion: number) {
 // ─── Get current (active) layout ─────────────────────────────────────────────
 
 export async function getLayout(branchId: string) {
-  const { data, error } = await supabaseAdmin
+  // Prefer active layout; fall back to latest draft if no active layout exists
+  const { data: active } = await supabaseAdmin
     .from('floor_layouts')
     .select('*')
     .eq('branch_id', branchId)
-    .in('status', ['active', 'draft'])
-    .order('status', { ascending: true }) // active before draft alphabetically? use version
+    .eq('status', 'active')
+    .order('layout_version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (active) return active;
+
+  const { data: draft, error } = await supabaseAdmin
+    .from('floor_layouts')
+    .select('*')
+    .eq('branch_id', branchId)
+    .eq('status', 'draft')
     .order('layout_version', { ascending: false })
     .limit(1)
     .single();
 
   if (error) throw error;
-  return data;
+  return draft;
 }
 
 // ─── Get live layout with real-time table statuses ────────────────────────────

@@ -11,8 +11,8 @@ const router: import('express').Router = Router();
 
 router.use(authenticate);
 
-// GET /loyalty/balance/:userId
-router.get('/balance/:userId', getBalance);
+// GET /loyalty/balance — returns balance for the authenticated user (own data only)
+router.get('/balance', getBalance);
 
 // POST /loyalty/earn
 router.post('/earn', earnPoints);
@@ -20,7 +20,7 @@ router.post('/earn', earnPoints);
 // POST /loyalty/redeem
 router.post('/redeem', redeemPoints);
 
-// GET /loyalty/history/:userId
-router.get('/history/:userId', getHistory);
+// GET /loyalty/history — returns transaction history for authenticated user only
+router.get('/history', getHistory);
 
 export default router;

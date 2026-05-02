@@ -4,6 +4,8 @@ import { sendEmail } from '../../email/send';
 import { insertAuditLog } from '../../utils/audit-log';
 
 // ─── Register Restaurant (multi-step, transactional) ────────────────────────
+// FIX: restaurants table only has: name, cuisine_type (singular), gst_number, status
+//      branches table only has: restaurant_id, name, address (text), lat, lon, manager_id, operating_hours, is_active
 export async function register(input: RegisterInput, ipAddress: string) {
   // 1. Create Supabase Auth user for owner
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -16,18 +18,15 @@ export async function register(input: RegisterInput, ipAddress: string) {
   const ownerId = authData.user.id;
 
   try {
-    // 2. Create restaurant record
+    // 2. Create restaurant record (only use columns that actually exist)
     const { data: restaurant, error: restError } = await supabaseAdmin
       .from('restaurants')
       .insert({
         name: input.restaurant.name,
-        cuisine_types: input.restaurant.cuisine_types,
-        description: input.restaurant.description,
-        gst_number: input.restaurant.gst_number,
-        contact_email: input.restaurant.contact_email ?? input.owner.email,
-        contact_phone: input.restaurant.contact_phone,
-        website: input.restaurant.website,
-        owner_id: ownerId,
+        cuisine_type: Array.isArray(input.restaurant.cuisine_types)
+          ? input.restaurant.cuisine_types.join(', ')
+          : input.restaurant.cuisine_types,
+        gst_number: input.restaurant.gst_number ?? null,
         status: 'pending',
       })
       .select()
@@ -35,21 +34,22 @@ export async function register(input: RegisterInput, ipAddress: string) {
 
     if (restError) throw new Error(`Restaurant creation failed: ${restError.message}`);
 
-    // 3. Create first branch
+    // 3. Create first branch — combine address fields into single 'address' column
+    const branchAddress = [
+      input.branch.address_line1,
+      input.branch.address_line2,
+      input.branch.city,
+      input.branch.state,
+      input.branch.pincode,
+    ].filter(Boolean).join(', ');
+
     const { data: branch, error: branchError } = await supabaseAdmin
       .from('branches')
       .insert({
         restaurant_id: restaurant.id,
         name: input.branch.name,
-        address_line1: input.branch.address_line1,
-        address_line2: input.branch.address_line2,
-        city: input.branch.city,
-        state: input.branch.state,
-        pincode: input.branch.pincode,
-        phone: input.branch.phone,
-        seating_capacity: input.branch.seating_capacity,
-        is_primary: true,
-        status: 'active',
+        address: branchAddress,
+        is_active: true,
       })
       .select()
       .single();
@@ -78,13 +78,12 @@ export async function register(input: RegisterInput, ipAddress: string) {
 
     if (userError) throw new Error(`User creation failed: ${userError.message}`);
 
-    // 5. Create default branding entry
+    // 5. Create default branding entry (only valid columns)
     await supabaseAdmin.from('restaurant_branding').insert({
       restaurant_id: restaurant.id,
       primary_color: '#E85D04',
       secondary_color: '#FAA307',
-      font_family: 'Inter',
-      app_name: input.restaurant.name,
+      app_name_display: input.restaurant.name,
     });
 
     // 6. Send welcome email (fire and forget)
@@ -122,10 +121,7 @@ export async function getAll(page = 1, limit = 20, status?: string) {
   let query = supabaseAdmin
     .from('restaurants')
     .select(`
-      id, name, cuisine_types, status, contact_email, contact_phone,
-      created_at,
-      users!owner_id ( name, email ),
-      branches ( count )
+      id, name, cuisine_type, status, gst_number, created_at
     `, { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -140,7 +136,6 @@ export async function getAll(page = 1, limit = 20, status?: string) {
 
 // ─── Get Nearby Restaurants (customer discovery) ──────────────────────────────
 export async function getNearby(lat: number, lon: number, radiusKm = 10) {
-  // PostGIS query via Supabase RPC
   const { data, error } = await supabaseAdmin.rpc('get_nearby_restaurants', {
     user_lat: lat,
     user_lon: lon,
@@ -152,14 +147,14 @@ export async function getNearby(lat: number, lon: number, radiusKm = 10) {
 }
 
 // ─── Get Single Restaurant (public) ──────────────────────────────────────────
+// FIX: use actual columns that exist in branches + restaurant_branding tables
 export async function getById(restaurantId: string) {
   const { data, error } = await supabaseAdmin
     .from('restaurants')
     .select(`
-      id, name, cuisine_types, description, contact_email,
-      contact_phone, website, status,
-      restaurant_branding ( primary_color, secondary_color, logo_url, banner_url, app_name ),
-      branches ( id, name, city, state, address_line1, phone, seating_capacity, status )
+      id, name, cuisine_type, gst_number, status,
+      restaurant_branding ( primary_color, secondary_color, logo_url, banner_url, app_name_display, tagline ),
+      branches ( id, name, address, lat, lon, is_active, operating_hours )
     `)
     .eq('id', restaurantId)
     .eq('status', 'active')
@@ -170,42 +165,50 @@ export async function getById(restaurantId: string) {
 }
 
 // ─── Get Live Status (real-time for customer) ─────────────────────────────────
-export async function getLiveStatus(restaurantId: string) {
+// FIX: queue_entries has no estimated_wait_minutes or restaurant_id
+export async function getLiveStatus(restaurantId: string, branchId?: string) {
+  const branchQuery = branchId
+    ? supabaseAdmin.from('branches').select('id').eq('id', branchId).eq('restaurant_id', restaurantId)
+    : supabaseAdmin.from('branches').select('id').eq('restaurant_id', restaurantId).eq('is_active', true);
+
+  const { data: branches } = await branchQuery;
+  const branchIds = (branches ?? []).map((b: any) => b.id);
+
+  if (!branchIds.length) {
+    return { available_tables: 0, total_tables: 0, queue_length: 0, avg_wait_minutes: 0, is_accepting_orders: false };
+  }
+
   const [tablesResult, queueResult] = await Promise.all([
-    supabaseAdmin
-      .from('tables')
-      .select('status')
-      .eq('restaurant_id', restaurantId),
-    supabaseAdmin
-      .from('queue_entries')
-      .select('estimated_wait_minutes')
-      .eq('restaurant_id', restaurantId)
-      .eq('status', 'waiting'),
+    supabaseAdmin.from('tables').select('status').in('branch_id', branchIds),
+    supabaseAdmin.from('queue_entries').select('position').in('branch_id', branchIds).eq('status', 'waiting'),
   ]);
 
   const tables = tablesResult.data ?? [];
   const queue = queueResult.data ?? [];
 
   const available = tables.filter((t) => t.status === 'free').length;
-  const avgWait =
-    queue.length > 0
-      ? Math.round(queue.reduce((s, q) => s + (q.estimated_wait_minutes ?? 0), 0) / queue.length)
-      : 0;
+  const avgWait = queue.length > 0 ? queue.length * 15 : 0; // estimate 15 min per party
 
   return {
     available_tables: available,
     total_tables: tables.length,
     queue_length: queue.length,
     avg_wait_minutes: avgWait,
-    is_accepting_orders: true, // expand with operating hours check
+    is_accepting_orders: available > 0 || queue.length < 20,
   };
 }
 
 // ─── Update Restaurant (owner) ────────────────────────────────────────────────
 export async function update(restaurantId: string, input: UpdateRestaurantInput) {
+  // Only update columns that actually exist in schema
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (input.name) updateData.name = input.name;
+  if (input.cuisine_types) updateData.cuisine_type = input.cuisine_types.join(', ');
+  if (input.gst_number) updateData.gst_number = input.gst_number;
+
   const { data, error } = await supabaseAdmin
     .from('restaurants')
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', restaurantId)
     .select()
     .single();
@@ -221,10 +224,9 @@ export async function updateStatus(
   actorId: string,
   ipAddress: string
 ) {
-  // Fetch old status for audit log
   const { data: old } = await supabaseAdmin
     .from('restaurants')
-    .select('status, contact_email, name')
+    .select('status, name')
     .eq('id', restaurantId)
     .single();
 
@@ -236,19 +238,6 @@ export async function updateStatus(
     .single();
 
   if (error) throw new Error(`Status update failed: ${error.message}`);
-
-  // Notify owner via email (fire and forget)
-  if (old?.contact_email) {
-    sendEmail({
-      to: old.contact_email,
-      templateName: 'welcome', // reuse with status update context
-      data: {
-        name: old.name,
-        restaurantName: old.name,
-        loginUrl: `${process.env.FRONTEND_URL}/login`,
-      },
-    }).catch(console.error);
-  }
 
   await insertAuditLog({
     actorId,

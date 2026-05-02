@@ -20,7 +20,7 @@ export async function getSales(params: {
   };
   const trunc = truncMap[granularity];
 
-  let query = supabaseAdmin.rpc('get_sales_report', {
+  const { data, error } = await supabaseAdmin.rpc('get_sales_report', {
     p_restaurant_id: restaurant_id,
     p_branch_id: branch_id ?? null,
     p_from: from,
@@ -28,7 +28,6 @@ export async function getSales(params: {
     p_trunc: trunc,
   });
 
-  const { data, error } = await query;
   if (error) throw error;
   return data;
 }
@@ -119,7 +118,18 @@ export async function exportReport(params: {
 }) {
   const { report_type, branch_id, restaurant_id, from, to, format, requested_by } = params;
 
-  // Fetch report data based on type
+  // BUG FIX: kitchen-performance export required branch_id (non-null assertion)
+  // but the caller never validated it was provided — guard explicitly here.
+  if (report_type === 'kitchen-performance' && !branch_id) {
+    throw Object.assign(
+      new Error('branch_id is required for kitchen-performance export'),
+      { status: 422 }
+    );
+  }
+
+  // BUG FIX: 'customer-insights' and 'platform' were valid report_type enum
+  // values in the schema but unreachable in exportReport — added both branches
+  // so the export matches every value the schema allows.
   let reportData: any[] = [];
 
   if (report_type === 'sales') {
@@ -128,6 +138,16 @@ export async function exportReport(params: {
     reportData = await getMenuPerformance(restaurant_id, branch_id);
   } else if (report_type === 'kitchen-performance') {
     reportData = await getKitchenPerformance(branch_id!, from, to);
+  } else if (report_type === 'customer-insights') {
+    const insights = await getCustomerInsights(restaurant_id);
+    // Flatten nested arrays for tabular export
+    reportData = [
+      { metric: 'new_customers_30d', value: insights.new_customers_30d },
+      ...insights.top_spenders.map((s: any) => ({ metric: 'top_spender', ...s })),
+    ];
+  } else if (report_type === 'platform') {
+    const raw = await getAdminPlatformReport();
+    reportData = Array.isArray(raw) ? raw : [raw];
   }
 
   // Generate file buffer
@@ -136,9 +156,13 @@ export async function exportReport(params: {
   let extension: string;
 
   if (format === 'csv') {
-    const parser = new Parser();
-    const csv = parser.parse(reportData);
-    fileBuffer = Buffer.from(csv, 'utf-8');
+    // BUG FIX: json2csv Parser throws when reportData is empty — guard it.
+    if (reportData.length === 0) {
+      fileBuffer = Buffer.from('No data available for the selected period.\n', 'utf-8');
+    } else {
+      const parser = new Parser();
+      fileBuffer = Buffer.from(parser.parse(reportData), 'utf-8');
+    }
     contentType = 'text/csv';
     extension = 'csv';
   } else {

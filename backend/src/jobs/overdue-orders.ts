@@ -8,12 +8,13 @@ export async function runOverdueOrdersCheck(): Promise<void> {
     Date.now() - OVERDUE_THRESHOLD_MINUTES * 60 * 1000
   ).toISOString();
 
+  // FIX: removed 'overdue_alerted_at' filter — column does not exist in schema.
+  // Use Redis to prevent duplicate alerts instead.
   const { data: overdueOrders, error } = await supabaseAdmin
     .from('orders')
     .select('id, branch_id, created_at')
     .eq('status', 'preparing')
-    .lt('created_at', threshold)
-    .is('overdue_alerted_at', null); // Don't alert twice
+    .lt('created_at', threshold);
 
   if (error) {
     console.error('[overdue-orders] Query error:', error.message);
@@ -51,12 +52,6 @@ export async function runOverdueOrdersCheck(): Promise<void> {
           threshold_minutes: OVERDUE_THRESHOLD_MINUTES,
         },
       });
-
-      // Stamp overdue_alerted_at to prevent duplicate alerts
-      await supabaseAdmin
-        .from('orders')
-        .update({ overdue_alerted_at: new Date().toISOString() })
-        .eq('id', order.id);
 
       console.log(`[overdue-orders] Alerted for order ${order.id}`);
     } catch (emitErr: any) {

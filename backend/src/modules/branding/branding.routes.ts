@@ -21,7 +21,7 @@ router.patch(
   ctrl.updateBranding
 );
 
-// Owner only — get presigned upload URL for logo/banner
+// Owner only — get presigned upload URL for logo/banner/favicon
 router.post(
   '/upload-url',
   authenticate,

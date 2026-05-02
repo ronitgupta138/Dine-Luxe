@@ -8,6 +8,15 @@ export const availabilityWindowSchema = z.object({
   end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Format HH:MM'),
 });
 
+// ─── Addon schema (shared) ────────────────────────────────────────────────────
+
+const addonSchema = z.object({
+  name: z.string().min(1).max(100),
+  price: z.number().nonnegative(),
+  is_required: z.boolean().default(false),
+  max_quantity: z.number().int().positive().default(1),
+});
+
 // ─── Categories ───────────────────────────────────────────────────────────────
 
 export const createCategorySchema = z.object({
@@ -41,21 +50,29 @@ export const createItemSchema = z.object({
   display_order: z.number().int().nonnegative().optional(),
   status: z.enum(['available', 'sold_out', 'hidden']).default('available'),
   availability_windows: z.array(availabilityWindowSchema).optional().default([]),
-  addons: z
-    .array(
-      z.object({
-        name: z.string().min(1).max(100),
-        price: z.number().nonnegative(),
-        is_required: z.boolean().default(false),
-        max_quantity: z.number().int().positive().default(1),
-      })
-    )
-    .optional()
-    .default([]),
+  addons: z.array(addonSchema).optional().default([]),
 });
 
-export const updateItemSchema = createItemSchema.partial().omit({ category_id: true }).extend({
+// FIX: the original used .partial().omit({ category_id: true }).extend({ category_id: ... })
+// which is redundant — omit removes the field then extend adds it back as required (non-optional).
+// The correct approach is a full .partial() so ALL fields including category_id are optional on update.
+// Defaults (.default(...)) are removed on partial fields so they don't overwrite intentional omissions.
+export const updateItemSchema = z.object({
   category_id: z.string().uuid().optional(),
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).optional(),
+  price: z.number().positive().optional(),
+  compare_price: z.number().positive().optional(),
+  image_url: z.string().url().optional(),
+  is_veg: z.boolean().optional(),
+  is_vegan: z.boolean().optional(),
+  contains_alcohol: z.boolean().optional(),
+  allergens: z.array(z.string()).optional(),
+  calories: z.number().int().nonnegative().optional(),
+  display_order: z.number().int().nonnegative().optional(),
+  status: z.enum(['available', 'sold_out', 'hidden']).optional(),
+  availability_windows: z.array(availabilityWindowSchema).optional(),
+  addons: z.array(addonSchema).optional(),
 });
 
 export const updateItemStatusSchema = z.object({

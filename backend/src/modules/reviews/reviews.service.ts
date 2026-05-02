@@ -90,7 +90,7 @@ export async function getByRestaurant(
     .select(
       `
       *,
-      user:users(id, full_name, avatar_url),
+      user:users(id, name, profile_pic_url),
       item_ratings:review_item_ratings(*, order_item:order_items(menu_item_id))
     `,
       { count: 'exact' }
@@ -112,7 +112,7 @@ export async function getByBranch(branchId: string, page: number, limit: number)
   const { from, to } = paginate(page, limit);
   const { data, error, count } = await supabaseAdmin
     .from('reviews')
-    .select('*, user:users(id, full_name, avatar_url)', { count: 'exact' })
+    .select('*, user:users(id, name, profile_pic_url)', { count: 'exact' })
     .eq('branch_id', branchId)
     .order('created_at', { ascending: false })
     .range(from, to);

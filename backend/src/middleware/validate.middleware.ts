@@ -51,12 +51,7 @@ export function validate(input: ValidationInput, target: ValidationTarget = 'bod
     }
 
     // Replace the target with the parsed (and coerced) value
-<<<<<<< HEAD
-    // cast to any to satisfy TypeScript index signature for express Request
-    (req as any)[target] = result.data;
-=======
     (req as unknown as Record<string, unknown>)[resolvedTarget] = result.data;
->>>>>>> 1e4fe1a (Fix Some of the Backend V1.1)
     next();
   };
 }

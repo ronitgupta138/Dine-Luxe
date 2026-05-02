@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../../config/supabase';
 import { redis } from '../../config/redis';
 import { config } from '../../config/env';
 import { generateOTP, storeOTP, verifyOTP, deleteOTP } from '../../utils/otp';
+import { sendEmail } from '../../email/send';
 import type {
   SignupInput,
   LoginInput,
@@ -72,8 +73,12 @@ export async function signup(input: SignupInput): Promise<{ message: string }> {
   const otp = generateOTP();
   await storeOTP(input.email, otp, config.OTP_EXPIRY_SECONDS);
 
-  // TODO: call email service to send OTP
-  // await sendEmail(input.email, 'otp-verify', { otp, firstName: input.firstName });
+  // Send OTP via email (fire and forget — never await in signup handler)
+  sendEmail({
+    to: input.email,
+    templateName: 'otp-verify',
+    data: { name: input.firstName, otp, expiryMinutes: Math.floor(config.OTP_EXPIRY_SECONDS / 60) },
+  });
   console.log(`[DEV] OTP for ${input.email}: ${otp}`);
 
   return { message: 'OTP sent to your email. Please verify to complete registration.' };
@@ -240,7 +245,11 @@ export async function forgotPassword(input: ForgotPasswordInput): Promise<{ mess
   if (profile) {
     const otp = generateOTP();
     await storeOTP(input.email, otp, config.OTP_EXPIRY_SECONDS);
-    // TODO: await sendEmail(input.email, 'otp-verify', { otp })
+    sendEmail({
+      to: input.email,
+      templateName: 'otp-verify',
+      data: { name: (profile as any).name ?? 'User', otp, expiryMinutes: Math.floor(config.OTP_EXPIRY_SECONDS / 60) },
+    });
     console.log(`[DEV] Password reset OTP for ${input.email}: ${otp}`);
   }
 
@@ -275,7 +284,7 @@ export async function resetPassword(input: ResetPasswordInput): Promise<{ messag
   }
 
   // Invalidate all sessions
-  await supabaseAdmin.auth.admin.signOut(profile.id as string, 'global');
+  await supabaseAdmin.auth.admin.signOut(profile.id as string);
   await redis.del(refreshTokenKey(profile.id as string));
   await deleteOTP(input.email);
 

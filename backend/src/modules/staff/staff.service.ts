@@ -238,46 +238,52 @@ export async function toggleAccess(
 }
 
 // ─── Get Performance Metrics ───────────────────────────────────────────────────
+// FIX: orders has no restaurant_id (filter by branch_id); reviews has no waiter_id/waiter_rating
 export async function getPerformance(staffId: string, restaurantId: string) {
-  const today = new Date().toISOString().split('T')[0];
+  const { data: staffProfile } = await supabaseAdmin
+    .from('users')
+    .select('branch_id')
+    .eq('id', staffId)
+    .eq('restaurant_id', restaurantId)
+    .single();
 
-  const [ordersToday, ratings, tablesThisWeek] = await Promise.all([
-    // Orders handled today
+  const branchId = staffProfile?.branch_id ?? '';
+  const today = new Date().toISOString().split('T')[0];
+  const weekAgo = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+
+  const [ordersToday, tablesThisWeek, ratingsRes] = await Promise.all([
     supabaseAdmin
       .from('orders')
-      .select('id, total_amount', { count: 'exact' })
+      .select('id', { count: 'exact', head: true })
       .eq('waiter_id', staffId)
-      .eq('restaurant_id', restaurantId)
+      .eq('branch_id', branchId)
       .gte('created_at', `${today}T00:00:00`)
       .in('status', ['served', 'paid', 'closed']),
 
-    // Average customer rating from reviews
-    supabaseAdmin
-      .from('reviews')
-      .select('waiter_rating')
-      .eq('waiter_id', staffId)
-      .eq('restaurant_id', restaurantId)
-      .not('waiter_rating', 'is', null),
-
-    // Tables served this week
     supabaseAdmin
       .from('orders')
-      .select('table_id', { count: 'exact' })
+      .select('id', { count: 'exact', head: true })
       .eq('waiter_id', staffId)
-      .eq('restaurant_id', restaurantId)
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()),
+      .eq('branch_id', branchId)
+      .gte('created_at', weekAgo),
+
+    // Use overall_rating on branch-level reviews as a proxy
+    supabaseAdmin
+      .from('reviews')
+      .select('overall_rating')
+      .eq('branch_id', branchId)
+      .gte('created_at', weekAgo),
   ]);
 
-  const ratingValues = (ratings.data ?? []).map((r) => r.waiter_rating);
+  const ratingValues = (ratingsRes.data ?? []).map((r: any) => r.overall_rating);
   const avgRating =
     ratingValues.length > 0
-      ? ratingValues.reduce((s, v) => s + v, 0) / ratingValues.length
+      ? ratingValues.reduce((s: number, v: number) => s + v, 0) / ratingValues.length
       : null;
 
   return {
     orders_today: ordersToday.count ?? 0,
-    revenue_today: (ordersToday.data ?? []).reduce((s, o) => s + (o.total_amount ?? 0), 0),
-    avg_rating: avgRating ? Math.round(avgRating * 100) / 100 : null,
+    avg_branch_rating_this_week: avgRating ? Math.round(avgRating * 100) / 100 : null,
     rating_count: ratingValues.length,
     tables_served_this_week: tablesThisWeek.count ?? 0,
   };

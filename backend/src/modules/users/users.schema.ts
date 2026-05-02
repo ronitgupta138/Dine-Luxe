@@ -29,10 +29,10 @@ export const updateProfileSchema = z.object({
 
   address: z
     .object({
-      line1: z.string().max(100).optional(),
-      line2: z.string().max(100).optional(),
-      city: z.string().max(50).optional(),
-      state: z.string().max(50).optional(),
+      line1:   z.string().max(100).optional(),
+      line2:   z.string().max(100).optional(),
+      city:    z.string().max(50).optional(),
+      state:   z.string().max(50).optional(),
       pincode: z
         .string()
         .regex(/^\d{6}$/, 'Pincode must be 6 digits')

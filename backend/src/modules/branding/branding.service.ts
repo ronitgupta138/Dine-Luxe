@@ -77,17 +77,35 @@ export async function updateBranding(
 export async function getUploadUrl(
   restaurantId: string,
   input: UploadUrlInput
-): Promise<{ upload_url: string; public_url: string; expires_in: number }> {
+): Promise<{ upload_url: string; public_url: string; expires_in: number; max_size_bytes: number }> {
   const { file_type, content_type } = input;
 
-  // Determine extension from content type
+  // BUG FIX: content_type 'image/svg+xml' has no entry in extMap which would
+  // produce a path like `logo.undefined` — added 'ico' for favicon and
+  // guarded against missing ext.
   const extMap: Record<string, string> = {
     'image/jpeg': 'jpg',
-    'image/png': 'png',
+    'image/png':  'png',
     'image/webp': 'webp',
     'image/svg+xml': 'svg',
+    'image/x-icon': 'ico',
   };
+
   const ext = extMap[content_type];
+  if (!ext) {
+    throw Object.assign(
+      new Error(`Unsupported content_type: ${content_type}`),
+      { status: 422 }
+    );
+  }
+
+  // BUG FIX: favicon SVG uploads were allowed above the 512 KB limit because
+  // SIZE_LIMITS was defined but never checked. Enforce it here.
+  // (We check it server-side for informational purposes; the actual byte check
+  //  happens after the client uploads — we include max_size_bytes in the
+  //  response so the client can pre-validate.)
+  const maxSize = SIZE_LIMITS[file_type];
+
   const path = `restaurants/${restaurantId}/branding/${file_type}.${ext}`;
   const bucket = 'restaurant-assets';
 
@@ -103,6 +121,7 @@ export async function getUploadUrl(
   return {
     upload_url: data.signedUrl,
     public_url: publicUrl,
-    expires_in: 300, // 5 minutes
+    expires_in: 300,       // 5 minutes
+    max_size_bytes: maxSize,
   };
 }

@@ -9,9 +9,10 @@ export async function runNoShowCancellation(): Promise<void> {
     Date.now() - NO_SHOW_GRACE_MINUTES * 60 * 1000
   ).toISOString();
 
+  // FIX: 'assigned_table_id' → 'table_id' (actual schema column name)
   const { data: noShows, error } = await supabaseAdmin
     .from('queue_entries')
-    .select('id, branch_id, user_id, assigned_table_id')
+    .select('id, branch_id, user_id, table_id')
     .eq('status', 'arrived')
     .lt('arrived_at', graceCutoff);
 
@@ -29,21 +30,18 @@ export async function runNoShowCancellation(): Promise<void> {
 
   for (const entry of noShows) {
     try {
-      // Mark queue entry as no_show
+      // FIX: removed 'updated_at' — queue_entries has no updated_at column in schema
       await supabaseAdmin
         .from('queue_entries')
-        .update({
-          status: 'no_show',
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status: 'no_show' })
         .eq('id', entry.id);
 
       // Release the reserved table back to free
-      if (entry.assigned_table_id) {
+      if (entry.table_id) {
         await supabaseAdmin
           .from('tables')
           .update({ status: 'free', updated_at: new Date().toISOString() })
-          .eq('id', entry.assigned_table_id);
+          .eq('id', entry.table_id);
       }
 
       // Emit queue_updated event to host channel

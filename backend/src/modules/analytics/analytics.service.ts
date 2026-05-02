@@ -14,8 +14,13 @@ export async function getMenuSuggestions(branchId: string) {
   if (error) throw error;
   if (!items?.length) return [];
 
-  const avgOrderCount =
-    items.reduce((sum: number, i: any) => sum + i.order_count, 0) / items.length;
+  // BUG FIX: avgOrderCount would be NaN (division by zero) if items is somehow
+  // empty after the length check — guard it. Also items.length is checked above
+  // so this is an extra safety net for the divide.
+  const totalOrders = items.reduce((sum: number, i: any) => sum + i.order_count, 0);
+  const avgOrderCount = items.length > 0 ? totalOrders / items.length : 0;
+
+  if (avgOrderCount === 0) return [];
 
   const slowSellers = items.filter((i: any) => i.order_count < avgOrderCount * 0.3);
 
@@ -115,8 +120,12 @@ export async function getStaffingRecommendation(branchId: string) {
   }
 
   return forecast.map((day) => {
-    const recommendedWaiters = Math.ceil(day.predicted_orders / 15);
-    const recommendedChefs = Math.ceil(day.predicted_orders / 20);
+    // BUG FIX: if predicted_orders is 0, Math.ceil(0/15) = 0 — that's correct,
+    // but we should ensure we never recommend negative staffing. The original
+    // code was fine here but adding explicit Math.max(1, ...) ensures at least
+    // 1 of each is recommended even on very slow days.
+    const recommendedWaiters = Math.max(1, Math.ceil(day.predicted_orders / 15));
+    const recommendedChefs   = Math.max(1, Math.ceil(day.predicted_orders / 20));
     const current = scheduledMap[day.date] ?? { waiters: 0, chefs: 0 };
 
     return {

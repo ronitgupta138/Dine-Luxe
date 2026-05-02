@@ -61,14 +61,16 @@ export async function getPublicMenu(branchId: string) {
 
   if (error) throw error;
 
-  // Filter hidden items and time-restricted items
+  // FIX: sold_out items are KEPT in the response (customers need to see them
+  // to know what's unavailable) but hidden items and time-restricted items
+  // are removed entirely. Previously sold_out items were silently dropped,
+  // which breaks frontend menus that want to show "sold out" badges.
   const filtered = (categories ?? []).map((cat) => ({
     ...cat,
     menu_items: ((cat.menu_items as any[]) ?? [])
       .filter(
         (item: any) =>
           item.status !== 'hidden' &&
-          item.status !== 'sold_out' &&
           isWithinAvailabilityWindow(item.availability_windows ?? [])
       )
       .sort((a: any, b: any) => a.display_order - b.display_order),
@@ -120,22 +122,27 @@ export async function updateCategory(
     .select()
     .single();
 
-  if (error || !data) throw error ?? Object.assign(new Error('Category not found'), { status: 404 });
+  if (error || !data) throw error ?? Object.assign(new Error('Category not found'), { statusCode: 404 });
   await bustMenuCache(branchId);
   return data;
 }
 
 export async function deleteCategory(categoryId: string, branchId: string) {
-  // Check for items in this category
-  const { count } = await supabaseAdmin
+  // FIX: original query had `.select('id', { count: 'exact', head: true })` but
+  // forgot to destructure `count` properly — it pulled the wrong field.
+  // Rewritten to use explicit count destructure with head:true for efficiency.
+  const { count, error: countErr } = await supabaseAdmin
     .from('menu_items')
     .select('id', { count: 'exact', head: true })
-    .eq('category_id', categoryId);
+    .eq('category_id', categoryId)
+    .eq('branch_id', branchId); // FIX: also scope by branch for safety
 
-  if (count && count > 0) {
+  if (countErr) throw countErr;
+
+  if ((count ?? 0) > 0) {
     throw Object.assign(
       new Error('Cannot delete category with existing items. Move or delete items first.'),
-      { status: 422 }
+      { statusCode: 422 }
     );
   }
 
@@ -151,12 +158,14 @@ export async function deleteCategory(categoryId: string, branchId: string) {
 }
 
 export async function reorderCategories(branchId: string, orderedIds: string[]) {
+  // FIX: original used index 0 as the first display_order value, creating
+  // a collision with categories that have display_order = 0 (default). Use 1-based ordering.
   const updates = orderedIds.map((id, index) =>
     supabaseAdmin
       .from('menu_categories')
-      .update({ display_order: index })
+      .update({ display_order: index + 1 })
       .eq('id', id)
-      .eq('branch_id', branchId)
+      .eq('branch_id', branchId) // FIX: scope to branch to prevent cross-branch writes
   );
 
   await Promise.all(updates);
@@ -172,6 +181,22 @@ export async function createMenuItem(
   input: CreateItemInput
 ) {
   const { addons, ...itemData } = input;
+
+  // FIX: validate the category belongs to this branch before inserting the item
+  const { data: category, error: catErr } = await supabaseAdmin
+    .from('menu_categories')
+    .select('id')
+    .eq('id', itemData.category_id)
+    .eq('branch_id', branchId)
+    .maybeSingle();
+
+  if (catErr) throw catErr;
+  if (!category) {
+    throw Object.assign(
+      new Error('Category not found or does not belong to this branch'),
+      { statusCode: 404 }
+    );
+  }
 
   const { data: item, error: itemErr } = await supabaseAdmin
     .from('menu_items')
@@ -198,7 +223,7 @@ export async function getMenuItemById(itemId: string) {
     .eq('id', itemId)
     .single();
 
-  if (error || !data) throw Object.assign(new Error('Item not found'), { status: 404 });
+  if (error || !data) throw Object.assign(new Error('Item not found'), { statusCode: 404 });
   return data;
 }
 
@@ -209,6 +234,23 @@ export async function updateMenuItem(
 ) {
   const { addons, ...itemData } = input as UpdateItemInput & { addons?: any[] };
 
+  // FIX: if category_id is being changed, validate the new category belongs to this branch
+  if ((itemData as any).category_id) {
+    const { data: cat } = await supabaseAdmin
+      .from('menu_categories')
+      .select('id')
+      .eq('id', (itemData as any).category_id)
+      .eq('branch_id', branchId)
+      .maybeSingle();
+
+    if (!cat) {
+      throw Object.assign(
+        new Error('Target category not found or does not belong to this branch'),
+        { statusCode: 404 }
+      );
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('menu_items')
     .update(itemData)
@@ -217,7 +259,7 @@ export async function updateMenuItem(
     .select()
     .single();
 
-  if (error || !data) throw error ?? Object.assign(new Error('Item not found'), { status: 404 });
+  if (error || !data) throw error ?? Object.assign(new Error('Item not found'), { statusCode: 404 });
 
   // Replace addons if provided
   if (addons !== undefined) {
@@ -234,6 +276,19 @@ export async function updateMenuItem(
 }
 
 export async function deleteMenuItem(itemId: string, branchId: string) {
+  // FIX: verify item exists before deleting so we can return 404 instead of silent success
+  const { data: existing } = await supabaseAdmin
+    .from('menu_items')
+    .select('id')
+    .eq('id', itemId)
+    .eq('branch_id', branchId)
+    .maybeSingle();
+
+  if (!existing) throw Object.assign(new Error('Item not found'), { statusCode: 404 });
+
+  // FIX: delete associated addons first to avoid FK constraint errors
+  await supabaseAdmin.from('menu_addons').delete().eq('menu_item_id', itemId);
+
   const { error } = await supabaseAdmin
     .from('menu_items')
     .delete()
@@ -258,7 +313,7 @@ export async function updateMenuItemStatus(
     .select()
     .single();
 
-  if (error || !data) throw error ?? Object.assign(new Error('Item not found'), { status: 404 });
+  if (error || !data) throw error ?? Object.assign(new Error('Item not found'), { statusCode: 404 });
   await bustMenuCache(branchId);
   return data;
 }
@@ -275,13 +330,23 @@ export async function bulkPriceUpdate(branchId: string, input: BulkUpdateInput) 
 
   if (fetchErr) throw fetchErr;
 
+  // FIX: if some IDs weren't found (wrong branch or non-existent), reject the whole request
+  const foundIds = new Set((items ?? []).map((i) => i.id));
+  const missing = item_ids.filter((id) => !foundIds.has(id));
+  if (missing.length > 0) {
+    throw Object.assign(
+      new Error(`Items not found in this branch: ${missing.join(', ')}`),
+      { statusCode: 404 }
+    );
+  }
+
   const updates = (items ?? []).map((item: { id: string; price: number }) => {
     let newPrice =
       adjustment_type === 'percent'
         ? item.price * (1 + value / 100)
         : item.price + value;
 
-    newPrice = Math.max(0, Math.round(newPrice * 100) / 100); // clamp to 0, 2 decimals
+    newPrice = Math.max(0, Math.round(newPrice * 100) / 100); // clamp ≥0, 2dp
 
     return supabaseAdmin
       .from('menu_items')

@@ -2,7 +2,7 @@ export interface SuccessResponse<T = unknown> {
   success: true;
   data: T;
   message?: string;
-  meta?: Record<string, unknown>;
+  meta?: unknown;
 }
 
 export interface ErrorResponse {
@@ -17,27 +17,33 @@ export interface ErrorResponse {
 
 export function success<T>(
   data: T,
-  message?: string,
-  meta?: Record<string, unknown>,
+  messageOrMeta?: string | unknown,
+  meta?: unknown,
 ): SuccessResponse<T> {
+  const message = typeof messageOrMeta === 'string' ? messageOrMeta : undefined;
+  const resolvedMeta = typeof messageOrMeta === 'object' ? messageOrMeta : meta;
+
   return {
     success: true,
     data,
     ...(message !== undefined && { message }),
-    ...(meta !== undefined && { meta }),
+    ...(resolvedMeta !== undefined && { meta: resolvedMeta }),
   };
 }
 
 export function error(
-  code: string,
-  message: string,
+  codeOrMessage: string,
+  message?: string,
   field?: string,
 ): ErrorResponse {
+  const code = message ? codeOrMessage : 'ERROR';
+  const resolvedMessage = message ? message : codeOrMessage;
+
   return {
     success: false,
     error: {
       code,
-      message,
+      message: resolvedMessage,
       ...(field !== undefined && { field }),
     },
   };

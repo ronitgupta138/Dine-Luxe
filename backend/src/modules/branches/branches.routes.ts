@@ -10,7 +10,7 @@ import {
 } from './branches.schema';
 import * as ctrl from './branches.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // All branch routes require auth + tenant injection
 router.use(authenticate, injectTenant);

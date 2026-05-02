@@ -11,7 +11,7 @@ import {
 } from './reviews.controller';
 import { createReviewSchema } from './reviews.schema';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // POST /reviews — customer only, after order
 router.post('/', authenticate, validate(createReviewSchema), createReview);

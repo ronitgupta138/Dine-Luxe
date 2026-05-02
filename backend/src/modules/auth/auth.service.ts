@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from '../../config/supabase';
 import { redis } from '../../config/redis';
@@ -39,11 +39,15 @@ function forgotPasswordRateLimitKey(email: string): string {
  */
 export async function signup(input: SignupInput): Promise<{ message: string }> {
   // Check email uniqueness in Supabase
-  const { data: existing } = await supabaseAdmin
-    .from('profiles')
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from('users')
     .select('id')
     .eq('email', input.email)
     .maybeSingle();
+
+  if (existingError) {
+    throw new Error(`Email lookup failed: ${existingError.message}`);
+  }
 
   if (existing) {
     const err = new Error('Email is already registered') as Error & { status: number };
@@ -105,30 +109,66 @@ export async function verifyOtp(input: OtpInput): Promise<{ accessToken: string;
     },
   });
 
-  if (authError || !authData.user) {
+  let authUser = authData?.user ?? null;
+
+  if (authError || !authUser) {
+    const { data: usersList, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+
+    if (listError) {
+      throw new Error(authError?.message ?? listError.message ?? 'Failed to create user account');
+    }
+
+    authUser = usersList?.users?.find((u) => u.email === pending.email) ?? null;
+  }
+
+  if (!authUser) {
     throw new Error(authError?.message ?? 'Failed to create user account');
   }
 
   // Insert profile row
-  await supabaseAdmin.from('profiles').insert({
-    id: authData.user.id,
-    email: pending.email,
-    phone: pending.phone,
-    first_name: pending.firstName,
-    last_name: pending.lastName,
-    password_hash: pending.hashedPassword,
-    role: 'customer',
-  });
+  const { data: existingUser, error: existingUserError } = await supabaseAdmin
+    .from('users')
+    .select('id')
+    .eq('email', pending.email)
+    .maybeSingle();
+
+  if (existingUserError) {
+    throw new Error(`User lookup failed: ${existingUserError.message}`);
+  }
+
+  if (!existingUser) {
+    const now = new Date().toISOString();
+    const { error: userInsertError } = await supabaseAdmin.from('users').insert({
+      id: authUser.id,
+      name: `${pending.firstName} ${pending.lastName}`.trim(),
+      email: pending.email,
+      phone: pending.phone,
+      password_hash: pending.hashedPassword,
+      role: 'customer',
+      created_by_restaurant: false,
+      is_active: true,
+      force_password_change: false,
+      created_at: now,
+      updated_at: now,
+    });
+
+    if (userInsertError) {
+      throw new Error(`User creation failed: ${userInsertError.message}`);
+    }
+  }
 
   // Cleanup Redis
   await deleteOTP(input.email);
   await redis.del(`pending_signup:${input.email}`);
 
-  const tokenPayload = { sub: authData.user.id, email: pending.email, role: 'customer' };
+  const tokenPayload = { sub: authUser.id, email: pending.email, role: 'customer' };
   const accessToken = signAccessToken(tokenPayload);
   const refreshToken = signRefreshToken(tokenPayload);
 
-  await redis.set(refreshTokenKey(authData.user.id), refreshToken, 'EX', 7 * 24 * 60 * 60);
+  await redis.set(refreshTokenKey(authUser.id), refreshToken, 'EX', 7 * 24 * 60 * 60);
 
   return { accessToken, refreshToken };
 }
@@ -138,7 +178,7 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
   const isEmail = input.emailOrUsername.includes('@');
 
   const query = supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select('id, email, role, password_hash, restaurant_id, branch_id');
 
   const { data: profile, error: profileError } = isEmail
@@ -192,8 +232,8 @@ export async function forgotPassword(input: ForgotPasswordInput): Promise<{ mess
 
   // Silently succeed even if email doesn't exist (security best practice)
   const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('id, first_name')
+    .from('users')
+    .select('id, name')
     .eq('email', input.email)
     .maybeSingle();
 
@@ -212,7 +252,7 @@ export async function resetPassword(input: ResetPasswordInput): Promise<{ messag
   await verifyOTP(input.email, input.otp);
 
   const { data: profile } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select('id')
     .eq('email', input.email)
     .maybeSingle();
@@ -225,10 +265,14 @@ export async function resetPassword(input: ResetPasswordInput): Promise<{ messag
 
   const hashedPassword = await bcrypt.hash(input.newPassword, config.BCRYPT_SALT_ROUNDS);
 
-  await supabaseAdmin
-    .from('profiles')
+  const { error: passwordError } = await supabaseAdmin
+    .from('users')
     .update({ password_hash: hashedPassword })
     .eq('id', profile.id);
+
+  if (passwordError) {
+    throw new Error(`Password update failed: ${passwordError.message}`);
+  }
 
   // Invalidate all sessions
   await supabaseAdmin.auth.admin.signOut(profile.id as string, 'global');

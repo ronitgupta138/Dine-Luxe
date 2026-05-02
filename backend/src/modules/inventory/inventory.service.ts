@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../../config/supabase';
 import { redis } from '../../config/redis';
 import { paginate } from '../../utils/pagination';
-import { auditLog } from '../../utils/audit-log';
+import { insertAuditLog } from '../../utils/audit-log';
 
 export interface DeductItem {
   menu_item_id: string;
@@ -36,7 +36,7 @@ export async function updateInventoryItem(
     .single();
 
   if (error) throw error;
-  await auditLog({ action: 'inventory.update', target_id: id, user_id: userId, payload });
+  await insertAuditLog({ action: 'inventory.update', targetType: 'inventory_item', targetId: id, actorId: userId, metadata: payload });
   return data;
 }
 

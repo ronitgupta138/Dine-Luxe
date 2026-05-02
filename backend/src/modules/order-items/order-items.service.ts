@@ -120,7 +120,8 @@ export async function updateItemStatus(
     throw Object.assign(new Error('Order item not found'), { status: 404 });
   }
 
-  if ((item.orders as { branch_id: string }).branch_id !== branchId) {
+  const itemBranchId = (item.orders as any)?.branch_id as string;
+  if (itemBranchId !== branchId) {
     throw Object.assign(new Error('Forbidden'), { status: 403 });
   }
 

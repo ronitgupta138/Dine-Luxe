@@ -46,3 +46,11 @@ export function buildPaginationMeta(total: number, page: number, limit: number):
     hasPrev: page > 1,
   };
 }
+
+export function paginate(page: number, limit: number) {
+  const offset = (page - 1) * limit;
+  return {
+    from: offset,
+    to: offset + limit,
+  };
+}

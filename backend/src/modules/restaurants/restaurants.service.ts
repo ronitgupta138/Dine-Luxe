@@ -57,12 +57,12 @@ export async function register(input: RegisterInput, ipAddress: string) {
     if (branchError) throw new Error(`Branch creation failed: ${branchError.message}`);
 
     // 4. Create owner profile
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
+    const now = new Date().toISOString();
+    const { error: userError } = await supabaseAdmin
+      .from('users')
       .insert({
         id: ownerId,
-        first_name: input.owner.first_name,
-        last_name: input.owner.last_name,
+        name: `${input.owner.first_name} ${input.owner.last_name}`.trim(),
         email: input.owner.email,
         phone: input.owner.phone,
         dob: input.owner.dob,
@@ -71,9 +71,12 @@ export async function register(input: RegisterInput, ipAddress: string) {
         branch_id: branch.id,
         is_active: true,
         force_password_change: false,
+        created_by_restaurant: true,
+        created_at: now,
+        updated_at: now,
       });
 
-    if (profileError) throw new Error(`Profile creation failed: ${profileError.message}`);
+    if (userError) throw new Error(`User creation failed: ${userError.message}`);
 
     // 5. Create default branding entry
     await supabaseAdmin.from('restaurant_branding').insert({
@@ -121,7 +124,7 @@ export async function getAll(page = 1, limit = 20, status?: string) {
     .select(`
       id, name, cuisine_types, status, contact_email, contact_phone,
       created_at,
-      profiles!owner_id ( first_name, last_name, email ),
+      users!owner_id ( name, email ),
       branches ( count )
     `, { count: 'exact' })
     .order('created_at', { ascending: false })

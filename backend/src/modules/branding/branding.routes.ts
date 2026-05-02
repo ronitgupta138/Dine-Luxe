@@ -6,7 +6,7 @@ import { validate } from '../../middleware/validate.middleware';
 import { updateBrandingSchema, uploadUrlSchema } from './branding.schema';
 import * as ctrl from './branding.controller';
 
-const router = Router({ mergeParams: true }); // inherits :id from parent router
+const router: import('express').Router = Router({ mergeParams: true }); // inherits :id from parent router
 
 // Public — customer app loads branding on every launch
 router.get('/', ctrl.getBranding);

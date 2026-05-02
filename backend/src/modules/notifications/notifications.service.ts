@@ -1,5 +1,4 @@
 import { supabaseAdmin } from '../../config/supabase';
-import { messaging } from '../../config/firebase';
 import { sendEmail as sendEmailUtil } from '../../email/send';
 import { paginate } from '../../utils/pagination';
 
@@ -10,41 +9,14 @@ export async function sendPush(
   body: string,
   data?: Record<string, string>
 ): Promise<void> {
-  const { data: devices, error } = await supabaseAdmin
-    .from('device_tokens')
-    .select('token')
-    .eq('user_id', userId);
-
-  if (error || !devices?.length) return;
-
-  const tokens = devices.map((d: any) => d.token);
-
-  const response = await messaging.sendEachForMulticast({
-    tokens,
-    notification: { title, body },
-    data: data ?? {},
-  });
-
-  // Remove invalid/expired tokens
-  const invalidTokens: string[] = [];
-  response.responses.forEach((r, idx) => {
-    if (!r.success) {
-      const code = r.error?.code;
-      if (
-        code === 'messaging/invalid-registration-token' ||
-        code === 'messaging/registration-token-not-registered'
-      ) {
-        invalidTokens.push(tokens[idx]);
-      }
-    }
-  });
-
-  if (invalidTokens.length) {
-    await supabaseAdmin
-      .from('device_tokens')
-      .delete()
-      .in('token', invalidTokens);
-  }
+  console.warn(
+    '[Notifications] Push notifications disabled (Firebase removed). Request ignored.'
+  );
+  void userId;
+  void title;
+  void body;
+  void data;
+  return;
 }
 
 // ─── Send email notification ───────────────────────────────────────────────────
@@ -61,7 +33,11 @@ export async function sendEmailNotification(
 
   if (error || !user?.email) return;
 
-  await sendEmailUtil(user.email, templateName, templateData);
+  await sendEmailUtil({
+    to: user.email,
+    templateName,
+    data: templateData as Record<string, any>,
+  });
 }
 
 // ─── Create in-app notification ───────────────────────────────────────────────

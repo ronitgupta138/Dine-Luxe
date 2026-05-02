@@ -12,7 +12,7 @@ import {
   handleCancelOrder,
 } from './orders.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // All order routes require authentication + tenant injection
 router.use(authenticate, injectTenant);

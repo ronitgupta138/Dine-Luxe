@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '../../config/supabase';
 import { redis } from '../../config/redis';
 import { generateEmployeeId } from '../../utils/employee-id';
-import { generateDOBPassword } from '../../utils/password';
+import { generateDefaultPassword } from '../../utils/password';
 import { insertAuditLog } from '../../utils/audit-log';
 import { sendEmail } from '../../email/send';
 import { CreateStaffInput, UpdateStaffInput } from './staff.schema';
@@ -9,10 +9,10 @@ import { CreateStaffInput, UpdateStaffInput } from './staff.schema';
 // ─── Get All Staff for a Branch ───────────────────────────────────────────────
 export async function getByBranch(branchId: string, restaurantId: string) {
   const { data, error } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select(`
-      id, first_name, last_name, email, phone, role,
-      employee_id, is_active, avatar_url, created_at,
+      id, name, email, phone, role,
+      employee_id, is_active, profile_pic_url, created_at,
       branches!branch_id ( name )
     `)
     .eq('branch_id', branchId)
@@ -48,7 +48,7 @@ export async function create(
   if (branchErr || !branch) throw new Error('Branch not found or unauthorized');
 
   // Generate default password from DOB (format: DDMMYYYY)
-  const defaultPassword = generateDOBPassword(input.dob);
+  const defaultPassword = generateDefaultPassword(new Date(input.dob));
 
   // Create Supabase Auth user
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -65,12 +65,12 @@ export async function create(
     const employeeId = await generateEmployeeId(branch.name, input.branch_id);
 
     // Create profile
+    const now = new Date().toISOString();
     const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
+      .from('users')
       .insert({
         id: staffId,
-        first_name: input.first_name,
-        last_name: input.last_name,
+        name: `${input.first_name} ${input.last_name}`.trim(),
         email: input.email,
         phone: input.phone,
         dob: input.dob,
@@ -81,6 +81,9 @@ export async function create(
         employee_id: employeeId,
         is_active: true,
         force_password_change: true, // must change DOB password on first login
+        created_by_restaurant: true,
+        created_at: now,
+        updated_at: now,
       })
       .select()
       .single();
@@ -120,10 +123,10 @@ export async function create(
 // ─── Get Staff by ID ──────────────────────────────────────────────────────────
 export async function getById(staffId: string, restaurantId: string) {
   const { data, error } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select(`
-      id, first_name, last_name, email, phone, dob, gender, role,
-      employee_id, is_active, avatar_url, force_password_change, created_at,
+      id, name, email, phone, dob, gender, role,
+      employee_id, is_active, profile_pic_url, force_password_change, created_at,
       branches!branch_id ( id, name )
     `)
     .eq('id', staffId)
@@ -140,9 +143,35 @@ export async function update(
   restaurantId: string,
   input: UpdateStaffInput
 ) {
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.first_name || input.last_name) {
+    const { data: current, error: currentError } = await supabaseAdmin
+      .from('users')
+      .select('name')
+      .eq('id', staffId)
+      .single();
+
+    if (currentError) throw new Error(`Failed to load current name: ${currentError.message}`);
+
+    const currentParts = (current?.name ?? '').trim().split(' ').filter(Boolean);
+    const currentFirst = currentParts[0] ?? '';
+    const currentLast = currentParts.slice(1).join(' ');
+    const first = input.first_name ?? currentFirst;
+    const last = input.last_name ?? currentLast;
+    updateData.name = `${first} ${last}`.trim();
+  }
+
+  if (input.phone) updateData.phone = input.phone;
+  if (input.role) updateData.role = input.role;
+  if (input.branch_id) updateData.branch_id = input.branch_id;
+  if (input.avatar_url) updateData.profile_pic_url = input.avatar_url;
+
   const { data, error } = await supabaseAdmin
-    .from('profiles')
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .from('users')
+    .update(updateData)
     .eq('id', staffId)
     .eq('restaurant_id', restaurantId)
     .select()
@@ -161,8 +190,8 @@ export async function toggleAccess(
 ) {
   // Get current status
   const { data: current } = await supabaseAdmin
-    .from('profiles')
-    .select('is_active, first_name, email')
+    .from('users')
+    .select('is_active, name, email')
     .eq('id', staffId)
     .eq('restaurant_id', restaurantId)
     .single();
@@ -172,7 +201,7 @@ export async function toggleAccess(
   const newStatus = !current.is_active;
 
   const { data, error } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .update({ is_active: newStatus, updated_at: new Date().toISOString() })
     .eq('id', staffId)
     .eq('restaurant_id', restaurantId)

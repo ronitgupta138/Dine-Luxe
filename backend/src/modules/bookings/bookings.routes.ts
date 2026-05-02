@@ -5,7 +5,7 @@ import { validate } from '../../middleware/validate.middleware';
 import { createBookingSchema, cancelBookingSchema } from './bookings.schema';
 import * as ctrl from './bookings.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // POST /bookings — customer
 router.post('/', authenticate, requireRole('customer'), validate({ body: createBookingSchema }), ctrl.createBooking);

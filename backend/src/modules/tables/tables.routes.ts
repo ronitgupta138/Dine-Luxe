@@ -5,7 +5,7 @@ import { validate } from '../../middleware/validate.middleware';
 import { createTableSchema, updateStatusSchema, mergeSchema } from './tables.schema';
 import * as ctrl from './tables.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // GET /tables/branch/:branchId — all authenticated staff
 router.get('/branch/:branchId', authenticate, ctrl.getTablesByBranch);

@@ -18,7 +18,7 @@ async function geocodeAddress(
     const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
       headers: { 'User-Agent': 'RestaurantOS/1.0' },
     });
-    const data = await res.json();
+    const data = (await res.json()) as any[];
     if (data.length === 0) return null;
     return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
   } catch {
@@ -34,7 +34,7 @@ export async function getAll(restaurantId: string) {
       id, name, city, state, address_line1, pincode, phone,
       seating_capacity, status, is_primary, operating_hours,
       latitude, longitude, created_at,
-      profiles!manager_id ( id, first_name, last_name )
+      users!manager_id ( id, name )
     `)
     .eq('restaurant_id', restaurantId)
     .order('created_at');
@@ -89,7 +89,7 @@ export async function getById(branchId: string, restaurantId: string) {
   const { data, error } = await supabaseAdmin
     .from('branches')
     .select(`
-      *, profiles!manager_id ( id, first_name, last_name, phone )
+      *, users!manager_id ( id, name, phone )
     `)
     .eq('id', branchId)
     .eq('restaurant_id', restaurantId)

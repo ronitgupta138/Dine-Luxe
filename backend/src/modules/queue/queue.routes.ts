@@ -3,7 +3,7 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/rbac.middleware';
 import * as ctrl from './queue.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // POST /queue/join — customer or host
 router.post('/join', authenticate, ctrl.joinQueue);

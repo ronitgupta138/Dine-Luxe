@@ -13,7 +13,7 @@ import {
   getFeedback,
 } from './admin.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // Public health check
 router.get('/health', getHealth);

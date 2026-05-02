@@ -31,7 +31,8 @@ export async function loginController(req: Request, res: Response, next: NextFun
 
 export async function logoutController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    await authService.logout((req as any).user.id);
+    const userId = req.user?.id;
+    await authService.logout(userId ?? '');
     res.status(200).json(success(null, 'Logged out successfully.'));
   } catch (err) {
     next(err);
@@ -68,9 +69,10 @@ export async function resetPasswordController(req: Request, res: Response, next:
 export async function checkEmailController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const email = req.query['email'] as string;
-    const { data } = await import('../../config/supabase').then(({ supabaseAdmin }) =>
-      supabaseAdmin.from('profiles').select('id').eq('email', email).maybeSingle(),
+    const { data, error } = await import('../../config/supabase').then(({ supabaseAdmin }) =>
+      supabaseAdmin.from('users').select('id').eq('email', email).maybeSingle(),
     );
+    if (error) throw error;
     res.status(200).json(success({ available: !data }, data ? 'Email is taken.' : 'Email is available.'));
   } catch (err) {
     next(err);

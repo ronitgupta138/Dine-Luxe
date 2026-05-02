@@ -6,7 +6,7 @@ import { validate } from '../../middleware/validate.middleware';
 import { registerSchema, updateRestaurantSchema, updateStatusSchema } from './restaurants.schema';
 import * as ctrl from './restaurants.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // ── Public ──────────────────────────────────────────────────────────────────
 router.post('/register', validate(registerSchema), ctrl.register);

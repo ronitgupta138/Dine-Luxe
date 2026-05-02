@@ -27,7 +27,7 @@ import {
   handleBulkPriceUpdate,
 } from './menu.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // ─── Public Routes (no auth) ──────────────────────────────────────────────────
 

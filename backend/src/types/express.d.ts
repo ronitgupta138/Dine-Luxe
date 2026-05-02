@@ -3,7 +3,7 @@ import 'express';
 declare global {
   namespace Express {
     interface Request {
-      user: {
+      user?: {
         id: string;
         email: string;
         role: string;
@@ -11,8 +11,8 @@ declare global {
         branch_id?: string;
         [key: string]: unknown;
       };
-      restaurantId: string;
-      branchId: string;
+      restaurantId?: string;
+      branchId?: string;
     }
   }
 }

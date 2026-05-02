@@ -67,17 +67,6 @@ export async function assignDelivery(orderId: string, branchId: string, restaura
     .update({ active_delivery_id: delivery.id })
     .eq('id', partner.id);
 
-  // Send push notification to partner (FCM)
-  if (partner.fcm_token) {
-    // TODO: integrate Firebase Admin SDK push notification
-    // await sendFCMNotification(partner.fcm_token, {
-    //   title: 'New Delivery Request',
-    //   body: `Order #${orderId.split('-')[0]} assigned to you`,
-    //   data: { delivery_id: delivery.id, order_id: orderId },
-    // });
-    console.log(`[FCM] TODO: notify partner ${partner.id} via FCM`);
-  }
-
   // Start 30s acceptance timeout via Redis sorted set
   // Score = acceptance deadline (Unix timestamp)
   const deadline = Math.floor(Date.now() / 1000) + ACCEPTANCE_TIMEOUT_SECONDS;

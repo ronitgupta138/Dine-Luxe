@@ -12,7 +12,7 @@ import {
 } from './support.controller';
 import { createTicketSchema, updateTicketStatusSchema, postMessageSchema } from './support.schema';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 router.use(authenticate);
 

@@ -6,7 +6,7 @@ import { validate } from '../../middleware/validate.middleware';
 import { createStaffSchema, updateStaffSchema } from './staff.schema';
 import * as ctrl from './staff.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // All routes: authenticated + tenant injected
 router.use(authenticate, injectTenant);

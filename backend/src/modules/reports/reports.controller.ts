@@ -1,13 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import * as reportsService from './reports.service';
-import { success } from '../../utils/response';
+import { success, error } from '../../utils/response';
+
+type AuthenticatedRequest = Request & {
+  user: { id: string; branch_id?: string; role: string; restaurant_id?: string };
+  restaurantId: string;
+  branchId: string;
+};
 
 export async function getSales(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const { branch_id, from, to, granularity = 'daily' } = req.query as any;
+    const restaurant_id = authReq.user?.restaurant_id;
+    if (!restaurant_id) {
+      return res.status(400).json(error('VALIDATION_ERROR', 'Restaurant context is required'));
+    }
+
     const data = await reportsService.getSales({
       branch_id,
-      restaurant_id: req.restaurant!.restaurant_id,
+      restaurant_id,
       from,
       to,
       granularity,
@@ -20,8 +32,14 @@ export async function getSales(req: Request, res: Response, next: NextFunction) 
 
 export async function getMenuPerformance(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const { branch_id } = req.query as any;
-    const data = await reportsService.getMenuPerformance(req.restaurant!.restaurant_id, branch_id);
+    const restaurant_id = authReq.user?.restaurant_id;
+    if (!restaurant_id) {
+      return res.status(400).json(error('VALIDATION_ERROR', 'Restaurant context is required'));
+    }
+
+    const data = await reportsService.getMenuPerformance(restaurant_id, branch_id);
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -30,9 +48,10 @@ export async function getMenuPerformance(req: Request, res: Response, next: Next
 
 export async function getKitchenPerformance(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const { branch_id, from, to } = req.query as any;
     const data = await reportsService.getKitchenPerformance(
-      branch_id ?? req.restaurant!.branch_id,
+      branch_id ?? authReq.user?.branch_id,
       from,
       to
     );
@@ -44,7 +63,13 @@ export async function getKitchenPerformance(req: Request, res: Response, next: N
 
 export async function getCustomerInsights(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await reportsService.getCustomerInsights(req.restaurant!.restaurant_id);
+    const authReq = req as AuthenticatedRequest;
+    const restaurant_id = authReq.user?.restaurant_id;
+    if (!restaurant_id) {
+      return res.status(400).json(error('VALIDATION_ERROR', 'Restaurant context is required'));
+    }
+
+    const data = await reportsService.getCustomerInsights(restaurant_id);
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -72,10 +97,11 @@ export async function getAdminTrends(req: Request, res: Response, next: NextFunc
 
 export async function exportReport(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const result = await reportsService.exportReport({
       ...req.body,
-      restaurant_id: req.restaurant!.restaurant_id,
-      requested_by: req.user!.id,
+      restaurant_id: authReq.user!.restaurant_id,
+      requested_by: authReq.user!.id,
     });
     res.json(success(result));
   } catch (err) {

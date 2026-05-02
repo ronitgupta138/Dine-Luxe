@@ -3,7 +3,7 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/rbac.middleware';
 import * as ctrl from './floor-layout.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // GET /floor-layout/branch/:branchId — owner/manager — get current layout (active or draft)
 router.get('/branch/:branchId', authenticate, requireRole('manager', 'owner'), ctrl.getLayout);

@@ -16,7 +16,7 @@ export async function generateEmployeeId(
 
   // Get the current max sequence for this branch
   const { data, error } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select('employee_id')
     .eq('branch_id', branchId)
     .like('employee_id', `EMP-${branchCode}-%`)

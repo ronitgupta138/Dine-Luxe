@@ -1,3 +1,4 @@
+/// <reference path="./types/express.d.ts" />
 import { config } from './config/env';
 import { redis } from './config/redis';
 import app from './app';

@@ -141,7 +141,7 @@ export async function generateUPIQR(input: UPIQRInput, branchId: string) {
 
   if (error || !order) throw Object.assign(new Error('Order not found'), { status: 404 });
 
-  const restaurant = order.restaurants as { upi_id: string; name: string } | null;
+  const restaurant = (order.restaurants as any)?.[0] as { upi_id: string; name: string } | null;
   if (!restaurant?.upi_id) {
     throw Object.assign(new Error('Restaurant UPI ID not configured'), { status: 422 });
   }

@@ -35,10 +35,14 @@ export async function runBookingReminder(): Promise<void> {
       });
 
       // Send push notification — fire and forget
+      const branchName = Array.isArray(booking.branch)
+        ? (booking.branch[0] as any)?.name
+        : (booking.branch as any)?.name;
+
       sendPush(
         booking.user_id,
         'Booking Reminder',
-        `Your table is reserved at ${booking.branch?.name ?? 'the restaurant'} at ${arrivalTime}. See you soon!`,
+        `Your table is reserved at ${branchName ?? 'the restaurant'} at ${arrivalTime}. See you soon!`,
         {
           type: 'booking_reminder',
           booking_id: booking.id,
@@ -49,7 +53,9 @@ export async function runBookingReminder(): Promise<void> {
       // Send email — fire and forget
       sendEmailNotification(booking.user_id, 'booking-reminder', {
         booking_id: booking.id,
-        branch_name: booking.branch?.name ?? 'Restaurant',
+        branch_name: Array.isArray(booking.branch)
+          ? (booking.branch[0] as any)?.name ?? 'Restaurant'
+          : (booking.branch as any)?.name ?? 'Restaurant',
         arrival_time: arrivalTime,
         party_size: booking.party_size,
       });

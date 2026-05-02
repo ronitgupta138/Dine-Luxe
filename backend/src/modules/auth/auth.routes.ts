@@ -21,7 +21,7 @@ import {
   refreshTokenSchema,
 } from './auth.schema';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // All auth routes share the authLimiter
 router.use(authLimiter);

@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import * as inventoryService from './inventory.service';
 import { success } from '../../utils/response';
 
+type AuthenticatedRequest = Request & {
+  user: { id: string; branch_id?: string; role: string; restaurant_id?: string };
+  restaurantId: string;
+  branchId: string;
+};
+
 export async function getInventory(req: Request, res: Response, next: NextFunction) {
   try {
     const { branchId } = req.params;
@@ -16,10 +22,11 @@ export async function getInventory(req: Request, res: Response, next: NextFuncti
 
 export async function updateInventory(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const data = await inventoryService.updateInventoryItem(
       req.params.id,
       req.body,
-      req.user!.id
+      authReq.user!.id
     );
     res.json(success(data));
   } catch (err) {
@@ -39,13 +46,14 @@ export async function deductInventory(req: Request, res: Response, next: NextFun
 
 export async function wasteLog(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const { ingredient_id, quantity, reason } = req.body;
     const data = await inventoryService.logWaste(
       ingredient_id,
       quantity,
       reason,
-      req.user!.id,
-      req.restaurant!.branch_id
+      authReq.user!.id,
+      authReq.user!.branch_id ?? ''
     );
     res.status(201).json(success(data));
   } catch (err) {

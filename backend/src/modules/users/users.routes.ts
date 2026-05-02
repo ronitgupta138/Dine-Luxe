@@ -5,7 +5,7 @@ import { validate } from '../../middleware/validate.middleware';
 import { updateProfileSchema } from './users.schema';
 import * as ctrl from './users.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // Public
 router.get('/check-email', ctrl.checkEmail);

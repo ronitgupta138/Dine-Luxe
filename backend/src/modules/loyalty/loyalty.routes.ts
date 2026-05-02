@@ -7,7 +7,7 @@ import {
   getHistory,
 } from './loyalty.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 router.use(authenticate);
 

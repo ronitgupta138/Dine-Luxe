@@ -2,10 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import * as staffService from './staff.service';
 import { success } from '../../utils/response';
 
+type AuthenticatedRequest = Request & {
+  user: { id: string; branch_id?: string; role: string; restaurant_id?: string };
+  restaurantId: string;
+  branchId: string;
+};
+
 // GET /staff/branch/:branchId
 export async function getByBranch(req: Request, res: Response, next: NextFunction) {
   try {
-    const staff = await staffService.getByBranch(req.params.branchId, req.restaurantId);
+    const authReq = req as AuthenticatedRequest;
+    const staff = await staffService.getByBranch(req.params.branchId, authReq.restaurantId!);
     res.json(success(staff));
   } catch (err) { next(err); }
 }
@@ -13,12 +20,13 @@ export async function getByBranch(req: Request, res: Response, next: NextFunctio
 // POST /staff/create
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const staff = await staffService.create(
       req.body,
-      req.restaurantId,
-      req.user.id,
-      req.user.branch_id,
-      req.user.role,
+      authReq.restaurantId!,
+      authReq.user!.id,
+      authReq.user!.branch_id ?? '',
+      authReq.user!.role,
       req.ip ?? 'unknown'
     );
     res.status(201).json(success(staff, 'Staff account created'));
@@ -28,7 +36,8 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 // GET /staff/:id
 export async function getById(req: Request, res: Response, next: NextFunction) {
   try {
-    const staff = await staffService.getById(req.params.id, req.restaurantId);
+    const authReq = req as AuthenticatedRequest;
+    const staff = await staffService.getById(req.params.id, authReq.restaurantId!);
     res.json(success(staff));
   } catch (err) { next(err); }
 }
@@ -36,7 +45,8 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 // PATCH /staff/:id
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const staff = await staffService.update(req.params.id, req.restaurantId, req.body);
+    const authReq = req as AuthenticatedRequest;
+    const staff = await staffService.update(req.params.id, authReq.restaurantId!, req.body);
     res.json(success(staff, 'Staff updated'));
   } catch (err) { next(err); }
 }
@@ -44,10 +54,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 // PATCH /staff/:id/toggle-access
 export async function toggleAccess(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const staff = await staffService.toggleAccess(
       req.params.id,
-      req.restaurantId,
-      req.user.id,
+      authReq.restaurantId!,
+      authReq.user!.id,
       req.ip ?? 'unknown'
     );
     res.json(success(staff, `Access ${staff.is_active ? 'enabled' : 'disabled'}`));
@@ -57,7 +68,8 @@ export async function toggleAccess(req: Request, res: Response, next: NextFuncti
 // GET /staff/:id/performance
 export async function getPerformance(req: Request, res: Response, next: NextFunction) {
   try {
-    const perf = await staffService.getPerformance(req.params.id, req.restaurantId);
+    const authReq = req as AuthenticatedRequest;
+    const perf = await staffService.getPerformance(req.params.id, authReq.restaurantId!);
     res.json(success(perf));
   } catch (err) { next(err); }
 }

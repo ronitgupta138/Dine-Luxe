@@ -4,7 +4,8 @@ import { config } from './env';
 export const redis = new Redis(config.REDIS_URL, {
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,
-  lazyConnect: true,
+  // lazyConnect removed – ioredis must connect eagerly so RedisStore and
+  // OTP/rate-limit calls are ready before the first request arrives.
 });
 
 redis.on('connect', () => {

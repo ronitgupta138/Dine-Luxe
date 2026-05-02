@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import * as restaurantsService from './restaurants.service';
 import { success, error } from '../../utils/response';
 
+type AuthenticatedRequest = Request & {
+  user: { id: string; branch_id?: string; role: string; restaurant_id?: string };
+  restaurantId: string;
+  branchId: string;
+};
+
 // POST /restaurants/register  (public — owner onboarding)
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -34,7 +40,7 @@ export async function getNearby(req: Request, res: Response, next: NextFunction)
     const radius = parseFloat(req.query.radius as string) || 10;
 
     if (isNaN(lat) || isNaN(lon)) {
-      return res.status(400).json(error('lat and lon are required'));
+      return res.status(400).json(error('VALIDATION_ERROR', 'lat and lon are required'));
     }
 
     const restaurants = await restaurantsService.getNearby(lat, lon, radius);
@@ -77,10 +83,11 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 // PATCH /restaurants/:id/status  (admin only)
 export async function updateStatus(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const updated = await restaurantsService.updateStatus(
       req.params.id,
       req.body,
-      req.user.id,
+      authReq.user!.id,
       req.ip ?? 'unknown'
     );
     res.json(success(updated, 'Status updated'));

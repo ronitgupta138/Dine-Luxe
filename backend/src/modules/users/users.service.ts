@@ -1,20 +1,38 @@
 import { supabaseAdmin } from '../../config/supabase';
 import { UpdateProfileInput } from './users.schema';
 
+function splitName(name?: string | null): { first_name: string; last_name: string } {
+  const parts = (name ?? '').trim().split(' ').filter(Boolean);
+  if (parts.length === 0) return { first_name: '', last_name: '' };
+  if (parts.length === 1) return { first_name: parts[0], last_name: '' };
+  return { first_name: parts[0], last_name: parts.slice(1).join(' ') };
+}
+
+function mapUserRow(row: any) {
+  const { first_name, last_name } = splitName(row?.name);
+  return {
+    ...row,
+    first_name,
+    last_name,
+    avatar_url: row?.profile_pic_url ?? null,
+  };
+}
+
 // ─── Get Full Profile ───────────────────────────────────────────────────────
 export async function getMe(userId: string) {
   const { data, error } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select(`
       id,
-      first_name,
-      last_name,
+      name,
       email,
       phone,
       dob,
       gender,
-      avatar_url,
+      profile_pic_url,
       address,
+      city,
+      pin_code,
       role,
       employee_id,
       is_active,
@@ -27,29 +45,60 @@ export async function getMe(userId: string) {
     .single();
 
   if (error) throw new Error(`Failed to fetch profile: ${error.message}`);
-  return data;
+  return mapUserRow(data);
 }
 
 // ─── Update Profile ─────────────────────────────────────────────────────────
 export async function updateMe(userId: string, updates: UpdateProfileInput) {
+  const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+  if (updates.first_name || updates.last_name) {
+    const { data: current, error: currentError } = await supabaseAdmin
+      .from('users')
+      .select('name')
+      .eq('id', userId)
+      .single();
+
+    if (currentError) throw new Error(`Failed to load current name: ${currentError.message}`);
+
+    const currentSplit = splitName(current?.name);
+    const first = updates.first_name ?? currentSplit.first_name;
+    const last = updates.last_name ?? currentSplit.last_name;
+    updateData.name = `${first} ${last}`.trim();
+  }
+
+  if (updates.phone) updateData.phone = updates.phone;
+  if (updates.dob) updateData.dob = updates.dob;
+  if (updates.gender) updateData.gender = updates.gender;
+  if (updates.avatar_url) updateData.profile_pic_url = updates.avatar_url;
+
+  if (updates.address) {
+    const parts = [updates.address.line1, updates.address.line2, updates.address.state]
+      .filter(Boolean)
+      .join(', ');
+    if (parts) updateData.address = parts;
+    if (updates.address.city) updateData.city = updates.address.city;
+    if (updates.address.pincode) updateData.pin_code = updates.address.pincode;
+  }
+
   const { data, error } = await supabaseAdmin
-    .from('profiles')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .from('users')
+    .update(updateData)
     .eq('id', userId)
     .select()
     .single();
 
   if (error) throw new Error(`Failed to update profile: ${error.message}`);
-  return data;
+  return mapUserRow(data);
 }
 
 // ─── Get User By ID (admin / manager) ──────────────────────────────────────
 export async function getUserById(userId: string, restaurantId: string) {
   const { data, error } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select(`
-      id, first_name, last_name, email, phone, dob,
-      gender, avatar_url, address, role, employee_id,
+      id, name, email, phone, dob,
+      gender, profile_pic_url, address, city, pin_code, role, employee_id,
       is_active, force_password_change, branch_id, created_at
     `)
     .eq('id', userId)
@@ -57,13 +106,13 @@ export async function getUserById(userId: string, restaurantId: string) {
     .single();
 
   if (error) throw new Error(`User not found: ${error.message}`);
-  return data;
+  return mapUserRow(data);
 }
 
 // ─── Check Email Availability ────────────────────────────────────────────────
 export async function checkEmail(email: string): Promise<{ available: boolean }> {
   const { data, error } = await supabaseAdmin
-    .from('profiles')
+    .from('users')
     .select('id')
     .eq('email', email.toLowerCase().trim())
     .maybeSingle();

@@ -17,8 +17,17 @@ function rateLimitResponse(_req: unknown, _res: unknown, _next: unknown, options
   };
 }
 
+/** Shared safe-store factory: if Redis is unavailable the limiter degrades gracefully */
+function makeLimiter(options: Parameters<typeof rateLimit>[0]) {
+  return rateLimit({
+    skipFailedRequests: false,
+    skip: () => redis.status !== 'ready', // bypass if Redis is not connected
+    ...options,
+  });
+}
+
 /** 100 requests per 15 minutes – general API routes */
-export const generalLimiter = rateLimit({
+export const generalLimiter: import('express-rate-limit').RateLimitRequestHandler = makeLimiter({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
@@ -30,7 +39,7 @@ export const generalLimiter = rateLimit({
 });
 
 /** 10 requests per 15 minutes – auth routes */
-export const authLimiter = rateLimit({
+export const authLimiter: import('express-rate-limit').RateLimitRequestHandler = makeLimiter({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
@@ -42,7 +51,7 @@ export const authLimiter = rateLimit({
 });
 
 /** 20 requests per hour – upload routes */
-export const uploadLimiter = rateLimit({
+export const uploadLimiter: import('express-rate-limit').RateLimitRequestHandler = makeLimiter({
   windowMs: 60 * 60 * 1000,
   max: 20,
   standardHeaders: true,

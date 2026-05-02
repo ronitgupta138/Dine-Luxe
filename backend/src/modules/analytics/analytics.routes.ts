@@ -9,7 +9,7 @@ import {
   getStaffingRecommendation,
 } from './analytics.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 router.use(authenticate, injectTenant, requireRole('owner', 'manager'));
 

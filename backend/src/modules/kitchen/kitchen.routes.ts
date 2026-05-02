@@ -3,7 +3,7 @@ import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/rbac.middleware';
 import * as ctrl from './kitchen.controller';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 // GET /kitchen/branch/:branchId/tickets — chef: active KDS orders
 router.get('/branch/:branchId/tickets', authenticate, requireRole('chef'), ctrl.getTickets);

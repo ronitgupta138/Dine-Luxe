@@ -13,7 +13,7 @@ export async function checkArrival(req: Request, res: Response, next: NextFuncti
   try {
     const parsed = arrivalCheckSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json(error('Validation failed', parsed.error.flatten()));
+      return res.status(400).json(error('VALIDATION_ERROR', 'Validation failed'));
     }
     const data = await arrivalCheck(parsed.data, req.user!.id);
     res.json(success(data));

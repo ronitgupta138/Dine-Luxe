@@ -10,7 +10,7 @@ import {
 } from './notifications.controller';
 import { registerDeviceSchema } from './notifications.schema';
 
-const router = Router();
+const router: import('express').Router = Router();
 
 router.use(authenticate);
 

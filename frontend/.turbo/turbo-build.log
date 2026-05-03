@@ -1,0 +1,57 @@
+
+> dineluxe-frontend@0.1.0 build D:\CODES\DineLuxe\frontend
+> next build
+
+   ▲ Next.js 15.3.2
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+Failed to compile.
+
+app\layout.tsx
+An error occurred in `next/font`.
+
+Error: Cannot find module 'autoprefixer'
+Require stack:
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\index.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\index.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack-config.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack-build\impl.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1420:15)
+    at D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\server\require-hook.js:55:36
+    at require.resolve (node:internal/modules/helpers:163:19)
+    at loadPlugin (D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js:53:32)
+    at D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js:185:56
+    at Array.map (<anonymous>)
+    at getPostCssPlugins (D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js:185:47)
+    at async D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\index.js:125:36
+    at async D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\loaders\next-font-loader\index.js:94:33
+    at async Span.traceAsyncFn (D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\trace\trace.js:157:20)
+
+app\layout.tsx
+An error occurred in `next/font`.
+
+Error: Cannot find module 'autoprefixer'
+Require stack:
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\index.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\index.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack-config.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack-build\impl.js
+- D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1420:15)
+    at D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\server\require-hook.js:55:36
+    at require.resolve (node:internal/modules/helpers:163:19)
+    at loadPlugin (D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js:53:32)
+    at D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js:185:56
+    at Array.map (<anonymous>)
+    at getPostCssPlugins (D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\plugins.js:185:47)
+    at async D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\config\blocks\css\index.js:125:36
+    at async D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\build\webpack\loaders\next-font-loader\index.js:94:33
+    at async Span.traceAsyncFn (D:\CODES\DineLuxe\node_modules\.pnpm\next@15.3.2_@babel+core@7.29.0_@opentelemetry+api@1.9.1_react-dom@19.2.5_react@19.2.5__react@19.2.5\node_modules\next\dist\trace\trace.js:157:20)
+
+
+> Build failed because of webpack errors
+ ELIFECYCLE  Command failed with exit code 1.

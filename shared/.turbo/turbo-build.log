@@ -1,0 +1,4 @@
+
+> @repo/shared@1.0.0 build D:\CODES\DineLuxe\shared
+> tsc -p tsconfig.json
+

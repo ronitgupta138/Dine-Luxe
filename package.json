@@ -1,1 +1,20 @@
-{"name":"DineLuxe","private":true,"workspaces":["frontend","backend","shared"],"scripts":{"dev":"npm run dev:frontend & npm run dev:backend","dev:frontend":"npm --workspace=frontend run dev","dev:backend":"npm --workspace=backend run dev","build":"npm --workspace=frontend run build && npm --workspace=backend run build","lint":"echo \"Add lint scripts\""}}
+{
+  "name": "DineLuxe",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.12.2",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.8"
+  }
+}

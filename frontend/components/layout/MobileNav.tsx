@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth }  from "@/hooks/useAuth";
 import { useCart }  from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
@@ -37,9 +37,13 @@ const STAFF_TABS: Record<string, TabItem[]> = {
 };
  
 export function MobileNav() {
-  const pathname = usePathname();
+  const [pathname, setPathname] = useState("/");
   const { role } = useAuth();
   const cartCount = useCart(s => s.itemCount());
+
+  useEffect(() => {
+    setPathname(window.location.pathname || "/");
+  }, []);
  
   let tabs: TabItem[] = [];
   if (role === "customer")                        tabs = CUSTOMER_TABS;

@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -25,11 +24,10 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const { user, role, signOut } = useAuth()
-  const router = useRouter()
 
   const handleLogout = async () => {
     await signOut()
-    router.push("/auth/login")
+    window.location.assign("/auth/login")
   }
 
   // Mock notifications
@@ -125,7 +123,7 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
                     >
                       <div className="flex items-start gap-3">
                         <div className={cn(
-                          "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
+                          "w-2 h-2 rounded-full mt-1.5 shrink-0",
                           notification.read ? "bg-gray-300" : "bg-brand-primary"
                         )} />
                         <div>
@@ -176,7 +174,7 @@ export function TopBar({ onMenuClick, className }: TopBarProps) {
                   <button
                     onClick={() => {
                       setShowUserMenu(false)
-                      router.push("/owner/settings")
+                      window.location.assign("/owner/settings")
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >

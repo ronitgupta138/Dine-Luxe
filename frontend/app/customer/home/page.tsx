@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { PageWrapper } from "@/components/layout/PageWrapper"
 import { FoodCard } from "@/components/customer/FoodCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -79,7 +79,6 @@ const quickActions = [
 ]
 
 export default function CustomerHomePage() {
-  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
 
   return (
@@ -111,20 +110,20 @@ export default function CustomerHomePage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-4 gap-3">
         {quickActions.map((action, index) => (
-          <motion.button
+          <motion.div
             key={action.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => router.push(action.href)}
-            className="flex flex-col items-center gap-2"
           >
-            <div className={`w-14 h-14 ${action.color} rounded-md flex items-center justify-center text-white shadow-lg`}>
-              {action.icon}
-            </div>
-            <span className="text-xs font-medium text-gray-700">{action.label}</span>
-          </motion.button>
+            <Link href={action.href} className="flex flex-col items-center gap-2">
+              <div className={`w-14 h-14 ${action.color} rounded-md flex items-center justify-center text-white shadow-lg`}>
+                {action.icon}
+              </div>
+              <span className="text-xs font-medium text-gray-700">{action.label}</span>
+            </Link>
+          </motion.div>
         ))}
       </div>
 
@@ -159,13 +158,10 @@ export default function CustomerHomePage() {
             <Flame size={20} className="text-orange-500" />
             <h2 className="font-semibold text-gray-900">Popular Dishes</h2>
           </div>
-          <button
-            onClick={() => router.push("/customer/menu")}
-            className="text-sm text-brand-primary flex items-center gap-1"
-          >
+          <Link href="/customer/menu" className="text-sm text-brand-primary flex items-center gap-1">
             See All
             <ChevronRight size={16} />
-          </button>
+          </Link>
         </div>
         <div className="space-y-4">
           {featuredItems.map((item, index) => (
@@ -186,7 +182,7 @@ export default function CustomerHomePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-gradient-to-r from-brand-primary to-brand-secondary rounded-md p-5 text-white"
+        className="bg-linear-to-r from-brand-primary to-brand-secondary rounded-md p-5 text-white"
       >
         <div className="flex items-center justify-between">
           <div>

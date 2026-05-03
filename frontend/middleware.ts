@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 // In development we short-circuit middleware to avoid importing server SDKs
 // which can cause issues in the edge runtime during local dev.

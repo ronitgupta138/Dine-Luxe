@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
 import {
   CalendarCheck,
   ChefHat,
@@ -216,7 +216,12 @@ function configFor(pathname: string): ShellConfig {
 }
 
 export default function RouteShell({ title, subtitle, statusLabel, children }: RouteShellProps) {
-  const pathname = usePathname() || "/"
+  const [pathname, setPathname] = useState("/")
+
+  useEffect(() => {
+    setPathname(window.location.pathname || "/")
+  }, [])
+
   const resolvedTitle = title || makeTitle(pathname)
   const resolvedSubtitle = subtitle || makeSubtitle(pathname)
   const isAuth = pathname.startsWith("/auth")

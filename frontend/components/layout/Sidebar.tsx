@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/useAuth"
 import {
@@ -67,16 +66,22 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
+  const [pathname, setPathname] = useState("")
   const { user, role, signOut } = useAuth()
+
+  useEffect(() => {
+    const updatePath = () => setPathname(window.location.pathname)
+    updatePath()
+    window.addEventListener("popstate", updatePath)
+    return () => window.removeEventListener("popstate", updatePath)
+  }, [])
 
 
   const filteredNavItems = role ? navItems.filter((item) => item.roles.includes(role)) : []
 
   const handleLogout = async () => {
     await signOut()
-    router.push("/auth/login")
+    window.location.assign("/auth/login")
   }
 
   return (
@@ -114,7 +119,7 @@ export function Sidebar() {
               key={item.href}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => router.push(item.href)}
+              onClick={() => window.location.assign(item.href)}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive

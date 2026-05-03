@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useRealtime } from "@/hooks/useRealtime";
 import { useAuth } from "@/hooks/useAuth";
 import { useTableStatus } from "@/hooks/useTableStatus";
@@ -213,7 +213,6 @@ function EventItemComponent({ event }: { event: EventItem }) {
 
 // Main Dashboard
 export default function ManagerDashboardPage() {
-  const router = useRouter();
   const { branchId } = useAuth();
   const { on, joinRoom } = useRealtime();
   const qc = useQueryClient();
@@ -450,12 +449,12 @@ export default function ManagerDashboardPage() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-gray-100">
-              <button onClick={() => router.push("/staff/manager/floor")} className="py-2 bg-gray-50 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
+              <Link href="/staff/manager/floor" className="py-2 bg-gray-50 rounded-lg text-center text-sm font-medium text-gray-700 hover:bg-gray-100">
                 View Floor Map
-              </button>
-              <button onClick={() => router.push("/staff/manager/staff-duty")} className="py-2 bg-gray-50 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100">
+              </Link>
+              <Link href="/staff/manager/staff-duty" className="py-2 bg-gray-50 rounded-lg text-center text-sm font-medium text-gray-700 hover:bg-gray-100">
                 Manage Staff
-              </button>
+              </Link>
             </div>
           </div>
         </div>

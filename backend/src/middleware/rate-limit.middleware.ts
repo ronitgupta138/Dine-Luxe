@@ -18,10 +18,17 @@ function rateLimitResponse(_req: unknown, _res: unknown, _next: unknown, options
 }
 
 /** Shared safe-store factory: if Redis is unavailable the limiter degrades gracefully */
-function makeLimiter(options: Parameters<typeof rateLimit>[0]) {
+function makeLimiter(options: Parameters<typeof rateLimit>[0], prefix: string) {
+  if (redis.status !== 'ready') {
+    return rateLimit({
+      skipFailedRequests: false,
+      ...options,
+    });
+  }
+
   return rateLimit({
     skipFailedRequests: false,
-    skip: () => redis.status !== 'ready', // bypass if Redis is not connected
+    store: makeStore(prefix),
     ...options,
   });
 }
@@ -32,11 +39,10 @@ export const generalLimiter: import('express-rate-limit').RateLimitRequestHandle
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  store: makeStore('rl:general:'),
   message: rateLimitResponse(null, null, null, {
     message: 'Too many requests. Please try again in 15 minutes.',
   }),
-});
+}, 'rl:general:');
 
 /** 10 requests per 15 minutes – auth routes */
 export const authLimiter: import('express-rate-limit').RateLimitRequestHandler = makeLimiter({
@@ -44,11 +50,10 @@ export const authLimiter: import('express-rate-limit').RateLimitRequestHandler =
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  store: makeStore('rl:auth:'),
   message: rateLimitResponse(null, null, null, {
     message: 'Too many authentication attempts. Please try again in 15 minutes.',
   }),
-});
+}, 'rl:auth:');
 
 /** 20 requests per hour – upload routes */
 export const uploadLimiter: import('express-rate-limit').RateLimitRequestHandler = makeLimiter({
@@ -56,8 +61,7 @@ export const uploadLimiter: import('express-rate-limit').RateLimitRequestHandler
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  store: makeStore('rl:upload:'),
   message: rateLimitResponse(null, null, null, {
     message: 'Upload limit reached. Please try again in an hour.',
   }),
-});
+}, 'rl:upload:');

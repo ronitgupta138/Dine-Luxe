@@ -1,3 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-/* Backend reports reports.routes.ts */
+const express_1 = require("express");
+const auth_middleware_1 = require("../../middleware/auth.middleware");
+const rbac_middleware_1 = require("../../middleware/rbac.middleware");
+const tenant_middleware_1 = require("../../middleware/tenant.middleware");
+const validate_middleware_1 = require("../../middleware/validate.middleware");
+const reports_controller_1 = require("./reports.controller");
+const reports_schema_1 = require("./reports.schema");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.authenticate, tenant_middleware_1.injectTenant);
+router.get('/sales', (0, rbac_middleware_1.requireRole)('owner', 'manager'), reports_controller_1.getSales);
+router.get('/menu-performance', (0, rbac_middleware_1.requireRole)('owner', 'manager'), reports_controller_1.getMenuPerformance);
+router.get('/kitchen-performance', (0, rbac_middleware_1.requireRole)('owner', 'manager'), reports_controller_1.getKitchenPerformance);
+router.get('/customer-insights', (0, rbac_middleware_1.requireRole)('owner'), reports_controller_1.getCustomerInsights);
+router.get('/admin/platform', (0, rbac_middleware_1.requireRole)('admin'), reports_controller_1.getAdminPlatform);
+router.get('/admin/trends', (0, rbac_middleware_1.requireRole)('admin'), reports_controller_1.getAdminTrends);
+router.post('/export', (0, rbac_middleware_1.requireRole)('owner', 'admin'), (0, validate_middleware_1.validate)(reports_schema_1.exportReportSchema), reports_controller_1.exportReport);
+exports.default = router;
+//# sourceMappingURL=reports.routes.js.map

@@ -1,33 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireRole = requireRole;
-exports.rbacGuard = rbacGuard;
-const roleRouteMap = {
-    '/api/admin': ['admin'],
-    '/api/owner': ['owner'],
-    '/api/staff/manager': ['manager'],
-    '/api/staff/host': ['host'],
-    '/api/staff/waiter': ['waiter'],
-    '/api/staff/chef': ['chef'],
-    '/api/staff/cashier': ['cashier'],
-};
-function requireRole(role) {
+const response_1 = require("../utils/response");
+/**
+ * Factory that returns middleware enforcing role-based access.
+ * Usage: router.get('/admin', authenticate, requireRole('admin', 'owner'), handler)
+ */
+function requireRole(...roles) {
     return (req, res, next) => {
-        if (req.user?.role === role) {
-            return next();
+        const userRole = req.user?.role;
+        if (!userRole || !roles.includes(userRole)) {
+            res.status(403).json((0, response_1.error)('FORBIDDEN', `Access denied. Required role(s): ${roles.join(', ')}. Your role: ${userRole ?? 'none'}.`));
+            return;
         }
-        return res.status(403).json({ error: 'Forbidden' });
+        next();
     };
 }
-function rbacGuard(req, res, next) {
-    const path = req.path;
-    const userRole = req.user?.role;
-    for (const prefix in roleRouteMap) {
-        if (path.startsWith(prefix)) {
-            if (!userRole || !roleRouteMap[prefix].includes(userRole)) {
-                return res.status(403).json({ error: 'Forbidden' });
-            }
-        }
-    }
-    next();
-}
+//# sourceMappingURL=rbac.middleware.js.map

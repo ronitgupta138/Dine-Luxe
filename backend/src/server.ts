@@ -37,5 +37,13 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 
 process.on('unhandledRejection', (reason: unknown) => {
   console.error('🔥 Unhandled rejection:', reason);
+  const message = reason instanceof Error ? reason.message : String(reason);
+  const isRedisRetryError = message.includes('MaxRetriesPerRequestError');
+
+  if (isRedisRetryError) {
+    console.warn('⚠️  Redis is unavailable. API stays up; Redis-backed features may fail until reconnect.');
+    return;
+  }
+
   shutdown('UNHANDLED_REJECTION');
 });

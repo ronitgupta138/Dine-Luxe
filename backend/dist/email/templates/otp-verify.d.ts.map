@@ -1,0 +1,1 @@
+{"version":3,"file":"otp-verify.d.ts","sourceRoot":"","sources":["../../../src/email/templates/otp-verify.ts"],"names":[],"mappings":"AAAA,UAAU,OAAO;IACf,IAAI,EAAE,MAAM,CAAC;IACb,GAAG,EAAE,MAAM,CAAC;IACZ,aAAa,EAAE,MAAM,CAAC;CACvB;AAED,wBAAgB,WAAW,CAAC,IAAI,EAAE,OAAO,GAAG;IAAE,OAAO,EAAE,MAAM,CAAC;IAAC,IAAI,EAAE,MAAM,CAAA;CAAE,CAgF5E"}

@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/useAuth"
 import {
@@ -57,10 +56,16 @@ const customerNavItems: NavItem[] = [
 ]
 
 export function BottomNav() {
-  const pathname = usePathname()
-  const router = useRouter()
+  const [pathname, setPathname] = useState("")
   const { role } = useAuth()
   const [cartCount] = useState(2) // Mock cart count
+
+  useEffect(() => {
+    const updatePath = () => setPathname(window.location.pathname)
+    updatePath()
+    window.addEventListener("popstate", updatePath)
+    return () => window.removeEventListener("popstate", updatePath)
+  }, [])
 
   // Only show for customers
   if (role !== "customer") return null
@@ -74,7 +79,7 @@ export function BottomNav() {
             <motion.button
               key={item.href}
               whileTap={{ scale: 0.9 }}
-              onClick={() => router.push(item.href)}
+              onClick={() => window.location.assign(item.href)}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors relative",
                 isActive ? "text-brand-primary" : "text-gray-400"

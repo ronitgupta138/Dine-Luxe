@@ -22,9 +22,10 @@ export async function assignDelivery(orderId: string, branchId: string, restaura
 
   // Find nearest online partner without an active delivery using geo query
   // Partners must have last_location populated and status = 'online'
+  // FIX: branches table uses 'lat'/'lon' columns, not 'current_lat'/'current_lon'
   const { data: branch } = await supabaseAdmin
     .from('branches')
-    .select('current_lat, current_lon')
+    .select('lat, lon')
     .eq('id', branchId)
     .single();
 
@@ -226,9 +227,10 @@ export async function updatePartnerLocation(
 // ─── Get Active Delivery for Partner ─────────────────────────────────────────
 
 export async function getActiveDelivery(partnerId: string) {
+  // FIX: tables uses 'label' not 'table_number'
   const { data, error } = await supabaseAdmin
     .from('deliveries')
-    .select('*, orders(*, tables(table_number)), branches(name, address)')
+    .select('*, orders(*, tables(label)), branches(name, address)')
     .eq('partner_id', partnerId)
     .in('status', ['assigned', 'accepted', 'picked_up'])
     .order('assigned_at', { ascending: false })

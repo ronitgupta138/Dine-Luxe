@@ -240,8 +240,9 @@ export async function assignTable(queueId: string, tableId: string, hostId: stri
 // ─── Mark no-show ─────────────────────────────────────────────────────────────
 
 export async function markQueueNoShow(queueId: string) {
+  // FIX: was querying non-existent table 'queue' — correct table is 'queue_entries'
   const { data: entry } = await supabaseAdmin
-    .from('queue')
+    .from('queue_entries')
     .select('*')
     .eq('id', queueId)
     .single();

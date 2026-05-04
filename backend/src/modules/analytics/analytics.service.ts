@@ -1,5 +1,9 @@
 import { supabaseAdmin } from '../../config/supabase';
 
+function isMissingRpc(error: { message?: string } | null): boolean {
+  return (error?.message ?? '').includes('Could not find the function');
+}
+
 // ─── Menu suggestions ─────────────────────────────────────────────────────────
 // READ-ONLY: SELECT only
 export async function getMenuSuggestions(branchId: string) {
@@ -11,7 +15,10 @@ export async function getMenuSuggestions(branchId: string) {
     p_since: thirtyDaysAgo,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
   if (!items?.length) return [];
 
   // BUG FIX: avgOrderCount would be NaN (division by zero) if items is somehow
@@ -45,7 +52,10 @@ export async function getBundleOpportunities(branchId: string) {
     p_limit: 5,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
   if (!pairs?.length) return [];
 
   return pairs.map((pair: any) => ({
@@ -71,7 +81,10 @@ export async function getDemandForecast(branchId: string) {
     p_since: ninetyDaysAgo,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
 
   // Build day-of-week averages map: { 0: { 9: 12, 10: 15, ... }, ... }
   const avgByDayHour: Record<number, Record<number, number>> = {};
@@ -107,12 +120,17 @@ export async function getDemandForecast(branchId: string) {
 export async function getStaffingRecommendation(branchId: string) {
   const forecast = await getDemandForecast(branchId);
 
+  if (forecast.length === 0) return [];
+
   // Get currently scheduled staff per day
   const { data: scheduled, error } = await supabaseAdmin.rpc('get_scheduled_staff', {
     p_branch_id: branchId,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
 
   const scheduledMap: Record<string, { waiters: number; chefs: number }> = {};
   for (const s of scheduled ?? []) {

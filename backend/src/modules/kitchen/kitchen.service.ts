@@ -15,14 +15,13 @@ export async function getKitchenTickets(branchId: string) {
       id,
       status,
       created_at,
-      preparation_started_at,
       table_id,
       tables(label, floor_number),
       order_items(
         id,
         quantity,
         status,
-        special_notes,
+        notes,
         menu_items(name, prep_time_minutes, photo_url)
       )
     `)
@@ -37,7 +36,7 @@ export async function getKitchenTickets(branchId: string) {
   return (data ?? []).map((order) => ({
     ...order,
     elapsed_minutes: Math.round(
-      (now - new Date(order.preparation_started_at ?? order.created_at).getTime()) / 60000,
+      (now - new Date(order.created_at).getTime()) / 60000,
     ),
   }));
 }
@@ -47,7 +46,7 @@ export async function getKitchenTickets(branchId: string) {
 export async function updateKitchenStatus(orderId: string, newStatus: string) {
   const { data: order } = await supabaseAdmin
     .from('orders')
-    .select('id, status, branch_id, preparation_started_at')
+    .select('id, status, branch_id')
     .eq('id', orderId)
     .single();
 
@@ -83,13 +82,6 @@ export async function updateKitchenStatus(orderId: string, newStatus: string) {
     status: newStatus,
     updated_at: new Date().toISOString(),
   };
-
-  if (newStatus === 'preparing' && !order.preparation_started_at) {
-    updates.preparation_started_at = new Date().toISOString();
-  }
-  if (newStatus === 'ready') {
-    updates.preparation_completed_at = new Date().toISOString();
-  }
 
   const { data, error } = await supabaseAdmin
     .from('orders')
@@ -147,16 +139,14 @@ export async function getOverdueOrders(branchId: string) {
       id,
       status,
       created_at,
-      preparation_started_at,
       table_id,
       tables(label),
       order_items(id, quantity, menu_items(name, prep_time_minutes))
     `)
     .eq('branch_id', branchId)
     .eq('status', 'preparing')
-    .not('preparation_started_at', 'is', null)       // FIX: only started orders
-    .lt('preparation_started_at', cutoff)             // FIX: use prep start time
-    .order('preparation_started_at', { ascending: true });
+    .lt('created_at', cutoff)
+    .order('created_at', { ascending: true });
 
   if (error) throw error;
 
@@ -164,7 +154,7 @@ export async function getOverdueOrders(branchId: string) {
   return (data ?? []).map((order) => ({
     ...order,
     elapsed_minutes: Math.round(
-      (Date.now() - new Date(order.preparation_started_at!).getTime()) / 60000,
+      (Date.now() - new Date(order.created_at).getTime()) / 60000,
     ),
   }));
 }

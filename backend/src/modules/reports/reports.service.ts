@@ -2,6 +2,10 @@ import { supabaseAdmin } from '../../config/supabase';
 import { Parser } from 'json2csv';
 import PDFDocument from 'pdfkit';
 
+function isMissingRpc(error: { message?: string } | null): boolean {
+  return (error?.message ?? '').includes('Could not find the function');
+}
+
 // ─── Sales report ──────────────────────────────────────────────────────────────
 export async function getSales(params: {
   branch_id?: string;
@@ -28,8 +32,11 @@ export async function getSales(params: {
     p_trunc: trunc,
   });
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
+  return data ?? [];
 }
 
 // ─── Menu performance ─────────────────────────────────────────────────────────
@@ -42,7 +49,10 @@ export async function getMenuPerformance(restaurantId: string, branchId?: string
     p_since: thirtyDaysAgo,
   });
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
 
   // Flag slow movers (< 5 orders in 30 days)
   const enriched = (data ?? []).map((item: any) => ({
@@ -61,8 +71,11 @@ export async function getKitchenPerformance(branchId: string, from: string, to: 
     p_to: to,
   });
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
+  return data ?? [];
 }
 
 // ─── Customer insights ────────────────────────────────────────────────────────
@@ -84,16 +97,19 @@ export async function getCustomerInsights(restaurantId: string) {
 
   return {
     new_customers_30d: newCustomers.count ?? 0,
-    returning_customers: returning.data ?? [],
-    top_spenders: topSpenders.data ?? [],
+    returning_customers: returning.error && isMissingRpc(returning.error) ? [] : (returning.data ?? []),
+    top_spenders: topSpenders.error && isMissingRpc(topSpenders.error) ? [] : (topSpenders.data ?? []),
   };
 }
 
 // ─── Admin platform report ────────────────────────────────────────────────────
 export async function getAdminPlatformReport() {
   const { data, error } = await supabaseAdmin.rpc('get_platform_report');
-  if (error) throw error;
-  return data;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
+  return data ?? [];
 }
 
 // ─── Admin trends ─────────────────────────────────────────────────────────────
@@ -102,8 +118,11 @@ export async function getAdminTrends(from: string, to: string) {
     p_from: from,
     p_to: to,
   });
-  if (error) throw error;
-  return data;
+  if (error) {
+    if (isMissingRpc(error)) return [];
+    throw error;
+  }
+  return data ?? [];
 }
 
 // ─── Export report (non-blocking) ─────────────────────────────────────────────

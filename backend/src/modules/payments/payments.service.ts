@@ -233,7 +233,7 @@ export async function getReceipt(orderId: string, branchId: string) {
   const [orderRes, paymentsRes] = await Promise.all([
     supabaseAdmin
       .from('orders')
-      .select('*, order_items(*, menu_items(name, price)), tables(table_number), branches(name, address)')
+      .select('*, order_items(*, menu_items(name, price)), tables(label), branches(name, address)')
       .eq('id', orderId)
       .eq('branch_id', branchId)
       .single(),

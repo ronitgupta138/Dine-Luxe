@@ -185,9 +185,10 @@ export async function getLayout(branchId: string) {
     .eq('status', 'draft')
     .order('layout_version', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!draft) throw Object.assign(new Error('No layout found'), { statusCode: 404 });
   return draft;
 }
 
@@ -203,7 +204,9 @@ export async function getLiveLayout(branchId: string) {
     .select('*')
     .eq('branch_id', branchId)
     .eq('status', 'active')
-    .single();
+    .order('layout_version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (layoutErr || !layout) throw Object.assign(new Error('No active layout found'), { statusCode: 404 });
 

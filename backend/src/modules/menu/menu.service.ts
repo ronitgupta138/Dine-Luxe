@@ -17,22 +17,16 @@ async function bustMenuCache(branchId: string) {
   await redis.del(menuCacheKey(branchId));
 }
 
-function isWithinAvailabilityWindow(
-  windows: { days: string[]; start_time: string; end_time: string }[]
-): boolean {
-  if (!windows || windows.length === 0) return true;
+function isWithinAvailability(availability: any): boolean {
+  if (!availability || availability.type === 'always') return true;
+  if (availability.type !== 'time_based') return true;
 
   const now = new Date();
-  const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-  const currentDay = dayNames[now.getDay()];
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const from = availability.from ?? '00:00';
+  const to = availability.to ?? '23:59';
 
-  return windows.some(
-    (w) =>
-      w.days.includes(currentDay) &&
-      currentTime >= w.start_time &&
-      currentTime <= w.end_time
-  );
+  return currentTime >= from && currentTime <= to;
 }
 
 // ─── Public Menu (cached, filtered) ──────────────────────────────────────────
@@ -46,12 +40,11 @@ export async function getPublicMenu(branchId: string) {
     .from('menu_categories')
     .select(
       `
-      id, name, description, display_order, image_url,
+      id, name, description, display_order,
       menu_items (
-        id, name, description, price, compare_price, image_url,
-        is_veg, is_vegan, contains_alcohol, allergens, calories,
-        status, display_order, availability_windows,
-        menu_addons ( id, name, price, is_required, max_quantity )
+        id, name, description, price, discounted_price, photo_url,
+        dietary_tags, allergens, prep_time_minutes, availability,
+        addons, status, display_order, is_featured
       )
     `
     )
@@ -71,9 +64,13 @@ export async function getPublicMenu(branchId: string) {
       .filter(
         (item: any) =>
           item.status !== 'hidden' &&
-          isWithinAvailabilityWindow(item.availability_windows ?? [])
+          isWithinAvailability(item.availability)
       )
-      .sort((a: any, b: any) => a.display_order - b.display_order),
+      .sort((a: any, b: any) => a.display_order - b.display_order)
+      .map((item: any) => ({
+        ...item,
+        menu_addons: item.addons ?? [],
+      })),
   }));
 
   await redis.setex(cacheKey, MENU_CACHE_TTL, JSON.stringify(filtered));
@@ -217,14 +214,25 @@ export async function createMenuItem(
 }
 
 export async function getMenuItemById(itemId: string) {
-  const { data, error } = await supabaseAdmin
+  const { data: item, error } = await supabaseAdmin
     .from('menu_items')
-    .select('*, menu_addons(*), menu_categories(name)')
+    .select('*')
     .eq('id', itemId)
     .single();
 
-  if (error || !data) throw Object.assign(new Error('Item not found'), { statusCode: 404 });
-  return data;
+  if (error || !item) throw Object.assign(new Error('Item not found'), { statusCode: 404 });
+
+  const { data: category } = await supabaseAdmin
+    .from('menu_categories')
+    .select('name')
+    .eq('id', item.category_id)
+    .maybeSingle();
+
+  return {
+    ...item,
+    menu_addons: item.addons ?? [],
+    menu_categories: category ? { name: category.name } : null,
+  };
 }
 
 export async function updateMenuItem(

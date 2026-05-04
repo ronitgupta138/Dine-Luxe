@@ -9,6 +9,11 @@ export function requireRole(...roles: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const userRole = (req as any).user?.role;
 
+    if (userRole === 'super_admin') {
+      next();
+      return;
+    }
+
     if (!userRole || !roles.includes(userRole)) {
       res.status(403).json(
         error(

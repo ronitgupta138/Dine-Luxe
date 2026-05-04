@@ -28,25 +28,53 @@ export async function getBranding(restaurantId: string) {
   const { data, error } = await supabaseAdmin
     .from('restaurant_branding')
     .select(`
-      app_name, tagline,
-      primary_color, secondary_color, accent_color,
-      font_family, theme_mode,
-      logo_url, banner_url, favicon_url,
+      app_name_display,
+      tagline,
+      primary_color,
+      secondary_color,
+      logo_url,
+      banner_url,
+      font_preference,
+      welcome_animation,
+      receipt_footer,
       updated_at
     `)
     .eq('restaurant_id', restaurantId)
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(`Branding not found: ${error.message}`);
 
+  if (!data) {
+    return {
+      app_name_display: null,
+      app_name: null,
+      tagline: null,
+      primary_color: '#1A3C5E',
+      secondary_color: '#E8A020',
+      logo_url: null,
+      banner_url: null,
+      font_preference: 'Inter',
+      font_family: 'Inter',
+      welcome_animation: null,
+      receipt_footer: null,
+      updated_at: null,
+    };
+  }
+
+  const mapped = {
+    ...data,
+    app_name: data?.app_name_display ?? null,
+    font_family: data?.font_preference ?? null,
+  };
+
   // 3. Populate cache
   try {
-    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(data));
+    await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(mapped));
   } catch {
     // Cache write failure is non-fatal
   }
 
-  return data;
+  return mapped;
 }
 
 // ─── Update Branding ─────────────────────────────────────────────────────────
@@ -54,9 +82,21 @@ export async function updateBranding(
   restaurantId: string,
   input: UpdateBrandingInput
 ) {
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.app_name !== undefined) updateData.app_name_display = input.app_name;
+  if (input.tagline !== undefined) updateData.tagline = input.tagline;
+  if (input.primary_color !== undefined) updateData.primary_color = input.primary_color;
+  if (input.secondary_color !== undefined) updateData.secondary_color = input.secondary_color;
+  if (input.logo_url !== undefined) updateData.logo_url = input.logo_url;
+  if (input.banner_url !== undefined) updateData.banner_url = input.banner_url;
+  if (input.font_family !== undefined) updateData.font_preference = input.font_family;
+
   const { data, error } = await supabaseAdmin
     .from('restaurant_branding')
-    .update({ ...input, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('restaurant_id', restaurantId)
     .select()
     .single();

@@ -96,8 +96,13 @@ export async function getDashboard() {
 // ─── Platform stats (7×24 peak hours matrix) ─────────────────────────────────
 export async function getPlatformStats() {
   const { data, error } = await supabaseAdmin.rpc('get_peak_hours_matrix');
-  if (error) throw error;
-  return data;
+  if (error) {
+    if ((error.message ?? '').includes('Could not find the function')) {
+      return [];
+    }
+    throw error;
+  }
+  return data ?? [];
 }
 
 // ─── Health check (public) ────────────────────────────────────────────────────

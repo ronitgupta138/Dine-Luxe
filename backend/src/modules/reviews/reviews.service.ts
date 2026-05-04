@@ -90,8 +90,7 @@ export async function getByRestaurant(
     .select(
       `
       *,
-      user:users(id, name, profile_pic_url),
-      item_ratings:review_item_ratings(*, order_item:order_items(menu_item_id))
+      user:users(id, name, profile_pic_url)
     `,
       { count: 'exact' }
     )

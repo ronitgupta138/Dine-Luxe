@@ -1,6 +1,6 @@
 # API Test Commands — Full Endpoint Coverage
 
-> **Base URL:** `http://localhost:3000/api/v1`  
+> **Base URL:** `http://localhost:5001/api/v1`  
 > Replace `YOUR_TOKEN` with a valid JWT from login. Replace IDs with real UUIDs from your DB.
 
 ```bash

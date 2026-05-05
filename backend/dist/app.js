@@ -53,7 +53,8 @@ app.use(`${API}/admin`, admin_routes_1.default);
 app.use(`${API}/analytics`, analytics_routes_1.default);
 app.use(`${API}/bookings`, bookings_routes_1.default);
 app.use(`${API}/branches`, branches_routes_1.default);
-app.use(`${API}/branding`, branding_routes_1.default);
+app.use(`${API}/restaurant/:id/branding`, branding_routes_1.default);
+app.use(`${API}/restaurants/:id/branding`, branding_routes_1.default);
 app.use(`${API}/delivery`, delivery_routes_1.default);
 app.use(`${API}/floor-layout`, floor_layout_routes_1.default);
 app.use(`${API}/geo`, geo_routes_1.default);
@@ -73,8 +74,11 @@ app.use(`${API}/staff`, staff_routes_1.default);
 app.use(`${API}/support`, support_routes_1.default);
 app.use(`${API}/tables`, tables_routes_1.default);
 app.use(`${API}/users`, users_routes_1.default);
-// ─── Health check ────────────────────────────────────────────────────────────
+// ─── Health checks ───────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+app.get(`${API}/health`, (_req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 // ─── 404 & Error handlers (must be last) ────────────────────────────────────

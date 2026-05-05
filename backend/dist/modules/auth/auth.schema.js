@@ -14,15 +14,21 @@ const phoneSchema = zod_1.z
     .regex(/^\+[1-9]\d{7,14}$/, 'Phone must be in E.164 format (e.g. +919876543210)');
 exports.signupSchema = zod_1.z.object({
     email: zod_1.z.string().email('Invalid email address'),
-    phone: phoneSchema,
+    // BUG FIX: phone was required — made optional, collectable later via PATCH /users/me
+    phone: phoneSchema.optional(),
     password: passwordSchema,
-    firstName: zod_1.z.string().min(1, 'First name is required').max(50),
-    lastName: zod_1.z.string().min(1, 'Last name is required').max(50),
-});
+    // BUG FIX: accept either firstName+lastName OR a plain name field
+    firstName: zod_1.z.string().min(1, 'First name is required').max(50).optional(),
+    lastName: zod_1.z.string().min(1, 'Last name is required').max(50).optional(),
+    name: zod_1.z.string().min(1, 'Name is required').max(100).optional(),
+}).refine((data) => data.firstName || data.name, { message: 'Either "name" or "firstName" is required', path: ['firstName'] });
 exports.loginSchema = zod_1.z.object({
-    emailOrUsername: zod_1.z.string().min(1, 'Email or username is required'),
+    // BUG FIX: was only `emailOrUsername` — no client sends that field name.
+    // Now accepts `email` (standard) OR `emailOrUsername` (legacy/staff clients).
+    email: zod_1.z.string().min(1, 'Email or username is required').optional(),
+    emailOrUsername: zod_1.z.string().min(1, 'Email or username is required').optional(),
     password: zod_1.z.string().min(1, 'Password is required'),
-});
+}).refine((data) => data.email || data.emailOrUsername, { message: 'Email or username is required', path: ['email'] });
 exports.otpSchema = zod_1.z.object({
     email: zod_1.z.string().email('Invalid email address'),
     otp: zod_1.z.string().length(6, 'OTP must be exactly 6 digits').regex(/^\d{6}$/, 'OTP must be numeric'),

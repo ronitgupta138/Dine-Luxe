@@ -1,32 +1,60 @@
 import { z } from 'zod';
-export declare const signupSchema: z.ZodObject<{
+export declare const signupSchema: z.ZodEffects<z.ZodObject<{
     email: z.ZodString;
-    phone: z.ZodString;
+    phone: z.ZodOptional<z.ZodString>;
     password: z.ZodString;
-    firstName: z.ZodString;
-    lastName: z.ZodString;
+    firstName: z.ZodOptional<z.ZodString>;
+    lastName: z.ZodOptional<z.ZodString>;
+    name: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     email: string;
-    phone: string;
     password: string;
-    firstName: string;
-    lastName: string;
+    name?: string | undefined;
+    phone?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
 }, {
     email: string;
-    phone: string;
     password: string;
-    firstName: string;
-    lastName: string;
+    name?: string | undefined;
+    phone?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
+}>, {
+    email: string;
+    password: string;
+    name?: string | undefined;
+    phone?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
+}, {
+    email: string;
+    password: string;
+    name?: string | undefined;
+    phone?: string | undefined;
+    firstName?: string | undefined;
+    lastName?: string | undefined;
 }>;
-export declare const loginSchema: z.ZodObject<{
-    emailOrUsername: z.ZodString;
+export declare const loginSchema: z.ZodEffects<z.ZodObject<{
+    email: z.ZodOptional<z.ZodString>;
+    emailOrUsername: z.ZodOptional<z.ZodString>;
     password: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     password: string;
-    emailOrUsername: string;
+    email?: string | undefined;
+    emailOrUsername?: string | undefined;
 }, {
     password: string;
-    emailOrUsername: string;
+    email?: string | undefined;
+    emailOrUsername?: string | undefined;
+}>, {
+    password: string;
+    email?: string | undefined;
+    emailOrUsername?: string | undefined;
+}, {
+    password: string;
+    email?: string | undefined;
+    emailOrUsername?: string | undefined;
 }>;
 export declare const otpSchema: z.ZodObject<{
     email: z.ZodString;

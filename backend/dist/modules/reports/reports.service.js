@@ -13,6 +13,9 @@ exports.exportReport = exportReport;
 const supabase_1 = require("../../config/supabase");
 const json2csv_1 = require("json2csv");
 const pdfkit_1 = __importDefault(require("pdfkit"));
+function isMissingRpc(error) {
+    return (error?.message ?? '').includes('Could not find the function');
+}
 // ─── Sales report ──────────────────────────────────────────────────────────────
 async function getSales(params) {
     const { branch_id, restaurant_id, from, to, granularity } = params;
@@ -30,9 +33,12 @@ async function getSales(params) {
         p_to: to,
         p_trunc: trunc,
     });
-    if (error)
+    if (error) {
+        if (isMissingRpc(error))
+            return [];
         throw error;
-    return data;
+    }
+    return data ?? [];
 }
 // ─── Menu performance ─────────────────────────────────────────────────────────
 async function getMenuPerformance(restaurantId, branchId) {
@@ -42,8 +48,11 @@ async function getMenuPerformance(restaurantId, branchId) {
         p_branch_id: branchId ?? null,
         p_since: thirtyDaysAgo,
     });
-    if (error)
+    if (error) {
+        if (isMissingRpc(error))
+            return [];
         throw error;
+    }
     // Flag slow movers (< 5 orders in 30 days)
     const enriched = (data ?? []).map((item) => ({
         ...item,
@@ -58,9 +67,12 @@ async function getKitchenPerformance(branchId, from, to) {
         p_from: from,
         p_to: to,
     });
-    if (error)
+    if (error) {
+        if (isMissingRpc(error))
+            return [];
         throw error;
-    return data;
+    }
+    return data ?? [];
 }
 // ─── Customer insights ────────────────────────────────────────────────────────
 async function getCustomerInsights(restaurantId) {
@@ -78,16 +90,19 @@ async function getCustomerInsights(restaurantId) {
     ]);
     return {
         new_customers_30d: newCustomers.count ?? 0,
-        returning_customers: returning.data ?? [],
-        top_spenders: topSpenders.data ?? [],
+        returning_customers: returning.error && isMissingRpc(returning.error) ? [] : (returning.data ?? []),
+        top_spenders: topSpenders.error && isMissingRpc(topSpenders.error) ? [] : (topSpenders.data ?? []),
     };
 }
 // ─── Admin platform report ────────────────────────────────────────────────────
 async function getAdminPlatformReport() {
     const { data, error } = await supabase_1.supabaseAdmin.rpc('get_platform_report');
-    if (error)
+    if (error) {
+        if (isMissingRpc(error))
+            return [];
         throw error;
-    return data;
+    }
+    return data ?? [];
 }
 // ─── Admin trends ─────────────────────────────────────────────────────────────
 async function getAdminTrends(from, to) {
@@ -95,9 +110,12 @@ async function getAdminTrends(from, to) {
         p_from: from,
         p_to: to,
     });
-    if (error)
+    if (error) {
+        if (isMissingRpc(error))
+            return [];
         throw error;
-    return data;
+    }
+    return data ?? [];
 }
 // ─── Export report (non-blocking) ─────────────────────────────────────────────
 async function exportReport(params) {

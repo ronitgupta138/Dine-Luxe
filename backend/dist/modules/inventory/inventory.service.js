@@ -118,14 +118,19 @@ async function logWaste(inventoryItemId, quantity, reason, userId, branchId) {
         .single();
     if (error)
         throw error;
-    // Also deduct from current stock
+    // FIX: supabaseAdmin.rpc() returns a Promise and cannot be used as a column
+    // value inside .update(). Fetch current quantity first, then write the new value.
+    const { data: currentItem } = await supabase_1.supabaseAdmin
+        .from('inventory_items')
+        .select('current_quantity')
+        .eq('id', inventoryItemId)
+        .eq('branch_id', branchId)
+        .single();
+    const newQty = Math.max(0, Number(currentItem?.current_quantity ?? 0) - quantity);
     await supabase_1.supabaseAdmin
         .from('inventory_items')
         .update({
-        current_quantity: supabase_1.supabaseAdmin.rpc('subtract_quantity', {
-            p_item_id: inventoryItemId,
-            p_qty: quantity,
-        }),
+        current_quantity: newQty,
         last_updated: new Date().toISOString(),
         updated_by: userId,
     })

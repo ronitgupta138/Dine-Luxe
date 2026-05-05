@@ -9,6 +9,10 @@ const response_1 = require("../utils/response");
 function requireRole(...roles) {
     return (req, res, next) => {
         const userRole = req.user?.role;
+        if (userRole === 'super_admin') {
+            next();
+            return;
+        }
         if (!userRole || !roles.includes(userRole)) {
             res.status(403).json((0, response_1.error)('FORBIDDEN', `Access denied. Required role(s): ${roles.join(', ')}. Your role: ${userRole ?? 'none'}.`));
             return;

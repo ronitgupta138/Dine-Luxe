@@ -14,7 +14,7 @@ import type {
   RefreshTokenInput,
 } from './auth.schema';
 
-// ─── Token helpers ──────────────────────────────────────────────────────────
+// ─── Token helpers ────────────────────────────────────────────────────────────
 
 function signAccessToken(payload: Record<string, unknown>): string {
   return jwt.sign(payload, config.SUPABASE_JWT_SECRET, { expiresIn: '15m' });
@@ -32,13 +32,28 @@ function forgotPasswordRateLimitKey(email: string): string {
   return `forgot_rl:${email}`;
 }
 
-// ─── Service methods ─────────────────────────────────────────────────────────
+// ─── Service methods ──────────────────────────────────────────────────────────
 
 /**
  * Step 1 of signup: validate uniqueness, hash password, send OTP.
  * The Supabase user is NOT created until OTP is verified.
  */
 export async function signup(input: SignupInput): Promise<{ message: string }> {
+  // BUG FIX: normalise firstName/lastName from the flexible schema.
+  // Clients may send `name` (e.g. "John Doe") OR firstName + lastName separately.
+  let firstName: string;
+  let lastName: string;
+
+  if (input.firstName) {
+    firstName = input.firstName;
+    lastName = input.lastName ?? '';
+  } else {
+    // Split `name` field into first / last
+    const parts = (input.name ?? '').trim().split(' ').filter(Boolean);
+    firstName = parts[0] ?? '';
+    lastName = parts.slice(1).join(' ');
+  }
+
   // Check email uniqueness in Supabase
   const { data: existing, error: existingError } = await supabaseAdmin
     .from('users')
@@ -61,10 +76,10 @@ export async function signup(input: SignupInput): Promise<{ message: string }> {
 
   const pendingData = JSON.stringify({
     email: input.email,
-    phone: input.phone,
+    phone: input.phone ?? null,
     hashedPassword,
-    firstName: input.firstName,
-    lastName: input.lastName,
+    firstName,
+    lastName,
   });
 
   await redis.set(`pending_signup:${input.email}`, pendingData, 'EX', config.OTP_EXPIRY_SECONDS);
@@ -73,11 +88,10 @@ export async function signup(input: SignupInput): Promise<{ message: string }> {
   const otp = generateOTP();
   await storeOTP(input.email, otp, config.OTP_EXPIRY_SECONDS);
 
-  // Send OTP via email (fire and forget — never await in signup handler)
   sendEmail({
     to: input.email,
     templateName: 'otp-verify',
-    data: { name: input.firstName, otp, expiryMinutes: Math.floor(config.OTP_EXPIRY_SECONDS / 60) },
+    data: { name: firstName, otp, expiryMinutes: Math.floor(config.OTP_EXPIRY_SECONDS / 60) },
   });
   console.log(`[DEV] OTP for ${input.email}: ${otp}`);
 
@@ -97,7 +111,7 @@ export async function verifyOtp(input: OtpInput): Promise<{ accessToken: string;
 
   const pending = JSON.parse(raw) as {
     email: string;
-    phone: string;
+    phone: string | null;
     hashedPassword: string;
     firstName: string;
     lastName: string;
@@ -180,15 +194,18 @@ export async function verifyOtp(input: OtpInput): Promise<{ accessToken: string;
 
 /** Login with email or username + password. */
 export async function login(input: LoginInput): Promise<{ accessToken: string; refreshToken: string }> {
-  const isEmail = input.emailOrUsername.includes('@');
+  // BUG FIX: schema now accepts both `email` and `emailOrUsername`.
+  // Normalise to a single identifier here.
+  const identifier = (input.email ?? input.emailOrUsername ?? '').trim();
+  const isEmail = identifier.includes('@');
 
   const query = supabaseAdmin
     .from('users')
     .select('id, email, role, password_hash, restaurant_id, branch_id');
 
   const { data: profile, error: profileError } = isEmail
-    ? await query.eq('email', input.emailOrUsername).maybeSingle()
-    : await query.eq('username', input.emailOrUsername).maybeSingle();
+    ? await query.eq('email', identifier).maybeSingle()
+    : await query.eq('username', identifier).maybeSingle();
 
   if (profileError || !profile) {
     const err = new Error('Invalid credentials') as Error & { status: number };
@@ -235,7 +252,6 @@ export async function forgotPassword(input: ForgotPasswordInput): Promise<{ mess
     throw err;
   }
 
-  // Silently succeed even if email doesn't exist (security best practice)
   const { data: profile } = await supabaseAdmin
     .from('users')
     .select('id, name')
@@ -283,7 +299,6 @@ export async function resetPassword(input: ResetPasswordInput): Promise<{ messag
     throw new Error(`Password update failed: ${passwordError.message}`);
   }
 
-  // Invalidate all sessions
   await supabaseAdmin.auth.admin.signOut(profile.id as string);
   await redis.del(refreshTokenKey(profile.id as string));
   await deleteOTP(input.email);

@@ -27,7 +27,7 @@ async function joinQueue(input) {
     }
     // Get current max position for this branch
     const { data: lastEntry } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('position')
         .eq('branch_id', input.branch_id)
         .in('status', ['waiting', 'arrived'])
@@ -36,16 +36,16 @@ async function joinQueue(input) {
         .maybeSingle();
     const nextPosition = (lastEntry?.position ?? 0) + 1;
     const { data, error } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .insert({
         branch_id: input.branch_id,
         user_id: input.user_id ?? null,
         people_count: input.people_count,
-        customer_name: input.customer_name ?? null,
-        customer_phone: input.customer_phone ?? null,
+        guest_name: input.customer_name ?? null,
+        guest_phone: input.customer_phone ?? null,
         position: nextPosition,
         status: 'waiting',
-        joined_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
     })
         .select()
         .single();
@@ -63,7 +63,7 @@ async function joinQueue(input) {
 async function getBranchQueue(branchId, query) {
     const { page, limit, offset } = (0, pagination_1.parsePagination)(query);
     const { data, error, count } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('*, users(name, phone)', { count: 'exact' })
         .eq('branch_id', branchId)
         .in('status', ['waiting', 'arrived'])
@@ -76,7 +76,7 @@ async function getBranchQueue(branchId, query) {
 // ─── Get position + ETA ───────────────────────────────────────────────────────
 async function getQueuePosition(queueId) {
     const { data: entry } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('*')
         .eq('id', queueId)
         .single();
@@ -84,7 +84,7 @@ async function getQueuePosition(queueId) {
         throw Object.assign(new Error('Queue entry not found'), { statusCode: 404 });
     // Count entries ahead in queue
     const { count: entriesAhead } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('id', { count: 'exact', head: true })
         .eq('branch_id', entry.branch_id)
         .in('status', ['waiting', 'arrived'])
@@ -134,7 +134,7 @@ async function getQueuePosition(queueId) {
 async function markQueueArrived(queueId) {
     // FIX: fetch first so we can validate current status before update
     const { data: existing } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('id, status')
         .eq('id', queueId)
         .single();
@@ -147,7 +147,7 @@ async function markQueueArrived(queueId) {
         throw Object.assign(new Error(`Cannot mark arrived from status "${existing.status}"`), { statusCode: 422 });
     }
     const { data, error } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .update({ status: 'arrived', arrived_at: new Date().toISOString() })
         .eq('id', queueId)
         .select()
@@ -160,7 +160,7 @@ async function markQueueArrived(queueId) {
 async function assignTable(queueId, tableId, hostId) {
     // Fetch queue entry
     const { data: entry } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('*')
         .eq('id', queueId)
         .single();
@@ -203,8 +203,9 @@ async function assignTable(queueId, tableId, hostId) {
 }
 // ─── Mark no-show ─────────────────────────────────────────────────────────────
 async function markQueueNoShow(queueId) {
+    // FIX: was querying non-existent table 'queue' — correct table is 'queue_entries'
     const { data: entry } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('*')
         .eq('id', queueId)
         .single();
@@ -213,8 +214,8 @@ async function markQueueNoShow(queueId) {
     // FIX: .update() was not chained with .select() so the original returned { removed:true }
     // but nothing confirmed the update happened. Now we return the updated row.
     const { data, error } = await supabase_1.supabaseAdmin
-        .from('queue')
-        .update({ status: 'no_show', no_show_at: new Date().toISOString() })
+        .from('queue_entries')
+        .update({ status: 'no_show' })
         .eq('id', queueId)
         .select()
         .single();
@@ -232,19 +233,19 @@ async function markQueueNoShow(queueId) {
 // ─── Remove from queue ────────────────────────────────────────────────────────
 async function removeFromQueue(queueId) {
     const { data: entry } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('branch_id, status')
         .eq('id', queueId)
         .single();
     if (!entry)
         throw Object.assign(new Error('Queue entry not found'), { statusCode: 404 });
     // FIX: don't allow removing an already-seated/no_show/removed entry silently
-    if (['seated', 'no_show', 'removed'].includes(entry.status)) {
+    if (['seated', 'no_show', 'cancelled'].includes(entry.status)) {
         throw Object.assign(new Error(`Queue entry is already "${entry.status}" — cannot remove again`), { statusCode: 409 });
     }
     const { error } = await supabase_1.supabaseAdmin
-        .from('queue')
-        .update({ status: 'removed', removed_at: new Date().toISOString() })
+        .from('queue_entries')
+        .update({ status: 'cancelled' })
         .eq('id', queueId);
     if (error)
         throw error;
@@ -259,7 +260,7 @@ async function removeFromQueue(queueId) {
 // ─── Recalculate queue positions (no gaps) ────────────────────────────────────
 async function recalculatePositions(branchId) {
     const { data: activeQueue } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .select('id')
         .eq('branch_id', branchId)
         .in('status', ['waiting', 'arrived'])
@@ -272,7 +273,7 @@ async function recalculatePositions(branchId) {
         position: idx + 1,
     }));
     const { error } = await supabase_1.supabaseAdmin
-        .from('queue')
+        .from('queue_entries')
         .upsert(upsertPayload, { onConflict: 'id' });
     if (error) {
         // Log but don't crash – positions are cosmetic; seating is already committed

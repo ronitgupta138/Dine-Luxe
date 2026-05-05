@@ -12,12 +12,13 @@ const NEGATIVE_WORDS = ['bad', 'terrible', 'awful', 'horrible', 'disgusting', 'w
 // ─── Create review ─────────────────────────────────────────────────────────────
 async function create(userId, payload) {
     // Validate: user must have a completed order at this restaurant
+    // FIX: orders never reach 'completed' status; valid terminal statuses are 'paid', 'served', 'closed'
     const { data: order, error: orderErr } = await supabase_1.supabaseAdmin
         .from('orders')
         .select('id, status')
         .eq('id', payload.order_id)
         .eq('customer_id', userId)
-        .eq('status', 'completed')
+        .in('status', ['paid', 'served', 'closed'])
         .single();
     if (orderErr || !order) {
         throw new Error('No completed order found for this user');
@@ -32,12 +33,19 @@ async function create(userId, payload) {
     if (existing)
         throw new Error('Review already submitted for this order');
     // Insert main review
+    // FIX: fetch branch_id from order so getByBranch queries can filter correctly
+    const { data: orderBranch } = await supabase_1.supabaseAdmin
+        .from('orders')
+        .select('branch_id')
+        .eq('id', payload.order_id)
+        .maybeSingle();
     const { data: review, error } = await supabase_1.supabaseAdmin
         .from('reviews')
         .insert({
         user_id: userId,
         order_id: payload.order_id,
         restaurant_id: payload.restaurant_id,
+        branch_id: orderBranch?.branch_id ?? null,
         overall_rating: payload.overall_rating,
         text_review: payload.text_review ?? null,
         photos: payload.photos ?? [],
@@ -69,8 +77,7 @@ async function getByRestaurant(restaurantId, page, limit, minRating, maxRating) 
         .from('reviews')
         .select(`
       *,
-      user:users(id, name, profile_pic_url),
-      item_ratings:review_item_ratings(*, order_item:order_items(menu_item_id))
+      user:users(id, name, profile_pic_url)
     `, { count: 'exact' })
         .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false })
@@ -85,12 +92,24 @@ async function getByRestaurant(restaurantId, page, limit, minRating, maxRating) 
     return { data, count };
 }
 // ─── Get reviews by branch ─────────────────────────────────────────────────────
+// FIX: reviews table has no branch_id column — resolve via orders join
 async function getByBranch(branchId, page, limit) {
     const { from, to } = (0, pagination_1.paginate)(page, limit);
+    // Step 1: collect order IDs that belong to this branch
+    const { data: branchOrders, error: ordersErr } = await supabase_1.supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('branch_id', branchId);
+    if (ordersErr)
+        throw ordersErr;
+    const orderIds = (branchOrders ?? []).map((o) => o.id);
+    if (!orderIds.length)
+        return { data: [], count: 0 };
+    // Step 2: get paginated reviews for those orders
     const { data, error, count } = await supabase_1.supabaseAdmin
         .from('reviews')
         .select('*, user:users(id, name, profile_pic_url)', { count: 'exact' })
-        .eq('branch_id', branchId)
+        .in('order_id', orderIds)
         .order('created_at', { ascending: false })
         .range(from, to);
     if (error)

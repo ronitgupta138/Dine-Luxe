@@ -26,9 +26,10 @@ async function assignDelivery(orderId, branchId, restaurantId) {
     }
     // Find nearest online partner without an active delivery using geo query
     // Partners must have last_location populated and status = 'online'
+    // FIX: branches table uses 'lat'/'lon' columns, not 'current_lat'/'current_lon'
     const { data: branch } = await supabase_1.supabaseAdmin
         .from('branches')
-        .select('current_lat, current_lon')
+        .select('lat, lon')
         .eq('id', branchId)
         .single();
     // TODO: Use PostGIS ST_Distance for accurate geo-based sorting
@@ -189,9 +190,10 @@ async function updatePartnerLocation(partnerId, lat, lon, deliveryId) {
 }
 // ─── Get Active Delivery for Partner ─────────────────────────────────────────
 async function getActiveDelivery(partnerId) {
+    // FIX: tables uses 'label' not 'table_number'
     const { data, error } = await supabase_1.supabaseAdmin
         .from('deliveries')
-        .select('*, orders(*, tables(table_number)), branches(name, address)')
+        .select('*, orders(*, tables(label)), branches(name, address)')
         .eq('partner_id', partnerId)
         .in('status', ['assigned', 'accepted', 'picked_up'])
         .order('assigned_at', { ascending: false })

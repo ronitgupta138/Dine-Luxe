@@ -155,7 +155,7 @@ async function getOrdersByTable(tableId, branchId) {
         .select('*, order_items(*, menu_items(name, price))')
         .eq('table_id', tableId)
         .eq('branch_id', branchId)
-        .not('status', 'in', '("paid","cancelled")')
+        .not('status', 'in', '("paid","closed")')
         .order('created_at', { ascending: false });
     if (error)
         throw error;
@@ -165,9 +165,9 @@ async function getOrdersByTable(tableId, branchId) {
 async function getActiveBranchOrders(branchId) {
     const { data, error } = await supabase_1.supabaseAdmin
         .from('orders')
-        .select('*, order_items(id, status, menu_items(name)), tables(table_number)')
+        .select('*, order_items(id, status, menu_items(name)), tables(label)')
         .eq('branch_id', branchId)
-        .not('status', 'in', '("paid","cancelled")')
+        .not('status', 'in', '("paid","closed")')
         .order('created_at', { ascending: true });
     if (error)
         throw error;
@@ -184,7 +184,7 @@ async function cancelOrder(orderId, branchId, reason) {
     if (fetchErr || !order) {
         throw Object.assign(new Error('Order not found'), { statusCode: 404 });
     }
-    if (['paid', 'cancelled'].includes(order.status)) {
+    if (['paid', 'closed'].includes(order.status)) {
         throw Object.assign(new Error(`Cannot cancel order with status: ${order.status}`), { statusCode: 422 });
     }
     const servedItems = (order.order_items ?? []).filter((i) => i.status === 'served');
@@ -194,7 +194,7 @@ async function cancelOrder(orderId, branchId, reason) {
     // FIX: cancellation_reason and cancelled_at do not exist in schema — just update status
     const { data: updated, error: updateErr } = await supabase_1.supabaseAdmin
         .from('orders')
-        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .update({ status: 'closed', updated_at: new Date().toISOString() })
         .eq('id', orderId)
         .select()
         .single();

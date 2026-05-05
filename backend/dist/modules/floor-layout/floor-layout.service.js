@@ -141,9 +141,11 @@ async function getLayout(branchId) {
         .eq('status', 'draft')
         .order('layout_version', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
     if (error)
         throw error;
+    if (!draft)
+        throw Object.assign(new Error('No layout found'), { statusCode: 404 });
     return draft;
 }
 // ─── Get live layout with real-time table statuses ────────────────────────────
@@ -157,7 +159,9 @@ async function getLiveLayout(branchId) {
         .select('*')
         .eq('branch_id', branchId)
         .eq('status', 'active')
-        .single();
+        .order('layout_version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
     if (layoutErr || !layout)
         throw Object.assign(new Error('No active layout found'), { statusCode: 404 });
     const { data: tables, error: tableErr } = await supabase_1.supabaseAdmin

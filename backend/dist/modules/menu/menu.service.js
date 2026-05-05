@@ -20,16 +20,16 @@ const menuCacheKey = (branchId) => `menu:${branchId}`;
 async function bustMenuCache(branchId) {
     await redis_1.redis.del(menuCacheKey(branchId));
 }
-function isWithinAvailabilityWindow(windows) {
-    if (!windows || windows.length === 0)
+function isWithinAvailability(availability) {
+    if (!availability || availability.type === 'always')
+        return true;
+    if (availability.type !== 'time_based')
         return true;
     const now = new Date();
-    const dayNames = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const currentDay = dayNames[now.getDay()];
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    return windows.some((w) => w.days.includes(currentDay) &&
-        currentTime >= w.start_time &&
-        currentTime <= w.end_time);
+    const from = availability.from ?? '00:00';
+    const to = availability.to ?? '23:59';
+    return currentTime >= from && currentTime <= to;
 }
 // ─── Public Menu (cached, filtered) ──────────────────────────────────────────
 async function getPublicMenu(branchId) {
@@ -40,12 +40,11 @@ async function getPublicMenu(branchId) {
     const { data: categories, error } = await supabase_1.supabaseAdmin
         .from('menu_categories')
         .select(`
-      id, name, description, display_order, image_url,
+      id, name, description, display_order,
       menu_items (
-        id, name, description, price, compare_price, image_url,
-        is_veg, is_vegan, contains_alcohol, allergens, calories,
-        status, display_order, availability_windows,
-        menu_addons ( id, name, price, is_required, max_quantity )
+        id, name, description, price, discounted_price, photo_url,
+        dietary_tags, allergens, prep_time_minutes, availability,
+        addons, status, display_order, is_featured
       )
     `)
         .eq('branch_id', branchId)
@@ -61,8 +60,12 @@ async function getPublicMenu(branchId) {
         ...cat,
         menu_items: (cat.menu_items ?? [])
             .filter((item) => item.status !== 'hidden' &&
-            isWithinAvailabilityWindow(item.availability_windows ?? []))
-            .sort((a, b) => a.display_order - b.display_order),
+            isWithinAvailability(item.availability))
+            .sort((a, b) => a.display_order - b.display_order)
+            .map((item) => ({
+            ...item,
+            menu_addons: item.addons ?? [],
+        })),
     }));
     await redis_1.redis.setex(cacheKey, MENU_CACHE_TTL, JSON.stringify(filtered));
     return filtered;
@@ -171,14 +174,23 @@ async function createMenuItem(branchId, restaurantId, input) {
     return item;
 }
 async function getMenuItemById(itemId) {
-    const { data, error } = await supabase_1.supabaseAdmin
+    const { data: item, error } = await supabase_1.supabaseAdmin
         .from('menu_items')
-        .select('*, menu_addons(*), menu_categories(name)')
+        .select('*')
         .eq('id', itemId)
         .single();
-    if (error || !data)
+    if (error || !item)
         throw Object.assign(new Error('Item not found'), { statusCode: 404 });
-    return data;
+    const { data: category } = await supabase_1.supabaseAdmin
+        .from('menu_categories')
+        .select('name')
+        .eq('id', item.category_id)
+        .maybeSingle();
+    return {
+        ...item,
+        menu_addons: item.addons ?? [],
+        menu_categories: category ? { name: category.name } : null,
+    };
 }
 async function updateMenuItem(itemId, branchId, input) {
     const { addons, ...itemData } = input;

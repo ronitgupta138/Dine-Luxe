@@ -1,9 +1,9 @@
-/// <reference path="./types/express.d.ts" />
+// <reference path="./types/express.d.ts" />
 import { config } from './config/env';
 import { redis } from './config/redis';
 import app from './app';
 
-const PORT = Number(config.PORT) || 3000;
+const PORT = Number(conig.PORT) || 3000;
 
 const server = app.listen(PORT, () => {
   console.log(`🚀 Restaurant OS API running on port ${PORT} [${config.NODE_ENV}]`);

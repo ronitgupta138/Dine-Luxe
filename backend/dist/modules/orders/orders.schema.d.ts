@@ -27,11 +27,11 @@ export declare const createOrderSchema: z.ZodObject<{
     }, {
         quantity: number;
         menu_item_id: string;
+        notes?: string | undefined;
         addons?: {
             addon_id: string;
             quantity?: number | undefined;
         }[] | undefined;
-        notes?: string | undefined;
     }>, "many">;
     special_instructions: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
@@ -51,11 +51,11 @@ export declare const createOrderSchema: z.ZodObject<{
     items: {
         quantity: number;
         menu_item_id: string;
+        notes?: string | undefined;
         addons?: {
             addon_id: string;
             quantity?: number | undefined;
         }[] | undefined;
-        notes?: string | undefined;
     }[];
     table_id: string;
     order_type: "delivery" | "dine_in" | "takeaway";

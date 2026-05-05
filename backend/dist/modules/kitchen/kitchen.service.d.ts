@@ -3,7 +3,6 @@ export declare function getKitchenTickets(branchId: string): Promise<{
     id: any;
     status: any;
     created_at: any;
-    preparation_started_at: any;
     table_id: any;
     tables: {
         label: any;
@@ -13,7 +12,7 @@ export declare function getKitchenTickets(branchId: string): Promise<{
         id: any;
         quantity: any;
         status: any;
-        special_notes: any;
+        notes: any;
         menu_items: {
             name: any;
             prep_time_minutes: any;
@@ -27,7 +26,6 @@ export declare function getOverdueOrders(branchId: string): Promise<{
     id: any;
     status: any;
     created_at: any;
-    preparation_started_at: any;
     table_id: any;
     tables: {
         label: any;

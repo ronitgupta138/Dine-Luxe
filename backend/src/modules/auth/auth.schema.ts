@@ -14,16 +14,28 @@ const phoneSchema = z
 
 export const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
-  phone: phoneSchema,
+  // BUG FIX: phone was required — made optional, collectable later via PATCH /users/me
+  phone: phoneSchema.optional(),
   password: passwordSchema,
-  firstName: z.string().min(1, 'First name is required').max(50),
-  lastName: z.string().min(1, 'Last name is required').max(50),
-});
+  // BUG FIX: accept either firstName+lastName OR a plain name field
+  firstName: z.string().min(1, 'First name is required').max(50).optional(),
+  lastName: z.string().min(1, 'Last name is required').max(50).optional(),
+  name: z.string().min(1, 'Name is required').max(100).optional(),
+}).refine(
+  (data) => data.firstName || data.name,
+  { message: 'Either "name" or "firstName" is required', path: ['firstName'] },
+);
 
 export const loginSchema = z.object({
-  emailOrUsername: z.string().min(1, 'Email or username is required'),
+  // BUG FIX: was only `emailOrUsername` — no client sends that field name.
+  // Now accepts `email` (standard) OR `emailOrUsername` (legacy/staff clients).
+  email: z.string().min(1, 'Email or username is required').optional(),
+  emailOrUsername: z.string().min(1, 'Email or username is required').optional(),
   password: z.string().min(1, 'Password is required'),
-});
+}).refine(
+  (data) => data.email || data.emailOrUsername,
+  { message: 'Email or username is required', path: ['email'] },
+);
 
 export const otpSchema = z.object({
   email: z.string().email('Invalid email address'),

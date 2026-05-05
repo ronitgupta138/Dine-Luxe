@@ -75,8 +75,11 @@ app.use(`${API}/support`, supportRoutes);
 app.use(`${API}/tables`, tablesRoutes);
 app.use(`${API}/users`, usersRoutes);
 
-// ─── Health check ────────────────────────────────────────────────────────────
+// ─── Health checks ───────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+app.get(`${API}/health`, (_req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

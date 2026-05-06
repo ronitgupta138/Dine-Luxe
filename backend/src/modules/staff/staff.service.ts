@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '../../config/supabase';
 import { redis } from '../../config/redis';
 import { generateEmployeeId } from '../../utils/employee-id';
@@ -5,6 +6,7 @@ import { generateDefaultPassword } from '../../utils/password';
 import { insertAuditLog } from '../../utils/audit-log';
 import { sendEmail } from '../../email/send';
 import { CreateStaffInput, UpdateStaffInput } from './staff.schema';
+import { config } from '../../config/env';
 
 // ─── Get All Staff for a Branch ───────────────────────────────────────────────
 export async function getByBranch(branchId: string, restaurantId: string) {
@@ -32,6 +34,9 @@ export async function create(
   actorRole: string,
   ipAddress: string
 ) {
+  // Normalise email once — used for both Supabase Auth and the DB row.
+  const staffEmail = input.email.toLowerCase().trim();
+
   // Manager can only create staff for their OWN branch
   if (actorRole === 'manager' && input.branch_id !== actorBranchId) {
     throw new Error('Managers can only create staff for their own branch');
@@ -45,14 +50,23 @@ export async function create(
     .eq('restaurant_id', restaurantId)
     .single();
 
-  if (branchErr || !branch) throw new Error('Branch not found or unauthorized');
+  if (branchErr || !branch) {
+    throw new Error(
+      `Branch not found or unauthorized. Verify branch_id "${input.branch_id}" belongs to your restaurant.`
+    );
+  }
 
   // Generate default password from DOB (format: DDMMYYYY)
   const defaultPassword = generateDefaultPassword(new Date(input.dob));
 
+  // BUG FIX: hash the default password so it is stored in users.password_hash.
+  // Without this, login's bcrypt.compare(password, null) throws
+  // "Illegal arguments: string, object" — same issue that affected restaurant owners.
+  const hashedPassword = await bcrypt.hash(defaultPassword, config.BCRYPT_SALT_ROUNDS);
+
   // Create Supabase Auth user
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email: input.email,
+    email: staffEmail,
     password: defaultPassword,
     email_confirm: true, // auto-confirm staff emails
   });
@@ -71,11 +85,12 @@ export async function create(
       .insert({
         id: staffId,
         name: `${input.first_name} ${input.last_name}`.trim(),
-        email: input.email,
+        email: staffEmail,
         phone: input.phone,
         dob: input.dob,
         gender: input.gender,
         role: input.role,
+        password_hash: hashedPassword,
         restaurant_id: restaurantId,
         branch_id: input.branch_id,
         employee_id: employeeId,
@@ -92,7 +107,7 @@ export async function create(
 
     // Send credentials email (fire and forget — never await in request handler)
     sendEmail({
-      to: input.email,
+      to: staffEmail,
       templateName: 'welcome',
       data: {
         name: input.first_name,

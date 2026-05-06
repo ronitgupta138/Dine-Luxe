@@ -1,3 +1,5 @@
+import bcrypt from 'bcryptjs';
+import { config } from '../../config/env';
 import { supabaseAdmin } from '../../config/supabase';
 import { redis } from '../../config/redis';
 import { paginate } from '../../utils/pagination';
@@ -223,4 +225,87 @@ export async function getFeedback(page: number, limit: number) {
 
   if (error) throw error;
   return { data, count };
+}
+// ─── Shared helper: create any privileged user (admin or super_admin) ─────────
+async function createPrivilegedUser(input: {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  role: 'admin' | 'super_admin';
+}) {
+  const email = input.email.toLowerCase().trim();
+  const name = `${input.first_name} ${input.last_name}`.trim();
+
+  // BUG FIX: hash the password so it is stored in users.password_hash.
+  // Without this, login crashes with "Illegal arguments: string, object".
+  const hashedPassword = await bcrypt.hash(input.password, config.BCRYPT_SALT_ROUNDS);
+
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password: input.password,
+    email_confirm: true,
+  });
+
+  if (authError) throw new Error(`Auth creation failed: ${authError.message}`);
+
+  const userId = authData.user.id;
+  const now = new Date().toISOString();
+
+  const { error: profileError } = await supabaseAdmin.from('users').insert({
+    id: userId,
+    name,
+    email,
+    phone: input.phone ?? null,
+    password_hash: hashedPassword,
+    role: input.role,
+    is_active: true,
+    force_password_change: false,
+    created_by_restaurant: false,
+    created_at: now,
+    updated_at: now,
+  });
+
+  if (profileError) {
+    await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
+    throw new Error(`Profile creation failed: ${profileError.message}`);
+  }
+
+  return { id: userId, email, name, phone: input.phone ?? null, role: input.role };
+}
+
+// ─── Create admin (called by super_admin via POST /admin/create-admin) ────────
+export async function createAdmin(input: {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+}) {
+  return createPrivilegedUser({ ...input, role: 'admin' });
+}
+
+// ─── Bootstrap: create first super_admin (via POST /admin/bootstrap) ─────────
+// Protected by X-Seed-Secret header — NOT a JWT route.
+// Blocked after the first super_admin exists.
+export async function createSuperAdmin(input: {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+}) {
+  const { count } = await supabaseAdmin
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('role', 'super_admin');
+
+  if ((count ?? 0) > 0) {
+    const err = new Error('A super_admin already exists. Use POST /admin/create-admin with a super_admin token.') as Error & { status: number };
+    err.status = 409;
+    throw err;
+  }
+
+  return createPrivilegedUser({ ...input, role: 'super_admin' });
 }

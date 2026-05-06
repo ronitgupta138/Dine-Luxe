@@ -160,7 +160,7 @@ curl -X POST http://localhost:5001/api/v1/staff/create \
   -d '{
     "first_name": "Ravi",
     "last_name": "Kumar",
-    "email": "ravi.waiter@spicegarden.com",
+    "email": "ravi.waiter1@spicegarden.com",
     "phone": "9876543213",
     "dob": "1999-08-20",
     "gender": "male",
@@ -176,7 +176,7 @@ curl -X POST http://localhost:5001/api/v1/staff/create \
 curl -X POST http://localhost:5001/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "emailOrUsername": "ravi.waiter@spicegarden.com",
+    "emailOrUsername": "ravi.waiter1@spicegarden.com",
     "password": "20081999"
   }'
 ```
@@ -281,40 +281,23 @@ curl -X POST http://localhost:5001/api/v1/auth/login \
 
 ## 8. ADMIN Account
 
-> There is **no public API** to create an admin. It must be inserted directly into Supabase DB with `role: 'admin'`.
+> Super admin can now create admin accounts through the backend API.
 
-Use Supabase Dashboard → Table Editor → `users` table, or run via Supabase SQL Editor:
-
-```sql
--- Run this in Supabase SQL Editor
-INSERT INTO users (id, name, email, phone, role, is_active, force_password_change, created_by_restaurant, created_at, updated_at)
-VALUES (
-  gen_random_uuid(),
-  'Super Admin',
-  'admin@platform.com',
-  '+919999999999',
-  'admin',
-  true,
-  false,
-  false,
-  now(),
-  now()
-);
-```
-
-Then use Supabase Auth Dashboard to create the matching auth user with the same email, or via CLI:
+### Create an admin account as super admin
 ```bash
-# Via Supabase Management API (replace PROJECT_REF and SERVICE_KEY)
-curl -X POST https://PROJECT_REF.supabase.co/auth/v1/admin/users \
-  -H "apikey: SERVICE_KEY" \
-  -H "Authorization: Bearer SERVICE_KEY" \
+curl -X POST http://localhost:5001/api/v1/admin/create-admin \
+  -H "Authorization: Bearer $SUPER_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@platform.com",
     "password": "Admin@Secure123",
-    "email_confirm": true
+    "first_name": "Super",
+    "last_name": "Admin",
+    "phone": "9876543210"
   }'
 ```
+
+**Response contains:** `id`, `email`, `name`, and `role`.
 
 ### Login as Admin
 ```bash

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as authService from './auth.service';
-import { success } from '../../utils/response';
+import { success, error } from '../../utils/response';
 
 export async function signupController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -68,11 +68,18 @@ export async function resetPasswordController(req: Request, res: Response, next:
 
 export async function checkEmailController(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const email = req.query['email'] as string;
-    const { data, error } = await import('../../config/supabase').then(({ supabaseAdmin }) =>
+    // BUG FIX: normalise email before querying so "User@Email.Com" and
+    // "user@email.com" are treated as the same address.
+    const raw = req.query['email'] as string;
+    const email = (raw ?? '').toLowerCase().trim();
+    if (!email) {
+      res.status(400).json(error('VALIDATION_ERROR', 'email query parameter is required'));
+      return;
+    }
+    const { data, error: dbError } = await import('../../config/supabase').then(({ supabaseAdmin }) =>
       supabaseAdmin.from('users').select('id').eq('email', email).maybeSingle(),
     );
-    if (error) throw error;
+    if (dbError) throw dbError;
     res.status(200).json(success({ available: !data }, data ? 'Email is taken.' : 'Email is available.'));
   } catch (err) {
     next(err);

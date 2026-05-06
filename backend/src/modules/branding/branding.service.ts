@@ -83,6 +83,7 @@ export async function updateBranding(
   input: UpdateBrandingInput
 ) {
   const updateData: Record<string, unknown> = {
+    restaurant_id: restaurantId,          // required for upsert conflict target
     updated_at: new Date().toISOString(),
   };
 
@@ -94,10 +95,12 @@ export async function updateBranding(
   if (input.banner_url !== undefined) updateData.banner_url = input.banner_url;
   if (input.font_family !== undefined) updateData.font_preference = input.font_family;
 
+  // BUG FIX: was .update() which silently no-ops when no branding row exists yet
+  // (e.g. if the auto-insert during register failed). Use upsert so it creates
+  // the row on first PATCH and updates it thereafter.
   const { data, error } = await supabaseAdmin
     .from('restaurant_branding')
-    .update(updateData)
-    .eq('restaurant_id', restaurantId)
+    .upsert(updateData, { onConflict: 'restaurant_id' })
     .select()
     .single();
 

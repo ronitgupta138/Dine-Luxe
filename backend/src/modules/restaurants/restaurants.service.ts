@@ -7,9 +7,13 @@ import { insertAuditLog } from '../../utils/audit-log';
 // FIX: restaurants table only has: name, cuisine_type (singular), gst_number, status
 //      branches table only has: restaurant_id, name, address (text), lat, lon, manager_id, operating_hours, is_active
 export async function register(input: RegisterInput, ipAddress: string) {
+  // Normalise owner email once so auth user and DB row always match.
+  const ownerEmail = input.owner.email.toLowerCase().trim();
+  const now = new Date().toISOString();
+
   // 1. Create Supabase Auth user for owner
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email: input.owner.email,
+    email: ownerEmail,
     password: input.owner.password,
     email_confirm: false,
   });
@@ -18,7 +22,7 @@ export async function register(input: RegisterInput, ipAddress: string) {
   const ownerId = authData.user.id;
 
   try {
-    // 2. Create restaurant record (only use columns that actually exist)
+    // 2. Create restaurant record — include created_at/updated_at (NOT NULL in schema)
     const { data: restaurant, error: restError } = await supabaseAdmin
       .from('restaurants')
       .insert({
@@ -28,6 +32,8 @@ export async function register(input: RegisterInput, ipAddress: string) {
           : input.restaurant.cuisine_types,
         gst_number: input.restaurant.gst_number ?? null,
         status: 'pending',
+        created_at: now,
+        updated_at: now,
       })
       .select()
       .single();
@@ -35,6 +41,7 @@ export async function register(input: RegisterInput, ipAddress: string) {
     if (restError) throw new Error(`Restaurant creation failed: ${restError.message}`);
 
     // 3. Create first branch — combine address fields into single 'address' column
+    //    Also supply created_at/updated_at so the branches NOT NULL constraint is satisfied.
     const branchAddress = [
       input.branch.address_line1,
       input.branch.address_line2,
@@ -50,6 +57,8 @@ export async function register(input: RegisterInput, ipAddress: string) {
         name: input.branch.name,
         address: branchAddress,
         is_active: true,
+        created_at: now,
+        updated_at: now,
       })
       .select()
       .single();
@@ -57,13 +66,12 @@ export async function register(input: RegisterInput, ipAddress: string) {
     if (branchError) throw new Error(`Branch creation failed: ${branchError.message}`);
 
     // 4. Create owner profile
-    const now = new Date().toISOString();
     const { error: userError } = await supabaseAdmin
       .from('users')
       .insert({
         id: ownerId,
         name: `${input.owner.first_name} ${input.owner.last_name}`.trim(),
-        email: input.owner.email,
+        email: ownerEmail,
         phone: input.owner.phone,
         dob: input.owner.dob,
         role: 'owner',
@@ -84,11 +92,13 @@ export async function register(input: RegisterInput, ipAddress: string) {
       primary_color: '#E85D04',
       secondary_color: '#FAA307',
       app_name_display: input.restaurant.name,
+      created_at: now,
+      updated_at: now,
     });
 
     // 6. Send welcome email (fire and forget)
     sendEmail({
-      to: input.owner.email,
+      to: ownerEmail,
       templateName: 'welcome',
       data: {
         name: input.owner.first_name,

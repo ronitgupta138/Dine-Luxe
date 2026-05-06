@@ -56,7 +56,8 @@ export const updateRestaurantSchema = z.object({
 });
 
 export const updateStatusSchema = z.object({
-  status: z.enum(['pending', 'active', 'suspended', 'closed']),
+  // BUG FIX: DB enum RestaurantStatus has 'inactive' not 'closed'.
+  status: z.enum(['pending', 'active', 'suspended', 'inactive']),
   reason: z.string().max(500).optional(),
 });
 

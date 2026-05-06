@@ -15,7 +15,13 @@ export const updateProfileSchema = z.object({
 
   phone: z
     .string()
-    .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number')
+    // BUG FIX: was bare Indian 10-digit regex ^[6-9]\d{9}$ but signup stores
+    // phone in E.164 format (+919876543210). Accept both so PATCH /users/me
+    // doesn't reject a number the user legitimately provided at signup.
+    .regex(
+      /^(\+[1-9]\d{7,14}|[6-9]\d{9})$/,
+      'Phone must be a 10-digit Indian number or E.164 format (e.g. +919876543210)'
+    )
     .optional(),
 
   dob: z

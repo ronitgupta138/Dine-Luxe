@@ -1,0 +1,872 @@
+// ============================================================
+// RESTAURANT OS — PRISMA SCHEMA
+// Stack: Next.js 14 · Express.js · PostgreSQL (via Supabase)
+// Author: Priyanshu Kumar Gupta & Ronit Gupta | Version 1.0
+// ============================================================
+//
+// 📁 WHERE TO PUT THIS FILE:
+//    backend/prisma/schema.prisma
+//
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  super_admin
+  owner
+  manager
+  host
+  waiter
+  chef
+  cashier
+  customer
+  delivery_partner
+  support
+}
+
+enum TableStatus {
+  free
+  reserved
+  occupied
+  cleaning
+  maintenance
+}
+
+enum OrderStatus {
+  created
+  confirmed
+  preparing
+  ready
+  served
+  paid
+  closed
+}
+
+enum OrderType {
+  dine_in
+  delivery
+  takeaway
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+  arrived
+  seated
+  no_show
+  cancelled
+}
+
+enum BookingSource {
+  app
+  walk_in
+  phone
+}
+
+enum RestaurantStatus {
+  active
+  suspended
+  pending
+  inactive
+}
+
+enum TableShape {
+  round
+  square
+  rectangle
+  booth
+}
+
+enum MenuItemStatus {
+  available
+  sold_out
+  hidden
+}
+
+enum FloorLayoutStatus {
+  draft
+  active
+  archived
+}
+
+enum PaymentMethod {
+  cash
+  card
+  upi
+  split
+  wallet
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+enum DeliveryStatus {
+  assigned
+  accepted
+  picked_up
+  out_for_delivery
+  delivered
+  failed
+}
+
+enum QueueStatus {
+  waiting
+  arrived
+  seated
+  no_show
+  cancelled
+}
+
+enum SentimentLabel {
+  positive
+  neutral
+  negative
+}
+
+enum SupportTicketStatus {
+  open
+  assigned
+  resolved
+  closed
+}
+
+enum NotificationType {
+  order_update
+  booking_update
+  payment
+  queue_update
+  system_alert
+  promotional
+}
+
+enum InventoryStatus {
+  normal
+  low
+  critical
+}
+
+// ============================================================
+// CORE TABLES
+// ============================================================
+
+// ----------------------------------------------------------
+// USERS
+// Covers: Customers, All Staff Roles, Owners, Admin, Delivery
+// ----------------------------------------------------------
+model User {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String   @db.VarChar(100)
+  email                  String   @unique @db.VarChar(255)
+  phone                  String?  @db.VarChar(20)
+  password_hash          String?  @db.Text          // Null for Supabase Auth users
+  role                   UserRole @default(customer)
+  restaurant_id          String?  @db.Uuid          // Null for customers & super admin
+  branch_id              String?  @db.Uuid          // Null for owners (multi-branch)
+  employee_id            String?  @unique @db.VarChar(50) // e.g. EMP-BLR01-001
+  profile_pic_url        String?  @db.Text
+  dob                    DateTime? @db.Date
+  gender                 String?  @db.VarChar(20)
+  address                String?  @db.Text
+  city                   String?  @db.VarChar(100)
+  pin_code               String?  @db.VarChar(10)
+  device_tokens          String[] @default([])       // FCM push notification tokens
+  is_active              Boolean  @default(true)
+  force_password_change  Boolean  @default(false)   // True for new staff (DOB default pw)
+  created_by_restaurant  Boolean  @default(false)   // True if restaurant created, not self-signup
+  last_login             DateTime?
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  // Relations
+  restaurant             Restaurant?      @relation("OwnerRestaurants", fields: [restaurant_id], references: [id])
+  managed_branch         Branch?          @relation("BranchManager")
+  staff_branch           Branch?          @relation("StaffBranch", fields: [branch_id], references: [id])
+  bookings               Booking[]
+  queue_entries          QueueEntry[]
+  orders_as_customer     Order[]          @relation("CustomerOrders")
+  orders_as_waiter       Order[]          @relation("WaiterOrders")
+  reviews                Review[]
+  notifications          Notification[]
+  staff_feedback         StaffFeedback[]
+  delivery_partner       DeliveryPartner?
+  support_tickets        SupportTicket[]
+  dietary_profile        UserDietaryProfile?
+  customer_preferences   CustomerPreference[]
+  audit_logs             AuditLog[]       @relation("ActorLogs")
+
+  @@index([email])
+  @@index([phone])
+  @@index([restaurant_id, branch_id])
+  @@index([role, is_active])
+  @@map("users")
+}
+
+// ----------------------------------------------------------
+// RESTAURANTS
+// ----------------------------------------------------------
+model Restaurant {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String           @db.VarChar(200)
+  cuisine_type String?          @db.VarChar(100)
+  gst_number   String?          @db.VarChar(50)
+  status       RestaurantStatus @default(pending)
+  created_at   DateTime         @default(now())
+  updated_at   DateTime         @updatedAt
+
+  // Relations
+  owners       User[]           @relation("OwnerRestaurants")
+  branches     Branch[]
+  branding     RestaurantBranding?
+  reviews      Review[]
+  staff_feedback StaffFeedback[]
+  menu_items   MenuItem[]       // For platform-wide menu queries
+
+  @@map("restaurants")
+}
+
+// ----------------------------------------------------------
+// BRANCHES
+// Individual physical restaurant locations
+// ----------------------------------------------------------
+model Branch {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id   String   @db.Uuid
+  name            String   @db.VarChar(100)
+  address         String   @db.Text
+  lat             Decimal? @db.Decimal(10, 8)        // For geo-fencing
+  lon             Decimal? @db.Decimal(11, 8)
+  manager_id      String?  @unique @db.Uuid          // One manager per branch
+  operating_hours Json?                               // { mon: { open: "09:00", close: "22:00", closed: false } }
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  restaurant      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+  manager         User?             @relation("BranchManager", fields: [manager_id], references: [id])
+  staff           User[]            @relation("StaffBranch")
+  tables          Table[]
+  floor_layouts   FloorLayout[]
+  bookings        Booking[]
+  queue           QueueEntry[]
+  orders          Order[]
+  menu_categories MenuCategory[]
+  menu_items      MenuItem[]
+  inventory_items InventoryItem[]
+  branch_alerts   BranchAlert[]
+  reviews         Review[]
+
+  @@index([restaurant_id])
+  @@map("branches")
+}
+
+// ----------------------------------------------------------
+// RESTAURANT BRANDING (White-Label)
+// ----------------------------------------------------------
+model RestaurantBranding {
+  restaurant_id     String   @id @db.Uuid
+  primary_color     String   @default("#1A3C5E") @db.VarChar(7) // Hex
+  secondary_color   String   @default("#E8A020") @db.VarChar(7)
+  logo_url          String?  @db.Text
+  banner_url        String?  @db.Text
+  app_name_display  String?  @db.VarChar(100)
+  tagline           String?  @db.VarChar(200)
+  font_preference   String?  @default("Inter") @db.VarChar(50)
+  welcome_animation String?  @db.VarChar(50)
+  receipt_footer    String?  @db.Text
+  updated_at        DateTime @updatedAt
+
+  restaurant        Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
+
+  @@map("restaurant_branding")
+}
+
+// ============================================================
+// FLOOR & TABLES
+// ============================================================
+
+// ----------------------------------------------------------
+// FLOOR LAYOUTS
+// Stores the JSON grid of table placements per branch
+// ----------------------------------------------------------
+model FloorLayout {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branch_id       String            @db.Uuid
+  layout_data     Json              // Full grid: { floors: [{ floor_number, tables: [...] }] }
+  status          FloorLayoutStatus @default(draft)
+  layout_version  Int               @default(1)
+  created_by      String?           @db.Uuid
+  published_at    DateTime?
+  created_at      DateTime          @default(now())
+
+  branch          Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+
+  @@index([branch_id, status])
+  @@map("floor_layouts")
+}
+
+// ----------------------------------------------------------
+// TABLES
+// Individual physical tables in a branch
+// ----------------------------------------------------------
+model Table {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branch_id    String      @db.Uuid
+  label        String      @db.VarChar(10)          // e.g. T1, VIP3
+  capacity     Int
+  floor_number Int         @default(0)               // 0 = Ground
+  shape        TableShape  @default(square)
+  zone         String      @default("indoor") @db.VarChar(50) // indoor/outdoor/vip/family/bar
+  photo_url    String?     @db.Text                 // Customer-facing table photo
+  status       TableStatus @default(free)
+  x_pos        Int?                                  // Grid position (for floor designer)
+  y_pos        Int?
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+
+  // Relations
+  branch               Branch               @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  bookings             Booking[]
+  orders               Order[]
+  queue_assignments    QueueEntry[]
+  customer_preferences CustomerPreference[]
+
+  @@unique([branch_id, label])
+  @@index([branch_id, status])
+  @@index([branch_id, floor_number])
+  @@map("tables")
+}
+
+// ============================================================
+// MENU
+// ============================================================
+
+// ----------------------------------------------------------
+// MENU CATEGORIES
+// ----------------------------------------------------------
+model MenuCategory {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branch_id     String   @db.Uuid
+  name          String   @db.VarChar(100)
+  description   String?  @db.Text
+  display_order Int      @default(0)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  branch        Branch     @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  menu_items    MenuItem[]
+
+  @@index([branch_id, is_active])
+  @@map("menu_categories")
+}
+
+// ----------------------------------------------------------
+// MENU ITEMS
+// ----------------------------------------------------------
+model MenuItem {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id       String         @db.Uuid
+  branch_id         String         @db.Uuid
+  restaurant_id     String         @db.Uuid
+  name              String         @db.VarChar(200)
+  description       String?        @db.Text
+  price             Decimal        @db.Decimal(10, 2)
+  discounted_price  Decimal?       @db.Decimal(10, 2)
+  photo_url         String?        @db.Text
+  dietary_tags      String[]       @default([])     // ["veg", "halal", "vegan", "jain", "gluten_free"]
+  allergens         String[]       @default([])     // ["nuts", "dairy", "gluten", "eggs"]
+  prep_time_minutes Int?
+  availability      Json?          // { type: "always" | "time_based", from: "07:00", to: "11:00" }
+  addons            Json?          // [{ name: "Extra Cheese", extra_price: 30 }]
+  status            MenuItemStatus @default(available)
+  display_order     Int            @default(0)
+  is_featured       Boolean        @default(false)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+
+  // Relations
+  category            MenuCategory        @relation(fields: [category_id], references: [id])
+  branch              Branch              @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  restaurant          Restaurant          @relation(fields: [restaurant_id], references: [id])
+  order_items         OrderItem[]
+  recipe_ingredients  RecipeIngredient[]
+
+  @@index([branch_id, status])
+  @@index([restaurant_id])
+  @@map("menu_items")
+}
+
+// ============================================================
+// BOOKINGS & QUEUE
+// ============================================================
+
+// ----------------------------------------------------------
+// BOOKINGS
+// Table reservations made in advance
+// ----------------------------------------------------------
+model Booking {
+  id                        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                   String        @db.Uuid
+  branch_id                 String        @db.Uuid
+  table_id                  String?       @db.Uuid         // Assigned on confirmation
+  people_count              Int
+  arrival_time              DateTime
+  status                    BookingStatus @default(pending)
+  source                    BookingSource @default(app)
+  special_requests          String?       @db.Text
+  preferred_table_remembered Boolean      @default(false)
+  arrived_at                DateTime?
+  seated_at                 DateTime?
+  created_at                DateTime      @default(now())
+  updated_at                DateTime      @updatedAt
+
+  // Relations
+  user                      User          @relation(fields: [user_id], references: [id])
+  branch                    Branch        @relation(fields: [branch_id], references: [id])
+  table                     Table?        @relation(fields: [table_id], references: [id])
+
+  @@index([branch_id, arrival_time])
+  @@index([user_id, status])
+  @@map("bookings")
+}
+
+// ----------------------------------------------------------
+// QUEUE ENTRIES
+// Walk-in or digital queue management
+// ----------------------------------------------------------
+model QueueEntry {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branch_id   String      @db.Uuid
+  user_id     String?     @db.Uuid          // Null for anonymous walk-ins
+  table_id    String?     @db.Uuid          // Assigned when seated
+  people_count Int
+  position    Int
+  status      QueueStatus @default(waiting)
+  source      BookingSource @default(walk_in)
+  guest_name  String?     @db.VarChar(100)  // For walk-ins without app
+  guest_phone String?     @db.VarChar(20)
+  arrived_at  DateTime?
+  seated_at   DateTime?
+  created_at  DateTime    @default(now())
+
+  branch      Branch  @relation(fields: [branch_id], references: [id])
+  user        User?   @relation(fields: [user_id], references: [id])
+  table       Table?  @relation(fields: [table_id], references: [id])
+
+  @@index([branch_id, status, position])
+  @@map("queue_entries")
+}
+
+// ============================================================
+// ORDERS
+// ============================================================
+
+// ----------------------------------------------------------
+// ORDERS
+// ----------------------------------------------------------
+model Order {
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  table_id             String?     @db.Uuid        // Null for delivery orders
+  customer_id          String?     @db.Uuid
+  waiter_id            String?     @db.Uuid
+  branch_id            String      @db.Uuid
+  order_type           OrderType   @default(dine_in)
+  status               OrderStatus @default(created)
+  special_instructions String?     @db.Text
+  created_at           DateTime    @default(now())
+  confirmed_at         DateTime?
+  paid_at              DateTime?
+  closed_at            DateTime?
+  updated_at           DateTime    @updatedAt
+
+  // Relations
+  table                Table?      @relation(fields: [table_id], references: [id])
+  customer             User?       @relation("CustomerOrders", fields: [customer_id], references: [id])
+  waiter               User?       @relation("WaiterOrders", fields: [waiter_id], references: [id])
+  branch               Branch      @relation(fields: [branch_id], references: [id])
+  order_items          OrderItem[]
+  payment              Payment?
+  delivery             DeliveryAssignment?
+  review               Review?
+
+  @@index([branch_id, status])
+  @@index([table_id])
+  @@index([waiter_id])
+  @@index([customer_id])
+  @@index([branch_id, created_at(sort: Desc)])
+  @@map("orders")
+}
+
+// ----------------------------------------------------------
+// ORDER ITEMS
+// Individual line items within an order
+// ----------------------------------------------------------
+model OrderItem {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id        String    @db.Uuid
+  menu_item_id    String    @db.Uuid
+  quantity        Int
+  unit_price      Decimal   @db.Decimal(10, 2)    // Price at time of order (snapshot)
+  notes           String?   @db.Text               // "No onions", "Extra spicy"
+  addons          Json?                             // Selected addons at time of order
+  status          String    @default("pending")     // pending / preparing / ready / served
+  prepared_at     DateTime?
+  served_at       DateTime?
+  created_at      DateTime  @default(now())
+
+  order           Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  menu_item       MenuItem  @relation(fields: [menu_item_id], references: [id])
+
+  @@index([order_id])
+  @@map("order_items")
+}
+
+// ============================================================
+// PAYMENTS
+// ============================================================
+
+model Payment {
+  id                      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id                String        @unique @db.Uuid
+  amount                  Decimal       @db.Decimal(10, 2)
+  tax_amount              Decimal?      @db.Decimal(10, 2)
+  service_charge          Decimal?      @db.Decimal(10, 2)
+  discount_amount         Decimal?      @db.Decimal(10, 2)
+  method                  PaymentMethod
+  status                  PaymentStatus @default(pending)
+  transaction_ref         String?       @db.VarChar(200) // Gateway transaction ID
+  gateway_order_id        String?       @db.VarChar(200) // Razorpay order_id
+  gateway_payment_id      String?       @db.VarChar(200) // Razorpay payment_id
+  receipt_url             String?       @db.Text         // S3 URL to PDF receipt
+  coupon_id               String?       @db.Uuid
+  split_details           Json?         // Split bill breakdown per person
+  created_at              DateTime      @default(now())
+
+  order                   Order         @relation(fields: [order_id], references: [id])
+  coupon                  Coupon?       @relation(fields: [coupon_id], references: [id])
+
+  @@index([order_id])
+  @@map("payments")
+}
+
+// ----------------------------------------------------------
+// COUPONS
+// ----------------------------------------------------------
+model Coupon {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id    String    @db.Uuid
+  code             String    @unique @db.VarChar(50)
+  discount_type    String    @db.VarChar(20)    // "percent" | "fixed"
+  discount_value   Decimal   @db.Decimal(10, 2)
+  min_order_amount Decimal?  @db.Decimal(10, 2)
+  max_uses         Int?
+  used_count       Int       @default(0)
+  expires_at       DateTime?
+  is_active        Boolean   @default(true)
+  created_at       DateTime  @default(now())
+
+  payments         Payment[]
+
+  @@index([code])
+  @@map("coupons")
+}
+
+// ============================================================
+// DELIVERY
+// ============================================================
+
+model DeliveryPartner {
+  id                String  @id @db.Uuid
+  is_online         Boolean @default(false)
+  current_lat       Decimal? @db.Decimal(10, 8)
+  current_lon       Decimal? @db.Decimal(11, 8)
+  active_delivery_id String? @unique @db.Uuid
+  rating            Decimal? @db.Decimal(3, 2)
+  total_deliveries  Int     @default(0)
+  updated_at        DateTime @updatedAt
+
+  user              User    @relation(fields: [id], references: [id])
+  deliveries        DeliveryAssignment[]
+
+  @@map("delivery_partners")
+}
+
+model DeliveryAssignment {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id         String         @unique @db.Uuid
+  partner_id       String         @db.Uuid
+  status           DeliveryStatus @default(assigned)
+  pickup_address   String         @db.Text
+  delivery_address String         @db.Text
+  delivery_lat     Decimal?       @db.Decimal(10, 8)
+  delivery_lon     Decimal?       @db.Decimal(11, 8)
+  earning          Decimal?       @db.Decimal(10, 2)
+  accepted_at      DateTime?
+  picked_up_at     DateTime?
+  delivered_at     DateTime?
+  created_at       DateTime       @default(now())
+
+  order            Order          @relation(fields: [order_id], references: [id])
+  partner          DeliveryPartner @relation(fields: [partner_id], references: [id])
+
+  @@map("delivery_assignments")
+}
+
+// ============================================================
+// REVIEWS
+// ============================================================
+
+model Review {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String          @db.Uuid
+  restaurant_id   String          @db.Uuid
+  branch_id       String          @db.Uuid
+  order_id        String?         @unique @db.Uuid
+  overall_rating  Int             // 1-5
+  text_review     String?         @db.Text
+  photos          String[]        @default([])
+  item_ratings    Json?           // [{ menu_item_id, rating, comment }]
+  sentiment_label SentimentLabel?
+  sentiment_score Decimal?        @db.Decimal(4, 3)
+  created_at      DateTime        @default(now())
+
+  user            User            @relation(fields: [user_id], references: [id])
+  restaurant      Restaurant      @relation(fields: [restaurant_id], references: [id])
+  branch          Branch          @relation(fields: [branch_id], references: [id])
+  order           Order?          @relation(fields: [order_id], references: [id])
+
+  @@index([restaurant_id, created_at(sort: Desc)])
+  @@index([branch_id])
+  @@map("reviews")
+}
+
+// ============================================================
+// INVENTORY
+// ============================================================
+
+model InventoryItem {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branch_id          String    @db.Uuid
+  ingredient_name    String    @db.VarChar(200)
+  unit               String    @db.VarChar(20)    // g, kg, ml, l, pcs
+  current_quantity   Decimal   @db.Decimal(10, 3)
+  reorder_threshold  Decimal   @db.Decimal(10, 3)
+  cost_per_unit      Decimal?  @db.Decimal(10, 2)
+  last_updated       DateTime  @updatedAt
+  updated_by         String?   @db.Uuid
+
+  branch             Branch              @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  recipe_ingredients RecipeIngredient[]
+  waste_logs         InventoryWasteLog[]
+
+  @@index([branch_id])
+  @@map("inventory_items")
+}
+
+model RecipeIngredient {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  menu_item_id         String        @db.Uuid
+  inventory_item_id    String        @db.Uuid
+  quantity_per_serving Decimal       @db.Decimal(10, 3)
+  unit                 String        @db.VarChar(20)
+
+  menu_item            MenuItem      @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
+  inventory_item       InventoryItem @relation(fields: [inventory_item_id], references: [id], onDelete: Cascade)
+
+  @@unique([menu_item_id, inventory_item_id])
+  @@map("recipe_ingredients")
+}
+
+model InventoryWasteLog {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  inventory_item_id String        @db.Uuid
+  quantity_wasted   Decimal       @db.Decimal(10, 3)
+  reason            String        @db.VarChar(50)   // "expired" | "spilled" | "overprep"
+  logged_by         String        @db.Uuid
+  created_at        DateTime      @default(now())
+
+  inventory_item    InventoryItem @relation(fields: [inventory_item_id], references: [id])
+
+  @@map("inventory_waste_logs")
+}
+
+// ============================================================
+// NOTIFICATIONS & ALERTS
+// ============================================================
+
+model Notification {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String           @db.Uuid
+  title            String           @db.VarChar(200)
+  body             String           @db.Text
+  type             NotificationType
+  is_read          Boolean          @default(false)
+  reference_id     String?          @db.Uuid       // order_id, booking_id etc.
+  reference_type   String?          @db.VarChar(50)
+  created_at       DateTime         @default(now())
+
+  user             User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read])
+  @@map("notifications")
+}
+
+model BranchAlert {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branch_id    String   @db.Uuid
+  type         String   @db.VarChar(50)   // "overdue_order" | "inventory_low" | "staff_request"
+  message      String   @db.Text
+  reference_id String?  @db.Uuid
+  is_resolved  Boolean  @default(false)
+  created_at   DateTime @default(now())
+  resolved_at  DateTime?
+
+  branch       Branch   @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+
+  @@index([branch_id, is_resolved])
+  @@map("branch_alerts")
+}
+
+// ============================================================
+// STAFF FEEDBACK (Anonymous)
+// ============================================================
+
+model StaffFeedback {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id   String          @db.Uuid
+  branch_id       String?         @db.Uuid
+  user_id         String?         @db.Uuid
+  role_label      String          @db.VarChar(50)   // "A Waiter", "A Chef" — never the real name
+  feedback_text   String          @db.Text
+  sentiment_label SentimentLabel?
+  sentiment_score Decimal?        @db.Decimal(4, 3)
+  is_flagged      Boolean         @default(false)
+  created_at      DateTime        @default(now())
+
+  // NOTE: staff_id is intentionally NOT stored here — true anonymity
+  restaurant      Restaurant      @relation(fields: [restaurant_id], references: [id])
+  user            User?           @relation(fields: [user_id], references: [id]) // Only for private linkage during session
+
+  @@index([restaurant_id])
+  @@map("staff_feedback")
+}
+
+// ============================================================
+// CUSTOMER PERSONALIZATION
+// ============================================================
+
+model CustomerPreference {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                String   @db.Uuid
+  branch_id              String?  @db.Uuid
+  preferred_table_id     String?  @db.Uuid
+  preferred_table_label  String?  @db.VarChar(10)
+  times_selected         Int      @default(1)
+  last_selected          DateTime @default(now())
+
+  user                   User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  table                  Table?   @relation(fields: [preferred_table_id], references: [id])
+
+  @@unique([user_id, branch_id])
+  @@map("customer_preferences")
+}
+
+model UserDietaryProfile {
+  user_id     String   @id @db.Uuid
+  preferences String[] @default([])   // ["vegan", "halal", "jain", "gluten_free"]
+  allergies   String[] @default([])   // ["nuts", "dairy", "shellfish"]
+  updated_at  DateTime @updatedAt
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_dietary_profiles")
+}
+
+// ============================================================
+// LOYALTY POINTS
+// ============================================================
+
+model LoyaltyAccount {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String          @unique @db.Uuid
+  restaurant_id  String          @db.Uuid
+  points_balance Int             @default(0)
+  total_earned   Int             @default(0)
+  updated_at     DateTime        @updatedAt
+
+  transactions   LoyaltyTransaction[]
+
+  @@map("loyalty_accounts")
+}
+
+model LoyaltyTransaction {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  loyalty_account_id String         @db.Uuid
+  points_change     Int             // Positive = earned, Negative = redeemed
+  reason            String          @db.VarChar(100)  // "order_purchase" | "redeemed"
+  reference_id      String?         @db.Uuid          // order_id
+  created_at        DateTime        @default(now())
+
+  account           LoyaltyAccount  @relation(fields: [loyalty_account_id], references: [id])
+
+  @@map("loyalty_transactions")
+}
+
+// ============================================================
+// SUPPORT
+// ============================================================
+
+model SupportTicket {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String              @db.Uuid
+  restaurant_id     String?             @db.Uuid
+  subject           String              @db.VarChar(200)
+  conversation      Json                // Array of { role: "user"|"ai"|"agent", message, timestamp }
+  status            SupportTicketStatus @default(open)
+  agent_id          String?             @db.Uuid
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  resolved_at       DateTime?
+
+  user              User                @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("support_tickets")
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actor_id      String   @db.Uuid
+  action        String   @db.VarChar(100)   // "staff.create" | "table.status_changed"
+  target_type   String   @db.VarChar(50)    // "User" | "Order" | "Table"
+  target_id     String?  @db.Uuid
+  old_value     Json?
+  new_value     Json?
+  ip_address    String?  @db.VarChar(45)
+  created_at    DateTime @default(now())
+
+  actor         User     @relation("ActorLogs", fields: [actor_id], references: [id])
+
+  @@index([actor_id])
+  @@index([target_type, target_id])
+  @@index([created_at(sort: Desc)])
+  @@map("audit_logs")
+}

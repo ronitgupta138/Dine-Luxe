@@ -24,8 +24,8 @@ const router: import('express').Router = Router();
 // Health check
 router.get('/health', getHealth);
 
-// One-time super_admin signup — no token needed.
-// Automatically returns 409 once a super_admin already exists.
+// Super_admin signup — no token needed.
+// Can create multiple super_admin accounts using the seed secret header.
 router.post('/signup', validate(createAdminSchema), signupSuperAdmin);
 
 // ── super_admin only ─────────────────────────────────────────────────────────

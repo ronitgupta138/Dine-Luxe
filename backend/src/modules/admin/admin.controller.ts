@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as adminService from './admin.service';
 import { success } from '../../utils/response';
 
-// POST /admin/signup  (public — one-time only, self-disabling after first super_admin)
+// POST /admin/signup  (public — protected by X-Seed-Secret and allows multiple super_admin users)
 export async function signupSuperAdmin(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await adminService.createSuperAdmin(req.body);

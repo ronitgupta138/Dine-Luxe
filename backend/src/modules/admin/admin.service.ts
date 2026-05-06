@@ -286,9 +286,8 @@ export async function createAdmin(input: {
   return createPrivilegedUser({ ...input, role: 'admin' });
 }
 
-// ─── Bootstrap: create first super_admin (via POST /admin/bootstrap) ─────────
+// ─── Create a super_admin (via POST /admin/signup) ─────────────────────────
 // Protected by X-Seed-Secret header — NOT a JWT route.
-// Blocked after the first super_admin exists.
 export async function createSuperAdmin(input: {
   email: string;
   password: string;
@@ -296,16 +295,5 @@ export async function createSuperAdmin(input: {
   last_name: string;
   phone?: string;
 }) {
-  const { count } = await supabaseAdmin
-    .from('users')
-    .select('id', { count: 'exact', head: true })
-    .eq('role', 'super_admin');
-
-  if ((count ?? 0) > 0) {
-    const err = new Error('A super_admin already exists. Use POST /admin/create-admin with a super_admin token.') as Error & { status: number };
-    err.status = 409;
-    throw err;
-  }
-
   return createPrivilegedUser({ ...input, role: 'super_admin' });
 }

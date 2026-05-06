@@ -1,7 +1,9 @@
+import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '../../config/supabase';
 import { RegisterInput, UpdateRestaurantInput, UpdateStatusInput } from './restaurants.schema';
 import { sendEmail } from '../../email/send';
 import { insertAuditLog } from '../../utils/audit-log';
+import { config } from '../../config/env';
 
 // ─── Register Restaurant (multi-step, transactional) ────────────────────────
 // FIX: restaurants table only has: name, cuisine_type (singular), gst_number, status
@@ -10,6 +12,11 @@ export async function register(input: RegisterInput, ipAddress: string) {
   // Normalise owner email once so auth user and DB row always match.
   const ownerEmail = input.owner.email.toLowerCase().trim();
   const now = new Date().toISOString();
+
+  // BUG FIX: hash password here so it is stored in users.password_hash.
+  // Without this, login's bcrypt.compare(password, null) crashes with
+  // "Illegal arguments: string, object".
+  const hashedPassword = await bcrypt.hash(input.owner.password, config.BCRYPT_SALT_ROUNDS);
 
   // 1. Create Supabase Auth user for owner
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -75,6 +82,7 @@ export async function register(input: RegisterInput, ipAddress: string) {
         phone: input.owner.phone,
         dob: input.owner.dob,
         role: 'owner',
+        password_hash: hashedPassword,
         restaurant_id: restaurant.id,
         branch_id: branch.id,
         is_active: true,

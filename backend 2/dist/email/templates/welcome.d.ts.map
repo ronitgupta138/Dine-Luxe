@@ -1,1 +1,0 @@
-{"version":3,"file":"welcome.d.ts","sourceRoot":"","sources":["../../../src/email/templates/welcome.ts"],"names":[],"mappings":"AAAA,UAAU,WAAW;IACnB,IAAI,EAAE,MAAM,CAAC;IACb,cAAc,CAAC,EAAE,MAAM,CAAC;IACxB,QAAQ,EAAE,MAAM,CAAC;CAClB;AAED,wBAAgB,eAAe,CAAC,IAAI,EAAE,WAAW,GAAG;IAAE,OAAO,EAAE,MAAM,CAAC;IAAC,IAAI,EAAE,MAAM,CAAA;CAAE,CAuEpF"}

@@ -1,1 +1,0 @@
-{"version":3,"file":"send.d.ts","sourceRoot":"","sources":["../../src/email/send.ts"],"names":[],"mappings":"AAiBA,UAAU,eAAe;IACvB,EAAE,EAAE,MAAM,CAAC;IACX,YAAY,EAAE,MAAM,CAAC;IACrB,IAAI,EAAE,MAAM,CAAC,MAAM,EAAE,GAAG,CAAC,CAAC;IAC1B,OAAO,CAAC,EAAE,MAAM,CAAC;CAClB;AAED,wBAAsB,SAAS,CAAC,MAAM,EAAE,eAAe,GAAG,OAAO,CAAC,IAAI,CAAC,CAiCtE"}

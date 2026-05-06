@@ -221,6 +221,15 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
     throw err;
   }
 
+  // BUG FIX: password_hash can be null for users created without a local
+  // password (e.g. via restaurants/register before this fix, or OAuth users).
+  // bcrypt.compare(string, null) throws "Illegal arguments: string, object".
+  if (!profile.password_hash) {
+    const err = new Error('Invalid credentials') as Error & { status: number };
+    err.status = 401;
+    throw err;
+  }
+
   const passwordMatch = await bcrypt.compare(input.password, profile.password_hash as string);
   if (!passwordMatch) {
     const err = new Error('Invalid credentials') as Error & { status: number };

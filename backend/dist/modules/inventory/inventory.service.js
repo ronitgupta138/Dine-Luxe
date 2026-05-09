@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInventoryByBranch = getInventoryByBranch;
+exports.createInventoryItem = createInventoryItem;
 exports.updateInventoryItem = updateInventoryItem;
 exports.deduct = deduct;
 exports.getAlerts = getAlerts;
@@ -8,8 +9,18 @@ exports.logWaste = logWaste;
 const supabase_1 = require("../../config/supabase");
 const pagination_1 = require("../../utils/pagination");
 const audit_log_1 = require("../../utils/audit-log");
-// ─── Get inventory for a branch ───────────────────────────────────────────────
-// FIX: inventory_items has ingredient_name + unit directly — no 'ingredients' join table
+function httpError(status, code, message) {
+    return Object.assign(new Error(message), { status, code });
+}
+function normalizeInventoryItem(item) {
+    return {
+        ...item,
+        name: item.ingredient_name,
+        quantity: Number(item.current_quantity),
+        min_threshold: Number(item.reorder_threshold),
+        cost_per_unit: item.cost_per_unit == null ? null : Number(item.cost_per_unit),
+    };
+}
 async function getInventoryByBranch(branchId, page, limit) {
     const { from, to } = (0, pagination_1.paginate)(page, limit);
     const { data, error, count } = await supabase_1.supabaseAdmin
@@ -20,26 +31,102 @@ async function getInventoryByBranch(branchId, page, limit) {
         .range(from, to);
     if (error)
         throw error;
-    return { data, count };
+    return { data: (data ?? []).map(normalizeInventoryItem), count };
 }
-// ─── Update quantity or threshold ─────────────────────────────────────────────
-// FIX: column is 'last_updated' not 'updated_at'
-async function updateInventoryItem(id, payload, userId) {
+async function createInventoryItem(payload, userId) {
     const { data, error } = await supabase_1.supabaseAdmin
         .from('inventory_items')
-        .update({ ...payload, last_updated: new Date().toISOString(), updated_by: userId })
-        .eq('id', id)
-        .select()
+        .insert({
+        branch_id: payload.branch_id,
+        ingredient_name: payload.name,
+        unit: payload.unit,
+        current_quantity: payload.quantity,
+        reorder_threshold: payload.min_threshold,
+        cost_per_unit: payload.cost_per_unit,
+        last_updated: new Date().toISOString(),
+        updated_by: userId,
+    })
+        .select('id, branch_id, ingredient_name, unit, current_quantity, reorder_threshold, cost_per_unit, last_updated, updated_by')
         .single();
     if (error)
         throw error;
-    await (0, audit_log_1.insertAuditLog)({ action: 'inventory.update', targetType: 'inventory_item', targetId: id, actorId: userId, metadata: payload });
-    return data;
+    await (0, audit_log_1.insertAuditLog)({ action: 'inventory.create', targetType: 'inventory_item', targetId: data.id, actorId: userId, metadata: payload });
+    return normalizeInventoryItem(data);
 }
-// ─── Deduct inventory after order ─────────────────────────────────────────────
-// FIX: recipe_ingredients uses 'inventory_item_id' (not 'ingredient_id') and 'quantity_per_serving' (not 'quantity_per_unit')
-async function deduct(branchId, items) {
+async function updateInventoryItem(id, payload, userId) {
+    const updatePayload = {
+        last_updated: new Date().toISOString(),
+        updated_by: userId,
+    };
+    if (payload.quantity !== undefined)
+        updatePayload.current_quantity = payload.quantity;
+    if (payload.current_quantity !== undefined)
+        updatePayload.current_quantity = payload.current_quantity;
+    if (payload.min_threshold !== undefined)
+        updatePayload.reorder_threshold = payload.min_threshold;
+    if (payload.reorder_threshold !== undefined)
+        updatePayload.reorder_threshold = payload.reorder_threshold;
+    if (payload.cost_per_unit !== undefined)
+        updatePayload.cost_per_unit = payload.cost_per_unit;
+    if (payload.unit !== undefined)
+        updatePayload.unit = payload.unit;
+    const { data, error } = await supabase_1.supabaseAdmin
+        .from('inventory_items')
+        .update(updatePayload)
+        .eq('id', id)
+        .select('id, branch_id, ingredient_name, unit, current_quantity, reorder_threshold, cost_per_unit, last_updated, updated_by')
+        .single();
+    if (error?.code === 'PGRST116') {
+        throw httpError(404, 'INVENTORY_NOT_FOUND', 'Inventory item not found');
+    }
+    if (error)
+        throw error;
+    await (0, audit_log_1.insertAuditLog)({ action: 'inventory.update', targetType: 'inventory_item', targetId: id, actorId: userId, metadata: payload });
+    return normalizeInventoryItem(data);
+}
+async function deductInventoryItem(inventoryItemId, quantity, userId) {
+    const { data: item, error: fetchError } = await supabase_1.supabaseAdmin
+        .from('inventory_items')
+        .select('id, branch_id, ingredient_name, unit, current_quantity, reorder_threshold, cost_per_unit, last_updated, updated_by')
+        .eq('id', inventoryItemId)
+        .single();
+    if (fetchError?.code === 'PGRST116') {
+        throw httpError(404, 'INVENTORY_NOT_FOUND', 'Inventory item not found');
+    }
+    if (fetchError)
+        throw fetchError;
+    const currentQuantity = Number(item.current_quantity);
+    if (quantity > currentQuantity) {
+        throw httpError(400, 'INSUFFICIENT_INVENTORY', `Cannot deduct ${quantity} ${item.unit} from ${item.ingredient_name}; only ${currentQuantity} ${item.unit} available.`);
+    }
+    const { data: updated, error: updateError } = await supabase_1.supabaseAdmin
+        .from('inventory_items')
+        .update({
+        current_quantity: currentQuantity - quantity,
+        last_updated: new Date().toISOString(),
+        ...(userId ? { updated_by: userId } : {}),
+    })
+        .eq('id', inventoryItemId)
+        .select('id, branch_id, ingredient_name, unit, current_quantity, reorder_threshold, cost_per_unit, last_updated, updated_by')
+        .single();
+    if (updateError)
+        throw updateError;
+    return normalizeInventoryItem(updated);
+}
+async function deduct(branchId, items, userId) {
+    const updatedItems = [];
+    const affectedBranchIds = new Set();
     for (const item of items) {
+        const directInventoryId = item.inventory_id ?? item.inventory_item_id;
+        if (directInventoryId) {
+            const updated = await deductInventoryItem(directInventoryId, item.quantity, userId);
+            updatedItems.push(updated);
+            affectedBranchIds.add(updated.branch_id);
+            continue;
+        }
+        if (!item.menu_item_id || !branchId) {
+            throw httpError(400, 'INVALID_DEDUCTION', 'inventory_id is required for direct inventory deductions.');
+        }
         const { data: recipe, error: recipeErr } = await supabase_1.supabaseAdmin
             .from('recipe_ingredients')
             .select('inventory_item_id, quantity_per_serving')
@@ -50,19 +137,15 @@ async function deduct(branchId, items) {
             continue;
         for (const ingredient of recipe) {
             const deductQty = ingredient.quantity_per_serving * item.quantity;
-            const { error } = await supabase_1.supabaseAdmin.rpc('deduct_inventory', {
-                p_branch_id: branchId,
-                p_inventory_item_id: ingredient.inventory_item_id,
-                p_quantity: deductQty,
-            });
-            if (error) {
-                console.error(`[inventory] deduct_inventory RPC failed for item ${ingredient.inventory_item_id}:`, error.message);
-                // Don't throw — inventory deduction failure should not block order creation
-            }
+            const updated = await deductInventoryItem(ingredient.inventory_item_id, deductQty, userId);
+            updatedItems.push(updated);
+            affectedBranchIds.add(updated.branch_id);
         }
     }
-    // Check for low stock after batch deduction (fire-and-forget)
-    checkAndEmitLowStock(branchId).catch(err => console.error('[inventory] checkAndEmitLowStock failed:', err.message));
+    for (const affectedBranchId of affectedBranchIds) {
+        checkAndEmitLowStock(affectedBranchId).catch(err => console.error('[inventory] checkAndEmitLowStock failed:', err.message));
+    }
+    return { items: updatedItems };
 }
 // FIX: Remove invalid RPC filter — compare columns client-side
 async function checkAndEmitLowStock(branchId) {
@@ -101,11 +184,10 @@ async function getAlerts(branchId) {
             : 0,
     }))
         .sort((a, b) => a.stock_ratio - b.stock_ratio);
-    return withRatio;
+    return withRatio.map(normalizeInventoryItem);
 }
-// ─── Log waste ────────────────────────────────────────────────────────────────
-// FIX: table is 'inventory_waste_logs', columns are 'inventory_item_id' and 'quantity_wasted'
-async function logWaste(inventoryItemId, quantity, reason, userId, branchId) {
+async function logWaste(inventoryItemId, quantity, reason, userId) {
+    const updatedItem = await deductInventoryItem(inventoryItemId, quantity, userId);
     const { data, error } = await supabase_1.supabaseAdmin
         .from('inventory_waste_logs')
         .insert({
@@ -118,24 +200,7 @@ async function logWaste(inventoryItemId, quantity, reason, userId, branchId) {
         .single();
     if (error)
         throw error;
-    // FIX: supabaseAdmin.rpc() returns a Promise and cannot be used as a column
-    // value inside .update(). Fetch current quantity first, then write the new value.
-    const { data: currentItem } = await supabase_1.supabaseAdmin
-        .from('inventory_items')
-        .select('current_quantity')
-        .eq('id', inventoryItemId)
-        .eq('branch_id', branchId)
-        .single();
-    const newQty = Math.max(0, Number(currentItem?.current_quantity ?? 0) - quantity);
-    await supabase_1.supabaseAdmin
-        .from('inventory_items')
-        .update({
-        current_quantity: newQty,
-        last_updated: new Date().toISOString(),
-        updated_by: userId,
-    })
-        .eq('id', inventoryItemId)
-        .eq('branch_id', branchId);
-    return data;
+    checkAndEmitLowStock(updatedItem.branch_id).catch(err => console.error('[inventory] checkAndEmitLowStock failed:', err.message));
+    return { ...data, inventory_item: updatedItem };
 }
 //# sourceMappingURL=inventory.service.js.map

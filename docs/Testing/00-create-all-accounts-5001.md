@@ -341,3 +341,14 @@ curl -X POST http://localhost:5001/api/v1/auth/login \
 
 - **Signup (customer):** E.164 format → `+919876543210`
 - **Staff creation & restaurant register:** Indian 10-digit → `9876543210` (no country code, must start with 6–9)
+
+## ADMIN
+
+```bash
+ curl -X POST http://localhost:5001/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "emailOrUsername": "priyanshuguptaworkprofile@gmail.com",
+    "password": "Priyanshu85%"
+  }'
+```

@@ -153,33 +153,86 @@ export async function getAll(page = 1, limit = 20, status?: string) {
 }
 
 // ─── Get Nearby Restaurants (customer discovery) ──────────────────────────────
+// BUG FIX: The Postgres RPC 'get_nearby_restaurants' does not exist in the DB.
+// Replaced with a pure JS haversine calculation:
+//   1. Fetch all active restaurants that have branches with lat/lon set.
+//   2. Compute distance in JS and filter by radius.
+//   3. Sort by distance ascending.
 export async function getNearby(lat: number, lon: number, radiusKm = 10) {
-  const { data, error } = await supabaseAdmin.rpc('get_nearby_restaurants', {
-    user_lat: lat,
-    user_lon: lon,
-    radius_km: radiusKm,
-  });
+  const { data, error } = await supabaseAdmin
+    .from('branches')
+    .select(`
+      id, name, address, lat, lon, is_active,
+      restaurant:restaurants!restaurant_id (
+        id, name, cuisine_type, status,
+        restaurant_branding ( logo_url, app_name_display )
+      )
+    `)
+    .eq('is_active', true)
+    .eq('restaurants.status', 'active')
+    .not('lat', 'is', null)
+    .not('lon', 'is', null);
 
   if (error) throw new Error(`Nearby query failed: ${error.message}`);
-  return data;
+
+  // Haversine distance in km
+  function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  const results = (data ?? [])
+    .map((branch: any) => ({
+      ...branch,
+      distance_km: haversine(lat, lon, Number(branch.lat), Number(branch.lon)),
+    }))
+    .filter((b: any) => b.distance_km <= radiusKm)
+    .sort((a: any, b: any) => a.distance_km - b.distance_km);
+
+  return results;
 }
 
 // ─── Get Single Restaurant (public) ──────────────────────────────────────────
-// FIX: use actual columns that exist in branches + restaurant_branding tables
+// BUG FIX 1: .single() on a join with multiple branches throws
+//   "Cannot coerce the result to a single JSON object".
+//   Use .maybeSingle() on the restaurant row and fetch related data separately.
+// BUG FIX 2: removed .eq('status','active') filter — owners need to see their
+//   restaurant even when it's 'pending' or 'suspended'.
 export async function getById(restaurantId: string) {
-  const { data, error } = await supabaseAdmin
+  const { data: restaurant, error } = await supabaseAdmin
     .from('restaurants')
-    .select(`
-      id, name, cuisine_type, gst_number, status,
-      restaurant_branding ( primary_color, secondary_color, logo_url, banner_url, app_name_display, tagline ),
-      branches ( id, name, address, lat, lon, is_active, operating_hours )
-    `)
+    .select('id, name, cuisine_type, gst_number, status, created_at, updated_at')
     .eq('id', restaurantId)
-    .eq('status', 'active')
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(`Restaurant not found: ${error.message}`);
-  return data;
+  if (!restaurant) throw Object.assign(new Error('Restaurant not found'), { statusCode: 404 });
+
+  // Fetch branding and branches separately to avoid multi-row join collapse
+  const [brandingRes, branchesRes] = await Promise.all([
+    supabaseAdmin
+      .from('restaurant_branding')
+      .select('primary_color, secondary_color, logo_url, banner_url, app_name_display, tagline')
+      .eq('restaurant_id', restaurantId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('branches')
+      .select('id, name, address, lat, lon, is_active, operating_hours')
+      .eq('restaurant_id', restaurantId),
+  ]);
+
+  return {
+    ...restaurant,
+    restaurant_branding: brandingRes.data ?? null,
+    branches: branchesRes.data ?? [],
+  };
 }
 
 // ─── Get Live Status (real-time for customer) ─────────────────────────────────

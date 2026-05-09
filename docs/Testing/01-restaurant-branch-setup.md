@@ -6,7 +6,7 @@
 
 ---
 
-## Prerequisites
+## Prerequisites(WORKING)
 
 ```bash
 BASE="http://localhost:5001/api/v1"
@@ -21,8 +21,7 @@ echo "Admin Token: $ADMIN_TOKEN"
 
 ---
 
-## STEP 1 — Register Restaurant (Public — No Token Needed)
-
+## STEP 1 — Register Restaurant (Public — No Token Needed) (WORKING)
 ```bash
 curl -X POST $BASE/restaurants/register \
   -H "Content-Type: application/json" \
@@ -66,7 +65,7 @@ export BRANCH_ID="<branch.id>"
 
 ---
 
-## STEP 2 — Admin Activates Restaurant
+## STEP 2 — Admin Activates Restaurant(WORKING)
 
 ```bash
 curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/status \
@@ -79,19 +78,19 @@ curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/status \
 
 ---
 
-## STEP 3 — Login as Owner
+## STEP 3 — Login as Owner(WORKING)
 
 ```bash
 export OWNER_TOKEN=$(curl -s -X POST $BASE/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"emailOrUsername":"priya.mehta@restaurant.com","password":"Owner@1234"}' \
+  -d '{"emailOrUsername":"priya.mehta1@restaurant.com","password":"Owner@1234"}' \
   | jq -r '.data.accessToken')
 echo "Owner Token: $OWNER_TOKEN"
 ```
 
 ---
 
-## STEP 4 — Get All Branches (Owner)
+## STEP 4 — Get All Branches (Owner)(WORKING)
 
 ```bash
 curl $BASE/branches \
@@ -102,7 +101,7 @@ curl $BASE/branches \
 
 ---
 
-## STEP 5 — Get Single Branch by ID
+## STEP 5 — Get Single Branch by ID(WORKING)
 
 ```bash
 curl $BASE/branches/$BRANCH_ID \
@@ -113,7 +112,7 @@ curl $BASE/branches/$BRANCH_ID \
 
 ---
 
-## STEP 6 — Update Branch Info (Owner/Manager)
+## STEP 6 — Update Branch Info (Owner/Manager)(WORKING)
 
 ```bash
 curl -X PATCH $BASE/branches/$BRANCH_ID \
@@ -138,7 +137,7 @@ curl -X PATCH $BASE/branches/$BRANCH_ID \
 
 ---
 
-## STEP 7 — Get Branch Live Stats
+## STEP 7 — Get Branch Live Stats(WORKING)
 
 ```bash
 curl $BASE/branches/$BRANCH_ID/live-stats \
@@ -149,7 +148,7 @@ curl $BASE/branches/$BRANCH_ID/live-stats \
 
 ---
 
-## STEP 8 — Toggle Branch Status (Temporarily Close)
+## STEP 8 — Toggle Branch Status (Temporarily Close)(WORKING)
 
 ```bash
 curl -X PATCH $BASE/branches/$BRANCH_ID/status \
@@ -171,7 +170,7 @@ curl -X PATCH $BASE/branches/$BRANCH_ID/status \
 
 ---
 
-## STEP 9 — Create a Second Branch
+## STEP 9 — Create a Second Branch(WORKING)
 
 ```bash
 curl -X POST $BASE/branches \
@@ -192,7 +191,7 @@ curl -X POST $BASE/branches \
 
 ---
 
-## STEP 10 — Update Restaurant Info
+## STEP 10 — Update Restaurant Info(Working)
 
 ```bash
 curl -X PATCH $BASE/restaurants/$RESTAURANT_ID \
@@ -209,7 +208,7 @@ curl -X PATCH $BASE/restaurants/$RESTAURANT_ID \
 
 ---
 
-## STEP 11 — Get Restaurant by ID (Public)
+## STEP 11 — Get Restaurant by ID (Public)(WORKING)
 
 ```bash
 curl $BASE/restaurants/$RESTAURANT_ID
@@ -219,7 +218,7 @@ curl $BASE/restaurants/$RESTAURANT_ID
 
 ---
 
-## STEP 12 — Get Nearby Restaurants (Public)
+## STEP 12 — Get Nearby Restaurants (Public)(WORKING)
 
 ```bash
 curl "$BASE/restaurants/nearby?lat=19.076&lon=72.877&radius=10"
@@ -229,7 +228,7 @@ curl "$BASE/restaurants/nearby?lat=19.076&lon=72.877&radius=10"
 
 ---
 
-## STEP 13 — Get Restaurant Live Status (Public)
+## STEP 13 — Get Restaurant Live Status (Public)(WORKING)
 
 ```bash
 curl $BASE/restaurants/$RESTAURANT_ID/live-status
@@ -239,7 +238,7 @@ curl $BASE/restaurants/$RESTAURANT_ID/live-status
 
 ---
 
-## STEP 14 — Admin: Get All Restaurants
+## STEP 14 — Admin: Get All Restaurants(WORKING)
 
 ```bash
 curl "$BASE/restaurants?page=1&limit=20" \
@@ -250,7 +249,7 @@ curl "$BASE/restaurants?page=1&limit=20" \
 
 ---
 
-## STEP 15 — Admin: Suspend a Restaurant
+## STEP 15 — Admin: Suspend a Restaurant(WORKING)
 
 ```bash
 curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/status \
@@ -261,7 +260,7 @@ curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/status \
 
 **Expected:** `200`
 
-### Reactivate
+### Reactivate(WORKING)
 
 ```bash
 curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/status \
@@ -272,7 +271,7 @@ curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/status \
 
 ---
 
-## ❌ Negative Tests
+## ❌ Negative Tests(WORKING)
 
 ```bash
 # Register with duplicate email → 409

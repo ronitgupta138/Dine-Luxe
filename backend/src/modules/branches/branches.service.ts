@@ -53,6 +53,7 @@ export async function create(
 ) {
   const fullAddress = buildAddress(input);
   const geo = await geocodeAddress(fullAddress);
+  const now = new Date().toISOString();
 
   const { data, error } = await supabaseAdmin
     .from('branches')
@@ -65,6 +66,8 @@ export async function create(
       manager_id: input.manager_id ?? null,
       operating_hours: input.operating_hours ?? null,
       is_active: true,
+      created_at: now,
+      updated_at: now,
     })
     .select()
     .single();

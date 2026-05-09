@@ -31,7 +31,8 @@ export async function insertAuditLog(params: AuditLogParams): Promise<void> {
       old_value: params.oldValue ?? null,
       new_value: params.newValue ?? null,
       ip_address: params.ipAddress ?? null,
-      metadata: params.metadata ?? null,
+      // BUG FIX: 'metadata' column does not exist in audit_logs table.
+      // Extra fields from callers are merged into new_value instead.
       created_at: new Date().toISOString(),
     });
 

@@ -40,9 +40,12 @@ export async function createTable(input: CreateTableInput) {
     );
   }
 
+  // BUG FIX: inserting raw `input` omits created_at/updated_at which are
+  // NOT NULL in the schema — add timestamps explicitly.
+  const now = new Date().toISOString();
   const { data, error } = await supabaseAdmin
     .from('tables')
-    .insert(input)
+    .insert({ ...input, created_at: now, updated_at: now })
     .select()
     .single();
 

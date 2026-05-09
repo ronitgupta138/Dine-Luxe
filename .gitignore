@@ -7,3 +7,5 @@ node_modules
 /.vscode
 frontend/.next
 
+
+/generated/prisma

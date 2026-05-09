@@ -792,3 +792,29 @@ ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_user_id_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_actor_id_fkey" FOREIGN KEY ("actor_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AlterTable: add merged_table_id column to tables
+ALTER TABLE "tables" ADD COLUMN "merged_table_id" UUID;
+
+-- CreateTable: merged_tables
+CREATE TABLE "merged_tables" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "branch_id" UUID NOT NULL,
+    "table_id_1" UUID NOT NULL,
+    "table_id_2" UUID NOT NULL,
+    "merged_by" UUID NOT NULL,
+    "unmerged_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "merged_tables_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "merged_tables_branch_id_idx" ON "merged_tables"("branch_id");
+CREATE INDEX "merged_tables_table_id_1_idx" ON "merged_tables"("table_id_1");
+CREATE INDEX "merged_tables_table_id_2_idx" ON "merged_tables"("table_id_2");
+
+-- AddForeignKey
+ALTER TABLE "merged_tables" ADD CONSTRAINT "merged_tables_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "branches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "merged_tables" ADD CONSTRAINT "merged_tables_table_id_1_fkey" FOREIGN KEY ("table_id_1") REFERENCES "tables"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "merged_tables" ADD CONSTRAINT "merged_tables_table_id_2_fkey" FOREIGN KEY ("table_id_2") REFERENCES "tables"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

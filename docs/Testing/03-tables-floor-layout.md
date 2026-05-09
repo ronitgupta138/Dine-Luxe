@@ -17,11 +17,84 @@ export WAITER_TOKEN="<waiter accessToken>"
 export BRANCH_ID="<branch UUID>"
 ```
 
+BASE="http://localhost:5001/api/v1"
+
+## OWNER
+```bash
+export OWNER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"priya.mehta1@restaurant.com","password":"Owner@1234"}' \
+  | jq -r '.data.accessToken')
+echo "OWNER: $OWNER_TOKEN"
+```
+## MANAGER
+
+```bash
+export MANAGER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"arjun.manager@spicegarden.com","password":"15051988"}' \
+  | jq -r '.data.accessToken')
+echo "MANAGER: $MANAGER_TOKEN"
+```
+
+## WAITER
+
+```bash
+export WAITER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"ravi.waiter@spicegarden.com","password":"20081999"}' \
+  | jq -r '.data.accessToken')
+echo "WAITER: $WAITER_TOKEN"
+```
+## CHEF
+```bash
+export CHEF_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"sanjay.chef@spicegarden.com","password":"10031985"}' \
+  | jq -r '.data.accessToken')
+echo "CHEF: $CHEF_TOKEN"
+```
+
+## CASHIER
+
+```bash
+export CASHIER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"sneha.cashier@spicegarden.com","password":"25111995"}' \
+  | jq -r '.data.accessToken')
+echo "CASHIER: $CASHIER_TOKEN"
+```
+## HOST
+```bash
+export HOST_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"pooja.host@spicegarden.com","password":"04072000"}' \
+  | jq -r '.data.accessToken')
+echo "HOST: $HOST_TOKEN"
+```
+
+## CUSTOMER
+```bash
+export CUSTOMER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"rahul.sharma@gmail.com","password":"Customer@123"}' \
+  | jq -r '.data.accessToken')
+echo "CUSTOMER: $CUSTOMER_TOKEN"
+```
+## ADMIN
+```bash
+export ADMIN_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"admin@platform.com","password":"Admin@Secure123"}' \
+  | jq -r '.data.accessToken')
+echo "ADMIN: $ADMIN_TOKEN"
+```
+
 ---
 
 ## ── TABLES ────────────────────────────────────────────────────────
 
-## STEP 1 — Create Tables (Owner/Manager)
+## STEP 1 — Create Tables (Owner/Manager)(WORKING)
 
 ```bash
 # Table T1
@@ -89,7 +162,7 @@ export TABLE_4_ID="<T4 id>"
 
 ---
 
-## STEP 2 — Get All Tables for Branch
+## STEP 2 — Get All Tables for Branch(WORKING)
 
 ```bash
 curl $BASE/tables/branch/$BRANCH_ID \
@@ -100,7 +173,7 @@ curl $BASE/tables/branch/$BRANCH_ID \
 
 ---
 
-## STEP 3 — Table Status Transitions (Valid Flow)
+## STEP 3 — Table Status Transitions (Valid Flow)(WORKING)
 
 ```bash
 # free → reserved (host seating a booking)
@@ -132,7 +205,7 @@ curl -X PATCH $BASE/tables/$TABLE_1_ID/status \
 
 ---
 
-## STEP 4 — Manager Override: occupied → free (Emergency Clear)
+## STEP 4 — Manager Override: occupied → free (Emergency Clear)(WORKING)
 
 ```bash
 # Put table in occupied state
@@ -152,7 +225,7 @@ curl -X PATCH $BASE/tables/$TABLE_2_ID/status \
 
 ---
 
-## STEP 5 — Put Table into Maintenance
+## STEP 5 — Put Table into Maintenance(WORKING)
 
 ```bash
 curl -X PATCH $BASE/tables/$TABLE_3_ID/status \
@@ -174,7 +247,7 @@ curl -X PATCH $BASE/tables/$TABLE_3_ID/status \
 
 ---
 
-## STEP 6 — Merge Two Tables (Host/Manager/Owner)
+## STEP 6 — Merge Two Tables (Host/Manager/Owner)(NOT WORKING)
 
 ```bash
 curl -X POST $BASE/tables/merge \
@@ -191,7 +264,7 @@ curl -X POST $BASE/tables/merge \
 ---
 
 ## STEP 7 — Delete a Table
-
+#### (NOT WORKING when Merged)
 ```bash
 curl -X DELETE $BASE/tables/$TABLE_4_ID \
   -H "Authorization: Bearer $OWNER_TOKEN"

@@ -7,8 +7,7 @@ import * as ctrl from './tables.controller';
 
 const router: import('express').Router = Router();
 
-// GET /tables/branch/:branchId — any authenticated staff (including chef, for KDS context)
-// FIX: chef added — they need table info to correlate with orders on the KDS
+// GET /tables/branch/:branchId — any authenticated staff
 router.get(
   '/branch/:branchId',
   authenticate,
@@ -16,37 +15,36 @@ router.get(
   ctrl.getTablesByBranch,
 );
 
-// POST /tables — manager or owner only
-router.post(
-  '/',
-  authenticate,
-  requireRole('manager', 'owner'),
-  validate({ body: createTableSchema }),
-  ctrl.createTable,
-);
-
-// PATCH /tables/:id/status — host, manager, owner, waiter (NOT cashier)
-// FIX: cashier was included but cashiers process payments — they don't manage table
-// occupancy state. Removed to follow least-privilege principle.
-router.patch(
-  '/:id/status',
-  authenticate,
-  requireRole('host', 'manager', 'owner', 'waiter'),
-  validate({ body: updateStatusSchema }),
-  ctrl.updateStatus,
-);
-
-// POST /tables/merge — manager or owner
-// FIX: was PATCH /:id/merge — the :id param was never used (both table IDs come
-// from the request body via mergeSchema). Changed to POST /merge which is more
-// accurate (creating a new merged entity, not patching an existing table).
-// Note: this route must be declared BEFORE /:id routes to avoid param collision.
+// POST /tables/merge — must be BEFORE /:id routes to prevent param collision
+// BUG FIX: validate({ body: mergeSchema }) was passing a plain object not a
+// ZodSchema — validate middleware calls schema.safeParse() which doesn't exist
+// on a plain object. Fixed to pass schema directly: validate(mergeSchema).
 router.post(
   '/merge',
   authenticate,
   requireRole('manager', 'owner', 'host'),
-  validate({ body: mergeSchema }),
+  validate(mergeSchema),
   ctrl.mergeTables,
+);
+
+// POST /tables — manager or owner only
+// BUG FIX: same validate wrapping issue fixed here too.
+router.post(
+  '/',
+  authenticate,
+  requireRole('manager', 'owner'),
+  validate(createTableSchema),
+  ctrl.createTable,
+);
+
+// PATCH /tables/:id/status
+// BUG FIX: same validate wrapping issue fixed here too.
+router.patch(
+  '/:id/status',
+  authenticate,
+  requireRole('host', 'manager', 'owner', 'waiter'),
+  validate(updateStatusSchema),
+  ctrl.updateStatus,
 );
 
 // DELETE /tables/:id — manager or owner

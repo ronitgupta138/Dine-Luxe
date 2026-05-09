@@ -260,6 +260,7 @@ model Branch {
   manager         User?             @relation("BranchManager", fields: [manager_id], references: [id])
   staff           User[]            @relation("StaffBranch")
   tables          Table[]
+  merged_tables   MergedTable[]
   floor_layouts   FloorLayout[]
   bookings        Booking[]
   queue           QueueEntry[]
@@ -312,6 +313,7 @@ model FloorLayout {
   created_by      String?           @db.Uuid
   published_at    DateTime?
   created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
 
   branch          Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
 
@@ -333,10 +335,11 @@ model Table {
   zone         String      @default("indoor") @db.VarChar(50) // indoor/outdoor/vip/family/bar
   photo_url    String?     @db.Text                 // Customer-facing table photo
   status       TableStatus @default(free)
-  x_pos        Int?                                  // Grid position (for floor designer)
-  y_pos        Int?
-  created_at   DateTime    @default(now())
-  updated_at   DateTime    @updatedAt
+  x_pos           Int?                                  // Grid position (for floor designer)
+  y_pos           Int?
+  merged_table_id String?  @db.Uuid                    // Set when this table is part of an active merge
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 
   // Relations
   branch               Branch               @relation(fields: [branch_id], references: [id], onDelete: Cascade)
@@ -344,11 +347,36 @@ model Table {
   orders               Order[]
   queue_assignments    QueueEntry[]
   customer_preferences CustomerPreference[]
+  merged_as_t1         MergedTable[]        @relation("MergeTable1")
+  merged_as_t2         MergedTable[]        @relation("MergeTable2")
 
   @@unique([branch_id, label])
   @@index([branch_id, status])
   @@index([branch_id, floor_number])
   @@map("tables")
+}
+
+// ----------------------------------------------------------
+// MERGED TABLES
+// Tracks active and historical table merge operations
+// ----------------------------------------------------------
+model MergedTable {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branch_id   String    @db.Uuid
+  table_id_1  String    @db.Uuid
+  table_id_2  String    @db.Uuid
+  merged_by   String    @db.Uuid
+  unmerged_at DateTime?
+  created_at  DateTime  @default(now())
+
+  branch      Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  table_1     Table  @relation("MergeTable1", fields: [table_id_1], references: [id])
+  table_2     Table  @relation("MergeTable2", fields: [table_id_2], references: [id])
+
+  @@index([branch_id])
+  @@index([table_id_1])
+  @@index([table_id_2])
+  @@map("merged_tables")
 }
 
 // ============================================================

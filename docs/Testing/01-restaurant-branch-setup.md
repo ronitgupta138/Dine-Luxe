@@ -19,6 +19,83 @@ export ADMIN_TOKEN=$(curl -s -X POST $BASE/auth/login \
 echo "Admin Token: $ADMIN_TOKEN"
 ```
 
+
+BASE="http://localhost:5001/api/v1"
+
+## OWNER
+```bash
+export OWNER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"priya.mehta1@restaurant.com","password":"Owner@1234"}' \
+  | jq -r '.data.accessToken')
+echo "OWNER: $OWNER_TOKEN"
+```
+## MANAGER
+
+```bash
+export MANAGER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"arjun.manager@spicegarden.com","password":"15051988"}' \
+  | jq -r '.data.accessToken')
+echo "MANAGER: $MANAGER_TOKEN"
+```
+
+## WAITER
+
+```bash
+export WAITER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"ravi.waiter@spicegarden.com","password":"20081999"}' \
+  | jq -r '.data.accessToken')
+echo "WAITER: $WAITER_TOKEN"
+```
+## CHEF
+```bash
+export CHEF_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"sanjay.chef@spicegarden.com","password":"10031985"}' \
+  | jq -r '.data.accessToken')
+echo "CHEF: $CHEF_TOKEN"
+```
+
+## CASHIER
+
+```bash
+export CASHIER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"sneha.cashier@spicegarden.com","password":"25111995"}' \
+  | jq -r '.data.accessToken')
+echo "CASHIER: $CASHIER_TOKEN"
+```
+## HOST
+```bash
+export HOST_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"pooja.host@spicegarden.com","password":"04072000"}' \
+  | jq -r '.data.accessToken')
+echo "HOST: $HOST_TOKEN"
+```
+
+## CUSTOMER
+```bash
+export CUSTOMER_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"rahul.sharma@gmail.com","password":"Customer@123"}' \
+  | jq -r '.data.accessToken')
+echo "CUSTOMER: $CUSTOMER_TOKEN"
+```
+## ADMIN
+```bash
+export ADMIN_TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"admin@platform.com","password":"Admin@Secure123"}' \
+  | jq -r '.data.accessToken')
+echo "ADMIN: $ADMIN_TOKEN"
+```
+
+
+
+
 ---
 
 ## STEP 1 — Register Restaurant (Public — No Token Needed) (WORKING)

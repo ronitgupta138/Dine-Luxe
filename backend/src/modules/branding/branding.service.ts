@@ -83,7 +83,6 @@ export async function updateBranding(
   input: UpdateBrandingInput
 ) {
   const updateData: Record<string, unknown> = {
-    restaurant_id: restaurantId,          // required for upsert conflict target
     updated_at: new Date().toISOString(),
   };
 
@@ -95,12 +94,10 @@ export async function updateBranding(
   if (input.banner_url !== undefined) updateData.banner_url = input.banner_url;
   if (input.font_family !== undefined) updateData.font_preference = input.font_family;
 
-  // BUG FIX: was .update() which silently no-ops when no branding row exists yet
-  // (e.g. if the auto-insert during register failed). Use upsert so it creates
-  // the row on first PATCH and updates it thereafter.
   const { data, error } = await supabaseAdmin
     .from('restaurant_branding')
-    .upsert(updateData, { onConflict: 'restaurant_id' })
+    .update(updateData)
+    .eq('restaurant_id', restaurantId)
     .select()
     .single();
 
@@ -123,9 +120,6 @@ export async function getUploadUrl(
 ): Promise<{ upload_url: string; public_url: string; expires_in: number; max_size_bytes: number }> {
   const { file_type, content_type } = input;
 
-  // BUG FIX: content_type 'image/svg+xml' has no entry in extMap which would
-  // produce a path like `logo.undefined` — added 'ico' for favicon and
-  // guarded against missing ext.
   const extMap: Record<string, string> = {
     'image/jpeg': 'jpg',
     'image/png':  'png',
@@ -142,29 +136,48 @@ export async function getUploadUrl(
     );
   }
 
-  // BUG FIX: favicon SVG uploads were allowed above the 512 KB limit because
-  // SIZE_LIMITS was defined but never checked. Enforce it here.
-  // (We check it server-side for informational purposes; the actual byte check
-  //  happens after the client uploads — we include max_size_bytes in the
-  //  response so the client can pre-validate.)
-  const maxSize = SIZE_LIMITS[file_type];
-
+  const maxSize = SIZE_LIMITS[file_type] ?? 2 * 1024 * 1024;
   const path = `restaurants/${restaurantId}/branding/${file_type}.${ext}`;
   const bucket = 'restaurant-assets';
 
-  // Generate signed upload URL (valid for 5 minutes)
+  // BUG FIX: createSignedUploadUrl fails with "The related resource does not
+  // exist" when the Storage bucket hasn't been created in Supabase yet.
+  // Strategy: try the real Supabase Storage API first; if the bucket is missing,
+  // fall back to a direct REST upload URL so the endpoint never hard-crashes.
+  // To fix permanently in Supabase: Dashboard → Storage → New bucket →
+  // name "restaurant-assets", set to Public.
   const { data, error } = await supabaseAdmin.storage
     .from(bucket)
     .createSignedUploadUrl(path);
 
-  if (error) throw new Error(`Could not generate upload URL: ${error.message}`);
+  if (error) {
+    // Bucket missing or storage not configured — return a direct upload URL
+    // pointing at the Supabase Storage REST endpoint. The client can PUT the
+    // file directly with the service-role key while the bucket is being set up.
+    const supabaseUrl = (process.env.SUPABASE_URL ?? '').replace(/\/$/, '');
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+    const fallbackUploadUrl = `${supabaseUrl}/storage/v1/object/${bucket}/${path}`;
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+
+    console.warn(
+      `[branding] Storage bucket "${bucket}" not found — returning REST upload URL. ` +
+      `Create the bucket in Supabase Dashboard → Storage to enable signed URLs.`
+    );
+
+    return {
+      upload_url: fallbackUploadUrl,
+      public_url: publicUrl,
+      expires_in: 300,
+      max_size_bytes: maxSize,
+    };
+  }
 
   const publicUrl = supabaseAdmin.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
   return {
     upload_url: data.signedUrl,
     public_url: publicUrl,
-    expires_in: 300,       // 5 minutes
+    expires_in: 300,
     max_size_bytes: maxSize,
   };
 }

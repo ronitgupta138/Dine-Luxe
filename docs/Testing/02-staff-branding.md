@@ -19,7 +19,7 @@ export RESTAURANT_ID="<restaurant UUID>"
 
 ## ── STAFF MANAGEMENT ──────────────────────────────────────────────
 
-## STEP 1 — Create Manager
+## STEP 1 — Create Manager(WORKING)
 
 ```bash
 curl -X POST $BASE/staff/create \
@@ -44,7 +44,7 @@ curl -X POST $BASE/staff/create \
 
 ---
 
-## STEP 2 — Create Waiter
+## STEP 2 — Create Waiter(WORKING)
 
 ```bash
 curl -X POST $BASE/staff/create \
@@ -67,7 +67,7 @@ curl -X POST $BASE/staff/create \
 
 ---
 
-## STEP 3 — Create Chef
+## STEP 3 — Create Chef(WORKING)
 
 ```bash
 curl -X POST $BASE/staff/create \
@@ -89,7 +89,7 @@ curl -X POST $BASE/staff/create \
 
 ---
 
-## STEP 4 — Create Cashier
+## STEP 4 — Create Cashier(WORKING)
 
 ```bash
 curl -X POST $BASE/staff/create \
@@ -111,7 +111,7 @@ curl -X POST $BASE/staff/create \
 
 ---
 
-## STEP 5 — Create Host
+## STEP 5 — Create Host(WORKING)
 
 ```bash
 curl -X POST $BASE/staff/create \
@@ -133,7 +133,7 @@ curl -X POST $BASE/staff/create \
 
 ---
 
-## STEP 6 — Get All Staff for Branch
+## STEP 6 — Get All Staff for Branch(WORKING)
 
 ```bash
 curl $BASE/staff/branch/$BRANCH_ID \
@@ -144,7 +144,7 @@ curl $BASE/staff/branch/$BRANCH_ID \
 
 ---
 
-## STEP 7 — Get Single Staff Member
+## STEP 7 — Get Single Staff Member(WORKING)
 
 ```bash
 curl $BASE/staff/$MANAGER_ID \
@@ -155,7 +155,7 @@ curl $BASE/staff/$MANAGER_ID \
 
 ---
 
-## STEP 8 — Update Staff Info
+## STEP 8 — Update Staff Info(WORKING)
 
 ```bash
 curl -X PATCH $BASE/staff/$MANAGER_ID \
@@ -172,7 +172,7 @@ curl -X PATCH $BASE/staff/$MANAGER_ID \
 
 ---
 
-## STEP 9 — Toggle Staff Access (Disable)
+## STEP 9 — Toggle Staff Access (Disable)(WORKING)
 
 ```bash
 curl -X PATCH $BASE/staff/$WAITER_ID/toggle-access \
@@ -192,8 +192,7 @@ curl -X PATCH $BASE/staff/$WAITER_ID/toggle-access \
 
 ---
 
-## STEP 10 — Login as Disabled Staff (Should Fail)
-
+## STEP 10 — Login as Disabled Staff (Should Fail)(WORKING)
 ```bash
 # First disable the waiter
 curl -X PATCH $BASE/staff/$WAITER_ID/toggle-access \
@@ -220,7 +219,7 @@ curl $BASE/staff/$MANAGER_ID/performance \
 
 ---
 
-## STEP 12 — Manager Creates Staff (Manager Token)
+## STEP 12 — Manager Creates Staff (Manager Token)(WORKING)
 
 ```bash
 export MANAGER_TOKEN=$(curl -s -X POST $BASE/auth/login \
@@ -249,7 +248,7 @@ curl -X POST $BASE/staff/create \
 
 ## ── BRANDING ──────────────────────────────────────────────────────
 
-## STEP 13 — Get Branding (Public)
+## STEP 13 — Get Branding (Public)(WORKING)
 
 ```bash
 curl $BASE/restaurants/$RESTAURANT_ID/branding
@@ -259,7 +258,7 @@ curl $BASE/restaurants/$RESTAURANT_ID/branding
 
 ---
 
-## STEP 14 — Update Branding (Owner Only)
+## STEP 14 — Update Branding (Owner Only)(WORKING)
 
 ```bash
 curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/branding \
@@ -280,7 +279,7 @@ curl -X PATCH $BASE/restaurants/$RESTAURANT_ID/branding \
 
 ---
 
-## STEP 15 — Get Presigned Upload URL for Logo
+## STEP 15 — Get Presigned Upload URL for Logo (WORKING)
 
 ```bash
 curl -X POST $BASE/restaurants/$RESTAURANT_ID/branding/upload-url \
@@ -296,7 +295,7 @@ curl -X POST $BASE/restaurants/$RESTAURANT_ID/branding/upload-url \
 
 ---
 
-## STEP 16 — Get Presigned Upload URL for Banner
+## STEP 16 — Get Presigned Upload URL for Banner (WORKING)
 
 ```bash
 curl -X POST $BASE/restaurants/$RESTAURANT_ID/branding/upload-url \

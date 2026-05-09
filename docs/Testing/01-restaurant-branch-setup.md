@@ -30,7 +30,7 @@ curl -X POST $BASE/restaurants/register \
     "owner": {
       "first_name": "Priya",
       "last_name": "Mehta",
-      "email": "priya.mehta@restaurant.com",
+      "email": "priya.mehta1@restaurant.com",
       "phone": "9876543211",
       "dob": "1990-05-15",
       "password": "Owner@1234"

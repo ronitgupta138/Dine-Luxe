@@ -36,6 +36,16 @@ export async function getPublicMenu(branchId: string) {
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
+  // Verify branch exists before querying categories — returns 404 instead of empty array
+  const { data: branch, error: branchErr } = await supabaseAdmin
+    .from('branches')
+    .select('id')
+    .eq('id', branchId)
+    .maybeSingle();
+
+  if (branchErr) throw branchErr;
+  if (!branch) throw Object.assign(new Error('Branch not found'), { statusCode: 404 });
+
   const { data: categories, error } = await supabaseAdmin
     .from('menu_categories')
     .select(
@@ -125,23 +135,25 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(categoryId: string, branchId: string) {
-  // FIX: original query had `.select('id', { count: 'exact', head: true })` but
-  // forgot to destructure `count` properly — it pulled the wrong field.
-  // Rewritten to use explicit count destructure with head:true for efficiency.
-  const { count, error: countErr } = await supabaseAdmin
+  // Verify the category exists and belongs to this branch
+  const { data: existing, error: findErr } = await supabaseAdmin
+    .from('menu_categories')
+    .select('id')
+    .eq('id', categoryId)
+    .eq('branch_id', branchId)
+    .maybeSingle();
+
+  if (findErr) throw findErr;
+  if (!existing) throw Object.assign(new Error('Category not found'), { statusCode: 404 });
+
+  // Cascade-delete all items in this category first (DB FK is RESTRICT, not CASCADE)
+  const { error: itemsErr } = await supabaseAdmin
     .from('menu_items')
-    .select('id', { count: 'exact', head: true })
+    .delete()
     .eq('category_id', categoryId)
-    .eq('branch_id', branchId); // FIX: also scope by branch for safety
+    .eq('branch_id', branchId);
 
-  if (countErr) throw countErr;
-
-  if ((count ?? 0) > 0) {
-    throw Object.assign(
-      new Error('Cannot delete category with existing items. Move or delete items first.'),
-      { statusCode: 422 }
-    );
-  }
+  if (itemsErr) throw itemsErr;
 
   const { error } = await supabaseAdmin
     .from('menu_categories')

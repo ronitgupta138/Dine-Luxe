@@ -38,7 +38,11 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     next();
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
-      res.status(403).json(error('TOKEN_EXPIRED', 'Access token has expired'));
+      // 401 = needs re-authentication. Using 403 here was wrong because it
+      // short-circuits before RBAC runs, making role-check tests return 403
+      // TOKEN_EXPIRED instead of 403 FORBIDDEN (two different 403 meanings
+      // that confuse clients). Clients must re-login on 401.
+      res.status(401).json(error('TOKEN_EXPIRED', 'Access token has expired'));
       return;
     }
     res.status(401).json(error('INVALID_TOKEN', 'Invalid access token'));

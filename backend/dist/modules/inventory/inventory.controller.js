@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getInventory = getInventory;
+exports.createInventory = createInventory;
 exports.updateInventory = updateInventory;
 exports.deductInventory = deductInventory;
 exports.wasteLog = wasteLog;
@@ -52,6 +53,16 @@ async function getInventory(req, res, next) {
         next(err);
     }
 }
+async function createInventory(req, res, next) {
+    try {
+        const authReq = req;
+        const data = await inventoryService.createInventoryItem(req.body, authReq.user.id);
+        res.status(201).json((0, response_1.success)(data));
+    }
+    catch (err) {
+        next(err);
+    }
+}
 async function updateInventory(req, res, next) {
     try {
         const authReq = req;
@@ -64,9 +75,10 @@ async function updateInventory(req, res, next) {
 }
 async function deductInventory(req, res, next) {
     try {
+        const authReq = req;
         const { branch_id, items } = req.body;
-        await inventoryService.deduct(branch_id, items);
-        res.json((0, response_1.success)({ message: 'Inventory deducted successfully' }));
+        const data = await inventoryService.deduct(branch_id, items, authReq.user.id);
+        res.json((0, response_1.success)(data, 'Inventory deducted successfully'));
     }
     catch (err) {
         next(err);
@@ -75,8 +87,8 @@ async function deductInventory(req, res, next) {
 async function wasteLog(req, res, next) {
     try {
         const authReq = req;
-        const { inventory_item_id, quantity, reason } = req.body;
-        const data = await inventoryService.logWaste(inventory_item_id, quantity, reason, authReq.user.id, authReq.user.branch_id ?? '');
+        const { inventory_id, inventory_item_id, ingredient_id, quantity, reason } = req.body;
+        const data = await inventoryService.logWaste(inventory_id ?? inventory_item_id ?? ingredient_id, quantity, reason, authReq.user.id);
         res.status(201).json((0, response_1.success)(data));
     }
     catch (err) {

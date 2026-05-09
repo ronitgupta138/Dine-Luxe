@@ -20,6 +20,16 @@ export async function getInventory(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function createInventory(req: Request, res: Response, next: NextFunction) {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    const data = await inventoryService.createInventoryItem(req.body, authReq.user!.id);
+    res.status(201).json(success(data));
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function updateInventory(req: Request, res: Response, next: NextFunction) {
   try {
     const authReq = req as AuthenticatedRequest;
@@ -36,9 +46,10 @@ export async function updateInventory(req: Request, res: Response, next: NextFun
 
 export async function deductInventory(req: Request, res: Response, next: NextFunction) {
   try {
+    const authReq = req as AuthenticatedRequest;
     const { branch_id, items } = req.body;
-    await inventoryService.deduct(branch_id, items);
-    res.json(success({ message: 'Inventory deducted successfully' }));
+    const data = await inventoryService.deduct(branch_id, items, authReq.user!.id);
+    res.json(success(data, 'Inventory deducted successfully'));
   } catch (err) {
     next(err);
   }
@@ -47,13 +58,12 @@ export async function deductInventory(req: Request, res: Response, next: NextFun
 export async function wasteLog(req: Request, res: Response, next: NextFunction) {
   try {
     const authReq = req as AuthenticatedRequest;
-    const { inventory_item_id, quantity, reason } = req.body;
+    const { inventory_id, inventory_item_id, ingredient_id, quantity, reason } = req.body;
     const data = await inventoryService.logWaste(
-      inventory_item_id,
+      inventory_id ?? inventory_item_id ?? ingredient_id,
       quantity,
       reason,
       authReq.user!.id,
-      authReq.user!.branch_id ?? ''
     );
     res.status(201).json(success(data));
   } catch (err) {

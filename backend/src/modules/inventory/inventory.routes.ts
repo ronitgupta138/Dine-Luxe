@@ -5,16 +5,25 @@ import { injectTenant } from '../../middleware/tenant.middleware';
 import { validate } from '../../middleware/validate.middleware';
 import {
   getInventory,
+  createInventory,
   updateInventory,
   deductInventory,
   wasteLog,
   getAlerts,
 } from './inventory.controller';
-import { updateInventorySchema, deductInventorySchema, wasteLogSchema } from './inventory.schema';
+import { createInventorySchema, updateInventorySchema, deductInventorySchema, wasteLogSchema } from './inventory.schema';
 
 const router: import('express').Router = Router();
 
 router.use(authenticate, injectTenant);
+
+// POST /inventory
+router.post(
+  '/',
+  requireRole('manager', 'owner'),
+  validate(createInventorySchema),
+  createInventory
+);
 
 // GET /inventory/branch/:branchId
 router.get(
@@ -34,6 +43,7 @@ router.patch(
 // POST /inventory/deduct — internal, called by orders service
 router.post(
   '/deduct',
+  requireRole('manager', 'owner'),
   validate(deductInventorySchema),
   deductInventory
 );
@@ -41,7 +51,7 @@ router.post(
 // POST /inventory/waste-log
 router.post(
   '/waste-log',
-  requireRole('manager', 'staff'),
+  requireRole('manager', 'owner'),
   validate(wasteLogSchema),
   wasteLog
 );

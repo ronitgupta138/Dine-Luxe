@@ -453,7 +453,7 @@ model Booking {
   table_id                  String?       @db.Uuid         // Assigned on confirmation
   people_count              Int
   arrival_time              DateTime
-  status                    BookingStatus @default(pending)
+(now())   status                    BookingStatus @default(pending)
   source                    BookingSource @default(app)
   special_requests          String?       @db.Text
   preferred_table_remembered Boolean      @default(false)

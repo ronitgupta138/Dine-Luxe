@@ -201,14 +201,10 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
 
   const query = supabaseAdmin
     .from('users')
-<<<<<<< HEAD
     // BUG FIX: added is_active to the select so we can reject disabled accounts
     // before issuing a token. Previously a disabled staff member could still log
     // in because is_active was never checked.
     .select('id, email, role, password_hash, restaurant_id, branch_id, is_active');
-=======
-    .select('id, email, role, password_hash, is_active, restaurant_id, branch_id');
->>>>>>> origin/main
 
   const { data: profile, error: profileError } = isEmail
     ? await query.eq('email', identifier).maybeSingle()
@@ -220,14 +216,8 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
     throw err;
   }
 
-<<<<<<< HEAD
-  // BUG FIX: reject disabled accounts — is_active check was missing entirely
-  if (!profile.is_active) {
-    const err = new Error('Account is disabled. Please contact your manager.') as Error & { status: number };
-    err.status = 403;
-=======
   if (profile.is_active === false) {
-    const err = new Error('Account banned') as Error & { status: number };
+    const err = new Error('Account is disabled. Please contact your manager.') as Error & { status: number };
     err.status = 403;
     throw err;
   }
@@ -238,7 +228,6 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
   if (!profile.password_hash) {
     const err = new Error('Invalid credentials') as Error & { status: number };
     err.status = 401;
->>>>>>> origin/main
     throw err;
   }
 
@@ -265,8 +254,6 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
 
   return { accessToken, refreshToken };
 }
-
-/** Send a password-reset OTP
 
 /** Send a password-reset OTP (rate limited to 3 per hour per email). */
 export async function forgotPassword(input: ForgotPasswordInput): Promise<{ message: string }> {

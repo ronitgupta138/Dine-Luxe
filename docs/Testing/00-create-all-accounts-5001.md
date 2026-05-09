@@ -63,7 +63,7 @@ curl -X POST http://localhost:5001/api/v1/restaurants/register \
     "owner": {
       "first_name": "Priya",
       "last_name": "Mehta",
-      "email": "priya.mehta@restaurant.com",
+      "email": "priya.mehta1@restaurant.com",
       "phone": "9876543211",
       "dob": "1990-05-15",
       "password": "Owner@1234"
@@ -98,7 +98,7 @@ curl -X POST http://localhost:5001/api/v1/restaurants/register \
 curl -X POST http://localhost:5001/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "emailOrUsername": "priya.mehta@restaurant.com",
+    "emailOrUsername": "priya.mehta1@restaurant.com",
     "password": "Owner@1234"
   }'
 ```

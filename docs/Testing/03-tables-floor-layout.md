@@ -276,7 +276,7 @@ curl -X DELETE $BASE/tables/$TABLE_4_ID \
 
 ## ── FLOOR LAYOUT ──────────────────────────────────────────────────
 
-## STEP 8 — Save Draft Layout
+## STEP 8 — Save Draft Layout(WORKING)
 
 ```bash
 curl -X POST $BASE/floor-layout/branch/$BRANCH_ID \
@@ -361,3 +361,7 @@ curl -X POST $BASE/tables \
   -H "Content-Type: application/json" \
   -d '{"branch_id":"'$BRANCH_ID'","label":"T99","capacity":99,"floor_number":0,"shape":"square","zone":"indoor"}'
 ```
+
+
+
+# ALL WORKING NOW

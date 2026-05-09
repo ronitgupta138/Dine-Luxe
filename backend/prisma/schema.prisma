@@ -189,7 +189,7 @@ model User {
   created_by_restaurant  Boolean  @default(false)   // True if restaurant created, not self-signup
   last_login             DateTime?
   created_at             DateTime @default(now())
-  updated_at             DateTime @updatedAt
+  updated_at             DateTime @default(now()) @updatedAt
 
   // Relations
   restaurant             Restaurant?      @relation("OwnerRestaurants", fields: [restaurant_id], references: [id])
@@ -224,8 +224,8 @@ model Restaurant {
   cuisine_type String?          @db.VarChar(100)
   gst_number   String?          @db.VarChar(50)
   status       RestaurantStatus @default(pending)
-  created_at   DateTime         @default(now())
-  updated_at   DateTime         @updatedAt
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now()) @updatedAt
 
   // Relations
   owners       User[]           @relation("OwnerRestaurants")
@@ -253,7 +253,7 @@ model Branch {
   operating_hours Json?                               // { mon: { open: "09:00", close: "22:00", closed: false } }
   is_active       Boolean  @default(true)
   created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  updated_at      DateTime @default(now()) @updatedAt
 
   // Relations
   restaurant      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
@@ -289,7 +289,7 @@ model RestaurantBranding {
   font_preference   String?  @default("Inter") @db.VarChar(50)
   welcome_animation String?  @db.VarChar(50)
   receipt_footer    String?  @db.Text
-  updated_at        DateTime @updatedAt
+  updated_at        DateTime @default(now()) @updatedAt
 
   restaurant        Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade)
 
@@ -312,8 +312,8 @@ model FloorLayout {
   layout_version  Int               @default(1)
   created_by      String?           @db.Uuid
   published_at    DateTime?
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @updatedAt
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
 
   branch          Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
 
@@ -339,7 +339,7 @@ model Table {
   y_pos           Int?
   merged_table_id String?  @db.Uuid                    // Set when this table is part of an active merge
   created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  updated_at      DateTime @default(now()) @updatedAt
 
   // Relations
   branch               Branch               @relation(fields: [branch_id], references: [id], onDelete: Cascade)
@@ -367,7 +367,7 @@ model MergedTable {
   table_id_2  String    @db.Uuid
   merged_by   String    @db.Uuid
   unmerged_at DateTime?
-  created_at  DateTime  @default(now())
+  created_at  DateTime @default(now())
 
   branch      Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
   table_1     Table  @relation("MergeTable1", fields: [table_id_1], references: [id])
@@ -423,8 +423,8 @@ model MenuItem {
   status            MenuItemStatus @default(available)
   display_order     Int            @default(0)
   is_featured       Boolean        @default(false)
-  created_at        DateTime       @default(now())
-  updated_at        DateTime       @updatedAt
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now()) @updatedAt
 
   // Relations
   category            MenuCategory        @relation(fields: [category_id], references: [id])
@@ -459,8 +459,8 @@ model Booking {
   preferred_table_remembered Boolean      @default(false)
   arrived_at                DateTime?
   seated_at                 DateTime?
-  created_at                DateTime      @default(now())
-  updated_at                DateTime      @updatedAt
+  created_at                DateTime @default(now())
+  updated_at                DateTime @default(now()) @updatedAt
 
   // Relations
   user                      User          @relation(fields: [user_id], references: [id])
@@ -489,7 +489,7 @@ model QueueEntry {
   guest_phone String?     @db.VarChar(20)
   arrived_at  DateTime?
   seated_at   DateTime?
-  created_at  DateTime    @default(now())
+  created_at  DateTime @default(now())
 
   branch      Branch  @relation(fields: [branch_id], references: [id])
   user        User?   @relation(fields: [user_id], references: [id])
@@ -515,11 +515,11 @@ model Order {
   order_type           OrderType   @default(dine_in)
   status               OrderStatus @default(created)
   special_instructions String?     @db.Text
-  created_at           DateTime    @default(now())
+  created_at           DateTime @default(now())
   confirmed_at         DateTime?
   paid_at              DateTime?
   closed_at            DateTime?
-  updated_at           DateTime    @updatedAt
+  updated_at           DateTime @default(now()) @updatedAt
 
   // Relations
   table                Table?      @relation(fields: [table_id], references: [id])
@@ -554,7 +554,7 @@ model OrderItem {
   status          String    @default("pending")     // pending / preparing / ready / served
   prepared_at     DateTime?
   served_at       DateTime?
-  created_at      DateTime  @default(now())
+  created_at      DateTime @default(now())
 
   order           Order     @relation(fields: [order_id], references: [id], onDelete: Cascade)
   menu_item       MenuItem  @relation(fields: [menu_item_id], references: [id])
@@ -582,7 +582,7 @@ model Payment {
   receipt_url             String?       @db.Text         // S3 URL to PDF receipt
   coupon_id               String?       @db.Uuid
   split_details           Json?         // Split bill breakdown per person
-  created_at              DateTime      @default(now())
+  created_at              DateTime @default(now())
 
   order                   Order         @relation(fields: [order_id], references: [id])
   coupon                  Coupon?       @relation(fields: [coupon_id], references: [id])
@@ -605,7 +605,7 @@ model Coupon {
   used_count       Int       @default(0)
   expires_at       DateTime?
   is_active        Boolean   @default(true)
-  created_at       DateTime  @default(now())
+  created_at       DateTime @default(now())
 
   payments         Payment[]
 
@@ -625,7 +625,7 @@ model DeliveryPartner {
   active_delivery_id String? @unique @db.Uuid
   rating            Decimal? @db.Decimal(3, 2)
   total_deliveries  Int     @default(0)
-  updated_at        DateTime @updatedAt
+  updated_at        DateTime @default(now()) @updatedAt
 
   user              User    @relation(fields: [id], references: [id])
   deliveries        DeliveryAssignment[]
@@ -646,7 +646,7 @@ model DeliveryAssignment {
   accepted_at      DateTime?
   picked_up_at     DateTime?
   delivered_at     DateTime?
-  created_at       DateTime       @default(now())
+  created_at       DateTime @default(now())
 
   order            Order          @relation(fields: [order_id], references: [id])
   partner          DeliveryPartner @relation(fields: [partner_id], references: [id])
@@ -670,7 +670,7 @@ model Review {
   item_ratings    Json?           // [{ menu_item_id, rating, comment }]
   sentiment_label SentimentLabel?
   sentiment_score Decimal?        @db.Decimal(4, 3)
-  created_at      DateTime        @default(now())
+  created_at      DateTime @default(now())
 
   user            User            @relation(fields: [user_id], references: [id])
   restaurant      Restaurant      @relation(fields: [restaurant_id], references: [id])
@@ -694,7 +694,7 @@ model InventoryItem {
   current_quantity   Decimal   @db.Decimal(10, 3)
   reorder_threshold  Decimal   @db.Decimal(10, 3)
   cost_per_unit      Decimal?  @db.Decimal(10, 2)
-  last_updated       DateTime  @updatedAt
+  last_updated       DateTime @default(now()) @updatedAt
   updated_by         String?   @db.Uuid
 
   branch             Branch              @relation(fields: [branch_id], references: [id], onDelete: Cascade)
@@ -725,7 +725,7 @@ model InventoryWasteLog {
   quantity_wasted   Decimal       @db.Decimal(10, 3)
   reason            String        @db.VarChar(50)   // "expired" | "spilled" | "overprep"
   logged_by         String        @db.Uuid
-  created_at        DateTime      @default(now())
+  created_at        DateTime @default(now())
 
   inventory_item    InventoryItem @relation(fields: [inventory_item_id], references: [id])
 
@@ -745,7 +745,7 @@ model Notification {
   is_read          Boolean          @default(false)
   reference_id     String?          @db.Uuid       // order_id, booking_id etc.
   reference_type   String?          @db.VarChar(50)
-  created_at       DateTime         @default(now())
+  created_at       DateTime @default(now())
 
   user             User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -783,7 +783,7 @@ model StaffFeedback {
   sentiment_label SentimentLabel?
   sentiment_score Decimal?        @db.Decimal(4, 3)
   is_flagged      Boolean         @default(false)
-  created_at      DateTime        @default(now())
+  created_at      DateTime @default(now())
 
   // NOTE: staff_id is intentionally NOT stored here — true anonymity
   restaurant      Restaurant      @relation(fields: [restaurant_id], references: [id])
@@ -817,7 +817,7 @@ model UserDietaryProfile {
   user_id     String   @id @db.Uuid
   preferences String[] @default([])   // ["vegan", "halal", "jain", "gluten_free"]
   allergies   String[] @default([])   // ["nuts", "dairy", "shellfish"]
-  updated_at  DateTime @updatedAt
+  updated_at  DateTime @default(now()) @updatedAt
 
   user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -834,7 +834,7 @@ model LoyaltyAccount {
   restaurant_id  String          @db.Uuid
   points_balance Int             @default(0)
   total_earned   Int             @default(0)
-  updated_at     DateTime        @updatedAt
+  updated_at     DateTime @default(now()) @updatedAt
 
   transactions   LoyaltyTransaction[]
 
@@ -847,7 +847,7 @@ model LoyaltyTransaction {
   points_change     Int             // Positive = earned, Negative = redeemed
   reason            String          @db.VarChar(100)  // "order_purchase" | "redeemed"
   reference_id      String?         @db.Uuid          // order_id
-  created_at        DateTime        @default(now())
+  created_at        DateTime @default(now())
 
   account           LoyaltyAccount  @relation(fields: [loyalty_account_id], references: [id])
 
@@ -866,8 +866,8 @@ model SupportTicket {
   conversation      Json                // Array of { role: "user"|"ai"|"agent", message, timestamp }
   status            SupportTicketStatus @default(open)
   agent_id          String?             @db.Uuid
-  created_at        DateTime            @default(now())
-  updated_at        DateTime            @updatedAt
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now()) @updatedAt
   resolved_at       DateTime?
 
   user              User                @relation(fields: [user_id], references: [id])

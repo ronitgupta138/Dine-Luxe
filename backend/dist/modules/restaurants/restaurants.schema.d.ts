@@ -159,13 +159,13 @@ export declare const updateRestaurantSchema: z.ZodObject<{
     website?: string | undefined;
 }>;
 export declare const updateStatusSchema: z.ZodObject<{
-    status: z.ZodEnum<["pending", "active", "suspended", "closed"]>;
+    status: z.ZodEnum<["pending", "active", "suspended", "inactive"]>;
     reason: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: "active" | "closed" | "pending" | "suspended";
+    status: "active" | "inactive" | "pending" | "suspended";
     reason?: string | undefined;
 }, {
-    status: "active" | "closed" | "pending" | "suspended";
+    status: "active" | "inactive" | "pending" | "suspended";
     reason?: string | undefined;
 }>;
 export type UpdateRestaurantInput = z.infer<typeof updateRestaurantSchema>;

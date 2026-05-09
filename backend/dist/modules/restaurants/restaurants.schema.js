@@ -49,7 +49,8 @@ exports.updateRestaurantSchema = zod_1.z.object({
     website: zod_1.z.string().url().optional(),
 });
 exports.updateStatusSchema = zod_1.z.object({
-    status: zod_1.z.enum(['pending', 'active', 'suspended', 'closed']),
+    // BUG FIX: DB enum RestaurantStatus has 'inactive' not 'closed'.
+    status: zod_1.z.enum(['pending', 'active', 'suspended', 'inactive']),
     reason: zod_1.z.string().max(500).optional(),
 });
 //# sourceMappingURL=restaurants.schema.js.map

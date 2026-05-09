@@ -35,4 +35,30 @@ export declare function getFeedback(page: number, limit: number): Promise<{
     data: any[];
     count: number | null;
 }>;
+export declare function createAdmin(input: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone?: string;
+}): Promise<{
+    id: string;
+    email: string;
+    name: string;
+    phone: string | null;
+    role: "super_admin";
+}>;
+export declare function createSuperAdmin(input: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone?: string;
+}): Promise<{
+    id: string;
+    email: string;
+    name: string;
+    phone: string | null;
+    role: "super_admin";
+}>;
 //# sourceMappingURL=admin.service.d.ts.map

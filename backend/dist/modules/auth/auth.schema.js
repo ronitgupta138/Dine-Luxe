@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshTokenSchema = exports.forgotPasswordSchema = exports.resetPasswordSchema = exports.otpSchema = exports.loginSchema = exports.signupSchema = void 0;
+exports.refreshTokenSchema = exports.forgotPasswordSchema = exports.resetPasswordSchema = exports.otpSchema = exports.loginSchema = exports.signupSchema = exports.passwordSchema = void 0;
 const zod_1 = require("zod");
-const passwordSchema = zod_1.z
+exports.passwordSchema = zod_1.z
     .string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
@@ -16,7 +16,7 @@ exports.signupSchema = zod_1.z.object({
     email: zod_1.z.string().email('Invalid email address'),
     // BUG FIX: phone was required — made optional, collectable later via PATCH /users/me
     phone: phoneSchema.optional(),
-    password: passwordSchema,
+    password: exports.passwordSchema,
     // BUG FIX: accept either firstName+lastName OR a plain name field
     firstName: zod_1.z.string().min(1, 'First name is required').max(50).optional(),
     lastName: zod_1.z.string().min(1, 'Last name is required').max(50).optional(),
@@ -36,7 +36,7 @@ exports.otpSchema = zod_1.z.object({
 exports.resetPasswordSchema = zod_1.z.object({
     email: zod_1.z.string().email('Invalid email address'),
     otp: zod_1.z.string().length(6, 'OTP must be exactly 6 digits').regex(/^\d{6}$/, 'OTP must be numeric'),
-    newPassword: passwordSchema,
+    newPassword: exports.passwordSchema,
 });
 exports.forgotPasswordSchema = zod_1.z.object({
     email: zod_1.z.string().email('Invalid email address'),

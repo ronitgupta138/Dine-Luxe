@@ -216,10 +216,18 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
     throw err;
   }
 
-  // BUG FIX: reject disabled accounts — is_active check was missing entirely
-  if (!profile.is_active) {
+  if (profile.is_active === false) {
     const err = new Error('Account is disabled. Please contact your manager.') as Error & { status: number };
     err.status = 403;
+    throw err;
+  }
+
+  // BUG FIX: password_hash can be null for users created without a local
+  // password (e.g. via restaurants/register before this fix, or OAuth users).
+  // bcrypt.compare(string, null) throws "Illegal arguments: string, object".
+  if (!profile.password_hash) {
+    const err = new Error('Invalid credentials') as Error & { status: number };
+    err.status = 401;
     throw err;
   }
 

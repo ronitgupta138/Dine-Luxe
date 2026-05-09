@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDashboard = getDashboard;
 exports.getPlatformStats = getPlatformStats;
@@ -9,6 +12,10 @@ exports.updateRestaurantStatus = updateRestaurantStatus;
 exports.getCustomers = getCustomers;
 exports.updateCustomerStatus = updateCustomerStatus;
 exports.getFeedback = getFeedback;
+exports.createAdmin = createAdmin;
+exports.createSuperAdmin = createSuperAdmin;
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const env_1 = require("../../config/env");
 const supabase_1 = require("../../config/supabase");
 const redis_1 = require("../../config/redis");
 const pagination_1 = require("../../utils/pagination");
@@ -199,5 +206,52 @@ async function getFeedback(page, limit) {
     if (error)
         throw error;
     return { data, count };
+}
+// ─── Shared helper: create any privileged user (admin or super_admin) ─────────
+async function createPrivilegedUser(input) {
+    const email = input.email.toLowerCase().trim();
+    const name = `${input.first_name} ${input.last_name}`.trim();
+    // BUG FIX: hash the password so it is stored in users.password_hash.
+    // Without this, login crashes with "Illegal arguments: string, object".
+    const hashedPassword = await bcryptjs_1.default.hash(input.password, env_1.config.BCRYPT_SALT_ROUNDS);
+    const { data: authData, error: authError } = await supabase_1.supabaseAdmin.auth.admin.createUser({
+        email,
+        password: input.password,
+        email_confirm: true,
+    });
+    if (authError)
+        throw new Error(`Auth creation failed: ${authError.message}`);
+    const userId = authData.user.id;
+    const now = new Date().toISOString();
+    // Some environments only expose 'super_admin' in the UserRole enum.
+    // Store admin logins as super_admin so platform endpoints remain reachable.
+    const persistedRole = input.role === 'admin' ? 'super_admin' : input.role;
+    const { error: profileError } = await supabase_1.supabaseAdmin.from('users').insert({
+        id: userId,
+        name,
+        email,
+        phone: input.phone ?? null,
+        password_hash: hashedPassword,
+        role: persistedRole,
+        is_active: true,
+        force_password_change: false,
+        created_by_restaurant: false,
+        created_at: now,
+        updated_at: now,
+    });
+    if (profileError) {
+        await supabase_1.supabaseAdmin.auth.admin.deleteUser(userId).catch(() => { });
+        throw new Error(`Profile creation failed: ${profileError.message}`);
+    }
+    return { id: userId, email, name, phone: input.phone ?? null, role: persistedRole };
+}
+// ─── Create admin (called by super_admin via POST /admin/create-admin) ────────
+async function createAdmin(input) {
+    return createPrivilegedUser({ ...input, role: 'admin' });
+}
+// ─── Create a super_admin (via POST /admin/signup) ─────────────────────────
+// Protected by X-Seed-Secret header — NOT a JWT route.
+async function createSuperAdmin(input) {
+    return createPrivilegedUser({ ...input, role: 'super_admin' });
 }
 //# sourceMappingURL=admin.service.js.map

@@ -1,6 +1,7 @@
 import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
 import { redis } from '../config/redis';
+import { config } from '../config/env';
 import { error } from '../utils/response';
 
 function makeStore(prefix: string) {
@@ -45,9 +46,11 @@ export const generalLimiter: import('express-rate-limit').RateLimitRequestHandle
 }, 'rl:general:');
 
 /** 10 requests per 15 minutes – auth routes */
+const authMax = config.NODE_ENV === 'development' ? 1000 : 10;
+
 export const authLimiter: import('express-rate-limit').RateLimitRequestHandler = makeLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: authMax,
   standardHeaders: true,
   legacyHeaders: false,
   message: rateLimitResponse(null, null, null, {

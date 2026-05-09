@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-/// <reference path="./types/express.d.ts" />
+// <reference path="./types/express.d.ts" />
 const env_1 = require("./config/env");
 const redis_1 = require("./config/redis");
 const app_1 = __importDefault(require("./app"));

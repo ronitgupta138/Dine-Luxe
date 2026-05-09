@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_middleware_1 = require("../../middleware/auth.middleware");
+const tenant_middleware_1 = require("../../middleware/tenant.middleware");
 const rbac_middleware_1 = require("../../middleware/rbac.middleware");
 const validate_middleware_1 = require("../../middleware/validate.middleware");
 const users_schema_1 = require("./users.schema");
@@ -46,6 +47,8 @@ router.get('/check-email', ctrl.checkEmail);
 router.get('/me', auth_middleware_1.authenticate, ctrl.getMe);
 router.patch('/me', auth_middleware_1.authenticate, (0, validate_middleware_1.validate)(users_schema_1.updateProfileSchema), ctrl.updateMe);
 // Manager / Owner / Admin only
-router.get('/:id', auth_middleware_1.authenticate, (0, rbac_middleware_1.requireRole)('manager', 'owner', 'admin'), ctrl.getUserById);
+// BUG FIX: injectTenant added so restaurantId is always on req and the
+// getUserById controller doesn't need a fragile JWT fallback.
+router.get('/:id', auth_middleware_1.authenticate, tenant_middleware_1.injectTenant, (0, rbac_middleware_1.requireRole)('manager', 'owner', 'admin'), ctrl.getUserById);
 exports.default = router;
 //# sourceMappingURL=users.routes.js.map

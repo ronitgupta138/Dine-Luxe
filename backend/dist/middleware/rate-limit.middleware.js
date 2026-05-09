@@ -7,6 +7,7 @@ exports.uploadLimiter = exports.authLimiter = exports.generalLimiter = void 0;
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const rate_limit_redis_1 = require("rate-limit-redis");
 const redis_1 = require("../config/redis");
+const env_1 = require("../config/env");
 const response_1 = require("../utils/response");
 function makeStore(prefix) {
     return new rate_limit_redis_1.RedisStore({
@@ -45,9 +46,10 @@ exports.generalLimiter = makeLimiter({
     }),
 }, 'rl:general:');
 /** 10 requests per 15 minutes – auth routes */
+const authMax = env_1.config.NODE_ENV === 'development' ? 1000 : 10;
 exports.authLimiter = makeLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: authMax,
     standardHeaders: true,
     legacyHeaders: false,
     message: rateLimitResponse(null, null, null, {

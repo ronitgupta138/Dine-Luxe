@@ -192,6 +192,8 @@ export async function exportReport(params: {
 
   const fileName = `reports/${restaurant_id}/${report_type}-${Date.now()}.${extension}`;
 
+  await ensureExportsBucket();
+
   // Upload to Supabase Storage
   const { error: uploadError } = await supabaseAdmin.storage
     .from('exports')
@@ -206,7 +208,11 @@ export async function exportReport(params: {
 
   if (urlError) throw urlError;
 
-  return { download_url: urlData.signedUrl, expires_in: 3600 };
+  return {
+    download_url: urlData.signedUrl,
+    expires_in: 3600,
+    expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+  };
 }
 
 async function generatePDF(data: any[], title: string): Promise<Buffer> {
@@ -234,4 +240,20 @@ async function generatePDF(data: any[], title: string): Promise<Buffer> {
 
     doc.end();
   });
+}
+
+async function ensureExportsBucket(): Promise<void> {
+  const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets();
+  if (listError) throw listError;
+
+  const exists = (buckets ?? []).some((b: any) => b.name === 'exports');
+  if (exists) return;
+
+  const { error: createError } = await supabaseAdmin.storage.createBucket('exports', {
+    public: false,
+  });
+
+  if (createError && !String(createError.message ?? '').toLowerCase().includes('already')) {
+    throw createError;
+  }
 }

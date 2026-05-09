@@ -253,13 +253,17 @@ async function createPrivilegedUser(input: {
   const userId = authData.user.id;
   const now = new Date().toISOString();
 
+  // Some environments only expose 'super_admin' in the UserRole enum.
+  // Store admin logins as super_admin so platform endpoints remain reachable.
+  const persistedRole = input.role === 'admin' ? 'super_admin' : input.role;
+
   const { error: profileError } = await supabaseAdmin.from('users').insert({
     id: userId,
     name,
     email,
     phone: input.phone ?? null,
     password_hash: hashedPassword,
-    role: input.role,
+    role: persistedRole,
     is_active: true,
     force_password_change: false,
     created_by_restaurant: false,
@@ -272,7 +276,7 @@ async function createPrivilegedUser(input: {
     throw new Error(`Profile creation failed: ${profileError.message}`);
   }
 
-  return { id: userId, email, name, phone: input.phone ?? null, role: input.role };
+  return { id: userId, email, name, phone: input.phone ?? null, role: persistedRole };
 }
 
 // ─── Create admin (called by super_admin via POST /admin/create-admin) ────────

@@ -16,13 +16,8 @@ export declare function getAll(page?: number, limit?: number, status?: string): 
     page: number;
     limit: number;
 }>;
-export declare function getNearby(lat: number, lon: number, radiusKm?: number): Promise<any>;
+export declare function getNearby(lat: number, lon: number, radiusKm?: number): Promise<any[]>;
 export declare function getById(restaurantId: string): Promise<{
-    id: any;
-    name: any;
-    cuisine_type: any;
-    gst_number: any;
-    status: any;
     restaurant_branding: {
         primary_color: any;
         secondary_color: any;
@@ -30,7 +25,7 @@ export declare function getById(restaurantId: string): Promise<{
         banner_url: any;
         app_name_display: any;
         tagline: any;
-    }[];
+    } | null;
     branches: {
         id: any;
         name: any;
@@ -40,6 +35,13 @@ export declare function getById(restaurantId: string): Promise<{
         is_active: any;
         operating_hours: any;
     }[];
+    id: any;
+    name: any;
+    cuisine_type: any;
+    gst_number: any;
+    status: any;
+    created_at: any;
+    updated_at: any;
 }>;
 export declare function getLiveStatus(restaurantId: string, branchId?: string): Promise<{
     available_tables: number;

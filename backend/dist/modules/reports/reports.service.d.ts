@@ -25,5 +25,6 @@ export declare function exportReport(params: {
 }): Promise<{
     download_url: string;
     expires_in: number;
+    expires_at: string;
 }>;
 //# sourceMappingURL=reports.service.d.ts.map

@@ -97,7 +97,7 @@ export async function createCategory(
 ) {
   const { data, error } = await supabaseAdmin
     .from('menu_categories')
-    .insert({ ...input, branch_id: branchId, restaurant_id: restaurantId })
+    .insert({ ...input, branch_id: branchId })
     .select()
     .single();
 
@@ -177,7 +177,34 @@ export async function createMenuItem(
   restaurantId: string,
   input: CreateItemInput
 ) {
-  const { addons, ...itemData } = input;
+  const { addons, availability_windows, is_veg, is_vegan, contains_alcohol, calories, compare_price, ...rest } = input;
+
+  // Map incoming schema fields → actual DB columns
+  const dietary_tags: string[] = [];
+  if (is_veg)           dietary_tags.push('veg');
+  if (is_vegan)         dietary_tags.push('vegan');
+  if (!is_veg && !is_vegan) dietary_tags.push('non_veg');
+  if (contains_alcohol) dietary_tags.push('contains_alcohol');
+
+  // availability_windows → availability JSONB (store as-is for time-based logic)
+  const availability =
+    availability_windows && availability_windows.length > 0
+      ? { type: 'time_based', windows: availability_windows }
+      : { type: 'always' };
+
+  const itemData = {
+    ...rest,
+    branch_id: branchId,
+    restaurant_id: restaurantId,
+    dietary_tags,
+    availability,
+    discounted_price: compare_price ?? null,
+    prep_time_minutes: calories ?? null, // calories not in DB — store as note or ignore
+  };
+
+  // FIX: calories and compare_price don't exist as columns — drop them
+  // (discounted_price maps to compare_price; calories has no column — silently dropped)
+  delete (itemData as any).calories;
 
   // FIX: validate the category belongs to this branch before inserting the item
   const { data: category, error: catErr } = await supabaseAdmin
@@ -197,17 +224,11 @@ export async function createMenuItem(
 
   const { data: item, error: itemErr } = await supabaseAdmin
     .from('menu_items')
-    .insert({ ...itemData, branch_id: branchId, restaurant_id: restaurantId })
+    .insert({ ...itemData, addons: addons && addons.length > 0 ? addons : [] })
     .select()
     .single();
 
   if (itemErr || !item) throw itemErr ?? new Error('Failed to create item');
-
-  if (addons && addons.length > 0) {
-    const addonPayload = addons.map((a) => ({ ...a, menu_item_id: item.id }));
-    const { error: addonErr } = await supabaseAdmin.from('menu_addons').insert(addonPayload);
-    if (addonErr) throw addonErr;
-  }
 
   await bustMenuCache(branchId);
   return item;
@@ -240,14 +261,41 @@ export async function updateMenuItem(
   branchId: string,
   input: UpdateItemInput
 ) {
-  const { addons, ...itemData } = input as UpdateItemInput & { addons?: any[] };
+  const { addons, availability_windows, is_veg, is_vegan, contains_alcohol, calories, compare_price, ...rest } = input as UpdateItemInput & { addons?: any[] };
+
+  // Build mapped update payload — only include fields that were actually provided
+  const itemData: Record<string, any> = { ...rest };
+
+  // Map dietary flags → dietary_tags only if any were provided
+  if (is_veg !== undefined || is_vegan !== undefined || contains_alcohol !== undefined) {
+    const dietary_tags: string[] = [];
+    if (is_veg)           dietary_tags.push('veg');
+    if (is_vegan)         dietary_tags.push('vegan');
+    if (is_veg === false && is_vegan === false) dietary_tags.push('non_veg');
+    if (contains_alcohol) dietary_tags.push('contains_alcohol');
+    itemData.dietary_tags = dietary_tags;
+  }
+
+  if (availability_windows !== undefined) {
+    itemData.availability =
+      availability_windows.length > 0
+        ? { type: 'time_based', windows: availability_windows }
+        : { type: 'always' };
+  }
+
+  if (compare_price !== undefined) {
+    itemData.discounted_price = compare_price;
+  }
+
+  // calories has no DB column — drop it silently
+  delete itemData.calories;
 
   // FIX: if category_id is being changed, validate the new category belongs to this branch
-  if ((itemData as any).category_id) {
+  if (itemData.category_id) {
     const { data: cat } = await supabaseAdmin
       .from('menu_categories')
       .select('id')
-      .eq('id', (itemData as any).category_id)
+      .eq('id', itemData.category_id)
       .eq('branch_id', branchId)
       .maybeSingle();
 
@@ -259,6 +307,11 @@ export async function updateMenuItem(
     }
   }
 
+  // Replace addons in the JSONB column if provided (no separate table — stored as JSONB)
+  if (addons !== undefined) {
+    itemData.addons = addons;
+  }
+
   const { data, error } = await supabaseAdmin
     .from('menu_items')
     .update(itemData)
@@ -268,16 +321,6 @@ export async function updateMenuItem(
     .single();
 
   if (error || !data) throw error ?? Object.assign(new Error('Item not found'), { statusCode: 404 });
-
-  // Replace addons if provided
-  if (addons !== undefined) {
-    await supabaseAdmin.from('menu_addons').delete().eq('menu_item_id', itemId);
-    if (addons.length > 0) {
-      await supabaseAdmin.from('menu_addons').insert(
-        addons.map((a: any) => ({ ...a, menu_item_id: itemId }))
-      );
-    }
-  }
 
   await bustMenuCache(branchId);
   return data;
@@ -294,9 +337,7 @@ export async function deleteMenuItem(itemId: string, branchId: string) {
 
   if (!existing) throw Object.assign(new Error('Item not found'), { statusCode: 404 });
 
-  // FIX: delete associated addons first to avoid FK constraint errors
-  await supabaseAdmin.from('menu_addons').delete().eq('menu_item_id', itemId);
-
+  // Addons are stored as JSONB on the item — no separate table to clean up
   const { error } = await supabaseAdmin
     .from('menu_items')
     .delete()

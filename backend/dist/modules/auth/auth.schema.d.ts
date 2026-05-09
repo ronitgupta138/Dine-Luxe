@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export declare const passwordSchema: z.ZodString;
 export declare const signupSchema: z.ZodEffects<z.ZodObject<{
     email: z.ZodString;
     phone: z.ZodOptional<z.ZodString>;

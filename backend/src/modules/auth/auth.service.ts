@@ -209,7 +209,7 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
 
   const query = supabaseAdmin
     .from('users')
-    .select('id, email, role, password_hash, restaurant_id, branch_id');
+    .select('id, email, role, password_hash, is_active, restaurant_id, branch_id');
 
   const { data: profile, error: profileError } = isEmail
     ? await query.eq('email', identifier).maybeSingle()
@@ -218,6 +218,12 @@ export async function login(input: LoginInput): Promise<{ accessToken: string; r
   if (profileError || !profile) {
     const err = new Error('Invalid credentials') as Error & { status: number };
     err.status = 401;
+    throw err;
+  }
+
+  if (profile.is_active === false) {
+    const err = new Error('Account banned') as Error & { status: number };
+    err.status = 403;
     throw err;
   }
 

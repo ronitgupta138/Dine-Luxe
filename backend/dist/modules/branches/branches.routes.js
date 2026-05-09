@@ -45,9 +45,13 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate, tenant_middleware_1.injectTenant);
 router.get('/', (0, rbac_middleware_1.requireRole)('owner', 'admin'), ctrl.getAll);
 router.post('/', (0, rbac_middleware_1.requireRole)('owner'), (0, validate_middleware_1.validate)(branches_schema_1.createBranchSchema), ctrl.create);
+// BUG FIX: specific sub-routes MUST come before /:id — otherwise Express matches
+// GET /live-stats and PATCH /status as /:id = "live-stats" / "status", which
+// Postgres then rejects with "invalid input syntax for type uuid".
+router.get('/:id/live-stats', (0, rbac_middleware_1.requireRole)('owner', 'manager', 'admin'), ctrl.getLiveStats);
+router.patch('/:id/status', (0, rbac_middleware_1.requireRole)('owner'), (0, validate_middleware_1.validate)(branches_schema_1.updateBranchStatusSchema), ctrl.toggleStatus);
+// Generic /:id routes come last
 router.get('/:id', (0, rbac_middleware_1.requireRole)('owner', 'manager', 'admin'), ctrl.getById);
 router.patch('/:id', (0, rbac_middleware_1.requireRole)('owner', 'manager'), (0, validate_middleware_1.validate)(branches_schema_1.updateBranchSchema), ctrl.update);
-router.patch('/:id/status', (0, rbac_middleware_1.requireRole)('owner'), (0, validate_middleware_1.validate)(branches_schema_1.updateBranchStatusSchema), ctrl.toggleStatus);
-router.get('/:id/live-stats', (0, rbac_middleware_1.requireRole)('owner', 'manager', 'admin'), ctrl.getLiveStats);
 exports.default = router;
 //# sourceMappingURL=branches.routes.js.map

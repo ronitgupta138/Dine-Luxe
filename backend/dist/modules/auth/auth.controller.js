@@ -109,10 +109,17 @@ async function resetPasswordController(req, res, next) {
 }
 async function checkEmailController(req, res, next) {
     try {
-        const email = req.query['email'];
-        const { data, error } = await Promise.resolve().then(() => __importStar(require('../../config/supabase'))).then(({ supabaseAdmin }) => supabaseAdmin.from('users').select('id').eq('email', email).maybeSingle());
-        if (error)
-            throw error;
+        // BUG FIX: normalise email before querying so "User@Email.Com" and
+        // "user@email.com" are treated as the same address.
+        const raw = req.query['email'];
+        const email = (raw ?? '').toLowerCase().trim();
+        if (!email) {
+            res.status(400).json((0, response_1.error)('VALIDATION_ERROR', 'email query parameter is required'));
+            return;
+        }
+        const { data, error: dbError } = await Promise.resolve().then(() => __importStar(require('../../config/supabase'))).then(({ supabaseAdmin }) => supabaseAdmin.from('users').select('id').eq('email', email).maybeSingle());
+        if (dbError)
+            throw dbError;
         res.status(200).json((0, response_1.success)({ available: !data }, data ? 'Email is taken.' : 'Email is available.'));
     }
     catch (err) {

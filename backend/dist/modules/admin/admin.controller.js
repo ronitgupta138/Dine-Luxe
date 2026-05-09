@@ -33,6 +33,8 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.signupSuperAdmin = signupSuperAdmin;
+exports.createAdmin = createAdmin;
 exports.getDashboard = getDashboard;
 exports.getPlatformStats = getPlatformStats;
 exports.getHealth = getHealth;
@@ -44,6 +46,26 @@ exports.updateCustomerStatus = updateCustomerStatus;
 exports.getFeedback = getFeedback;
 const adminService = __importStar(require("./admin.service"));
 const response_1 = require("../../utils/response");
+// POST /admin/signup  (public — protected by X-Seed-Secret and allows multiple super_admin users)
+async function signupSuperAdmin(req, res, next) {
+    try {
+        const data = await adminService.createSuperAdmin(req.body);
+        res.status(201).json((0, response_1.success)(data, 'Super admin created. Log in at POST /api/v1/auth/login with your credentials.'));
+    }
+    catch (err) {
+        next(err);
+    }
+}
+// POST /admin/create-admin  (super_admin JWT required)
+async function createAdmin(req, res, next) {
+    try {
+        const data = await adminService.createAdmin(req.body);
+        res.status(201).json((0, response_1.success)(data, 'Admin account created successfully.'));
+    }
+    catch (err) {
+        next(err);
+    }
+}
 async function getDashboard(req, res, next) {
     try {
         const data = await adminService.getDashboard();

@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.register = register;
 exports.getAll = getAll;
@@ -7,16 +10,25 @@ exports.getById = getById;
 exports.getLiveStatus = getLiveStatus;
 exports.update = update;
 exports.updateStatus = updateStatus;
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const supabase_1 = require("../../config/supabase");
 const send_1 = require("../../email/send");
 const audit_log_1 = require("../../utils/audit-log");
+const env_1 = require("../../config/env");
 // ─── Register Restaurant (multi-step, transactional) ────────────────────────
 // FIX: restaurants table only has: name, cuisine_type (singular), gst_number, status
 //      branches table only has: restaurant_id, name, address (text), lat, lon, manager_id, operating_hours, is_active
 async function register(input, ipAddress) {
+    // Normalise owner email once so auth user and DB row always match.
+    const ownerEmail = input.owner.email.toLowerCase().trim();
+    const now = new Date().toISOString();
+    // BUG FIX: hash password here so it is stored in users.password_hash.
+    // Without this, login's bcrypt.compare(password, null) crashes with
+    // "Illegal arguments: string, object".
+    const hashedPassword = await bcryptjs_1.default.hash(input.owner.password, env_1.config.BCRYPT_SALT_ROUNDS);
     // 1. Create Supabase Auth user for owner
     const { data: authData, error: authError } = await supabase_1.supabaseAdmin.auth.admin.createUser({
-        email: input.owner.email,
+        email: ownerEmail,
         password: input.owner.password,
         email_confirm: false,
     });
@@ -24,7 +36,7 @@ async function register(input, ipAddress) {
         throw new Error(`Auth creation failed: ${authError.message}`);
     const ownerId = authData.user.id;
     try {
-        // 2. Create restaurant record (only use columns that actually exist)
+        // 2. Create restaurant record — include created_at/updated_at (NOT NULL in schema)
         const { data: restaurant, error: restError } = await supabase_1.supabaseAdmin
             .from('restaurants')
             .insert({
@@ -34,12 +46,15 @@ async function register(input, ipAddress) {
                 : input.restaurant.cuisine_types,
             gst_number: input.restaurant.gst_number ?? null,
             status: 'pending',
+            created_at: now,
+            updated_at: now,
         })
             .select()
             .single();
         if (restError)
             throw new Error(`Restaurant creation failed: ${restError.message}`);
         // 3. Create first branch — combine address fields into single 'address' column
+        //    Also supply created_at/updated_at so the branches NOT NULL constraint is satisfied.
         const branchAddress = [
             input.branch.address_line1,
             input.branch.address_line2,
@@ -54,22 +69,24 @@ async function register(input, ipAddress) {
             name: input.branch.name,
             address: branchAddress,
             is_active: true,
+            created_at: now,
+            updated_at: now,
         })
             .select()
             .single();
         if (branchError)
             throw new Error(`Branch creation failed: ${branchError.message}`);
         // 4. Create owner profile
-        const now = new Date().toISOString();
         const { error: userError } = await supabase_1.supabaseAdmin
             .from('users')
             .insert({
             id: ownerId,
             name: `${input.owner.first_name} ${input.owner.last_name}`.trim(),
-            email: input.owner.email,
+            email: ownerEmail,
             phone: input.owner.phone,
             dob: input.owner.dob,
             role: 'owner',
+            password_hash: hashedPassword,
             restaurant_id: restaurant.id,
             branch_id: branch.id,
             is_active: true,
@@ -86,10 +103,12 @@ async function register(input, ipAddress) {
             primary_color: '#E85D04',
             secondary_color: '#FAA307',
             app_name_display: input.restaurant.name,
+            created_at: now,
+            updated_at: now,
         });
         // 6. Send welcome email (fire and forget)
         (0, send_1.sendEmail)({
-            to: input.owner.email,
+            to: ownerEmail,
             templateName: 'welcome',
             data: {
                 name: input.owner.first_name,
@@ -131,32 +150,80 @@ async function getAll(page = 1, limit = 20, status) {
     return { restaurants: data, total: count, page, limit };
 }
 // ─── Get Nearby Restaurants (customer discovery) ──────────────────────────────
+// BUG FIX: The Postgres RPC 'get_nearby_restaurants' does not exist in the DB.
+// Replaced with a pure JS haversine calculation:
+//   1. Fetch all active restaurants that have branches with lat/lon set.
+//   2. Compute distance in JS and filter by radius.
+//   3. Sort by distance ascending.
 async function getNearby(lat, lon, radiusKm = 10) {
-    const { data, error } = await supabase_1.supabaseAdmin.rpc('get_nearby_restaurants', {
-        user_lat: lat,
-        user_lon: lon,
-        radius_km: radiusKm,
-    });
+    const { data, error } = await supabase_1.supabaseAdmin
+        .from('branches')
+        .select(`
+      id, name, address, lat, lon, is_active,
+      restaurant:restaurants!restaurant_id (
+        id, name, cuisine_type, status,
+        restaurant_branding ( logo_url, app_name_display )
+      )
+    `)
+        .eq('is_active', true)
+        .eq('restaurants.status', 'active')
+        .not('lat', 'is', null)
+        .not('lon', 'is', null);
     if (error)
         throw new Error(`Nearby query failed: ${error.message}`);
-    return data;
+    // Haversine distance in km
+    function haversine(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
+        const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos((lat1 * Math.PI) / 180) *
+                Math.cos((lat2 * Math.PI) / 180) *
+                Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+    const results = (data ?? [])
+        .map((branch) => ({
+        ...branch,
+        distance_km: haversine(lat, lon, Number(branch.lat), Number(branch.lon)),
+    }))
+        .filter((b) => b.distance_km <= radiusKm)
+        .sort((a, b) => a.distance_km - b.distance_km);
+    return results;
 }
 // ─── Get Single Restaurant (public) ──────────────────────────────────────────
-// FIX: use actual columns that exist in branches + restaurant_branding tables
+// BUG FIX 1: .single() on a join with multiple branches throws
+//   "Cannot coerce the result to a single JSON object".
+//   Use .maybeSingle() on the restaurant row and fetch related data separately.
+// BUG FIX 2: removed .eq('status','active') filter — owners need to see their
+//   restaurant even when it's 'pending' or 'suspended'.
 async function getById(restaurantId) {
-    const { data, error } = await supabase_1.supabaseAdmin
+    const { data: restaurant, error } = await supabase_1.supabaseAdmin
         .from('restaurants')
-        .select(`
-      id, name, cuisine_type, gst_number, status,
-      restaurant_branding ( primary_color, secondary_color, logo_url, banner_url, app_name_display, tagline ),
-      branches ( id, name, address, lat, lon, is_active, operating_hours )
-    `)
+        .select('id, name, cuisine_type, gst_number, status, created_at, updated_at')
         .eq('id', restaurantId)
-        .eq('status', 'active')
-        .single();
+        .maybeSingle();
     if (error)
         throw new Error(`Restaurant not found: ${error.message}`);
-    return data;
+    if (!restaurant)
+        throw Object.assign(new Error('Restaurant not found'), { statusCode: 404 });
+    // Fetch branding and branches separately to avoid multi-row join collapse
+    const [brandingRes, branchesRes] = await Promise.all([
+        supabase_1.supabaseAdmin
+            .from('restaurant_branding')
+            .select('primary_color, secondary_color, logo_url, banner_url, app_name_display, tagline')
+            .eq('restaurant_id', restaurantId)
+            .maybeSingle(),
+        supabase_1.supabaseAdmin
+            .from('branches')
+            .select('id, name, address, lat, lon, is_active, operating_hours')
+            .eq('restaurant_id', restaurantId),
+    ]);
+    return {
+        ...restaurant,
+        restaurant_branding: brandingRes.data ?? null,
+        branches: branchesRes.data ?? [],
+    };
 }
 // ─── Get Live Status (real-time for customer) ─────────────────────────────────
 // FIX: queue_entries has no estimated_wait_minutes or restaurant_id

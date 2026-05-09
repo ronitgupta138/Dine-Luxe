@@ -49,6 +49,7 @@ async function getAll(restaurantId) {
 async function create(restaurantId, input, actorId, ipAddress) {
     const fullAddress = buildAddress(input);
     const geo = await geocodeAddress(fullAddress);
+    const now = new Date().toISOString();
     const { data, error } = await supabase_1.supabaseAdmin
         .from('branches')
         .insert({
@@ -60,6 +61,8 @@ async function create(restaurantId, input, actorId, ipAddress) {
         manager_id: input.manager_id ?? null,
         operating_hours: input.operating_hours ?? null,
         is_active: true,
+        created_at: now,
+        updated_at: now,
     })
         .select()
         .single();

@@ -133,8 +133,26 @@ async function exportReport(req, res, next) {
                 .status(400)
                 .json((0, response_1.error)('VALIDATION_ERROR', 'Restaurant context is required for export'));
         }
+        const reportType = String(req.body.report_type);
+        const now = new Date();
+        const defaultFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const from = req.body.from ?? defaultFrom;
+        const to = req.body.to ?? now.toISOString();
+        if (['sales', 'kitchen-performance'].includes(reportType) && (!req.body.from || !req.body.to)) {
+            return res
+                .status(400)
+                .json((0, response_1.error)('VALIDATION_ERROR', 'from and to are required for this report_type'));
+        }
+        if (new Date(from).getTime() > new Date(to).getTime()) {
+            return res
+                .status(400)
+                .json((0, response_1.error)('VALIDATION_ERROR', 'from must be less than or equal to to'));
+        }
         const result = await reportsService.exportReport({
             ...req.body,
+            report_type: reportType,
+            from,
+            to,
             restaurant_id,
             requested_by: authReq.user.id,
         });

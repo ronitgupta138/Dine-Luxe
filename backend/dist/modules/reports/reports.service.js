@@ -172,6 +172,7 @@ async function exportReport(params) {
         extension = 'pdf';
     }
     const fileName = `reports/${restaurant_id}/${report_type}-${Date.now()}.${extension}`;
+    await ensureExportsBucket();
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase_1.supabaseAdmin.storage
         .from('exports')
@@ -184,7 +185,11 @@ async function exportReport(params) {
         .createSignedUrl(fileName, 3600);
     if (urlError)
         throw urlError;
-    return { download_url: urlData.signedUrl, expires_in: 3600 };
+    return {
+        download_url: urlData.signedUrl,
+        expires_in: 3600,
+        expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+    };
 }
 async function generatePDF(data, title) {
     return new Promise((resolve, reject) => {
@@ -208,5 +213,19 @@ async function generatePDF(data, title) {
         }
         doc.end();
     });
+}
+async function ensureExportsBucket() {
+    const { data: buckets, error: listError } = await supabase_1.supabaseAdmin.storage.listBuckets();
+    if (listError)
+        throw listError;
+    const exists = (buckets ?? []).some((b) => b.name === 'exports');
+    if (exists)
+        return;
+    const { error: createError } = await supabase_1.supabaseAdmin.storage.createBucket('exports', {
+        public: false,
+    });
+    if (createError && !String(createError.message ?? '').toLowerCase().includes('already')) {
+        throw createError;
+    }
 }
 //# sourceMappingURL=reports.service.js.map

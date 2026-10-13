@@ -1,7 +1,14 @@
 {
-  "name": "DineLuxe",
+  "name": "dine-luxe",
   "version": "1.0.0",
-  "private": true,
+  "description": "Full-stack restaurant management, table reservation & ordering platform with PostgreSQL & Redis",
+  "license": "MIT",
+  "author": "Ronit Gupta <ronitgupta138@gmail.com>",
+  "homepage": "https://github.com/ronitgupta138/dine-luxe#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ronitgupta138/dine-luxe.git"
+  },
   "packageManager": "pnpm@9.12.2",
   "workspaces": [
     "frontend",
@@ -12,9 +19,13 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "test": "node tests/reservation.test.js"
   },
   "devDependencies": {
+    "express": "^4.19.2",
+    "ioredis": "^5.4.1",
+    "pg": "^8.11.5",
     "turbo": "^2.9.8"
   }
 }

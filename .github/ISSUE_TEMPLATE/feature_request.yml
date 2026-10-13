@@ -1,0 +1,28 @@
+name: "Feature Request"
+description: "Suggest an idea or architectural improvement for Dine Luxe"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Have an idea to improve restaurant workflows or performance? Let us know!"
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem or Workflow Gap"
+      description: "Is your feature request related to a specific operational problem?"
+      placeholder: "e.g., During peak lunch rushes, waiters need faster table merging..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed Solution"
+      description: "Describe what you would like Dine Luxe to do"
+      placeholder: "Add endpoint /api/tables/merge with atomic row locks..."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternative Approaches"
+      placeholder: "Any alternative solutions or workarounds considered?"

@@ -1,0 +1,41 @@
+name: "Bug Report"
+description: "File a bug report or reproducible defect in Dine Luxe"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time to report an issue in `dine-luxe`!"
+  - type: input
+    id: version
+    attributes:
+      label: "Dine Luxe Version / Commit"
+      placeholder: "e.g., 1.0.0 or commit hash"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: "Node.js & Database Environment"
+      placeholder: "e.g., Node 20, PostgreSQL 16, Redis 7"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "Steps to Reproduce"
+      description: "API call payload or UI steps that trigger the issue"
+      placeholder: "1. POST /api/reservations with body...\\n2. Simultaneous concurrent booking request..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected Behavior"
+      placeholder: "What should have happened (e.g. 409 Conflict, lock rollback)?"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Error Output / Logs"
+      placeholder: "Paste console error or network response"

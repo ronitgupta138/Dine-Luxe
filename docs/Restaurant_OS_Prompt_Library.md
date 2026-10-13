@@ -2936,4 +2936,4 @@ Use prompts in this sequence for fastest progress:
 
 ## Phase 5 — Intelligence: M20 (AI Features) → M2 (White-Label) → M3 (Admin Panel)
 
-Total Prompts: 110+  |  Modules: 25  |  Document by: Priyanshu Kumar Gupta & Ronit Gupta
+Total Prompts: 110+  |  Modules: 25  |  Document by: Ronit Gupta

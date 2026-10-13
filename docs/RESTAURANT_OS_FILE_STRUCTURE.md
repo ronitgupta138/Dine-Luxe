@@ -1,6 +1,6 @@
 # 🍽️ Restaurant OS — Final Project File Structure
 > Stack: Next.js 14 · Express.js · Supabase · Tailwind · shadcn/ui
-> Author: Priyanshu Kumar Gupta & Ronit Gupta | Version 1.0 — 2025
+> Author: Ronit Gupta | Version 1.0 — 2025
 
 ---
 

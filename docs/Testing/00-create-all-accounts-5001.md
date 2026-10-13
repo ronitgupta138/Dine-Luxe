@@ -348,7 +348,7 @@ curl -X POST http://localhost:5001/api/v1/auth/login \
  curl -X POST http://localhost:5001/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "emailOrUsername": "priyanshuguptaworkprofile@gmail.com",
+    "emailOrUsername": "ronitgupta138@gmail.com",
     "password": "Priyanshu85%"
   }'
 ```

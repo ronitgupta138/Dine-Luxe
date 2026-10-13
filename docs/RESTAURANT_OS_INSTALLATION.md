@@ -1,6 +1,6 @@
 # 🍽️ Restaurant OS — Complete Installation Guide
 > Stack: Next.js 14 · Express.js · Supabase · Tailwind · shadcn/ui
-> 100% Free for Students | Author: Priyanshu & Ronit | 2025
+> 100% Free for Students | Author: Ronit Gupta | 2025
 
 ---
 

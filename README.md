@@ -20,6 +20,7 @@
 [![Redis](https://img.shields.io/badge/Redis-7_ioredis-0891b2?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS3-0891b2?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-0891b2?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/ronitgupta138/dine-luxe/actions)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Interactive_Preview-0891b2?style=flat-square&logo=googlechrome&logoColor=white)](https://ronitgupta138.github.io/dine-luxe/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0891b2?style=flat-square)](LICENSE)
 
 </div>
@@ -204,6 +205,17 @@ npm run dev
 # Or run tests
 npm test
 ```
+
+---
+
+## 🌐 Live Demo & Cloud Deployment
+
+### 1. Interactive Web Demo (Live Now)
+Experience the real-time table reservation, Redis concurrency mutex simulation, menu browsing, and Kitchen Display System directly in your browser:  
+👉 **[https://ronitgupta138.github.io/dine-luxe/](https://ronitgupta138.github.io/dine-luxe/)**
+
+### 2. 1-Click Deploy to Vercel (Frontend)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fronitgupta138%2Fdine-luxe&root-directory=frontend)
 
 ---
 

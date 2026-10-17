@@ -21,7 +21,8 @@
 [![Redis](https://img.shields.io/badge/Redis-7_ioredis-0891b2?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS3-0891b2?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-0891b2?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/ronitgupta138/dine-luxe/actions)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Interactive_Preview-0891b2?style=flat-square&logo=googlechrome&logoColor=white)](https://ronitgupta138.github.io/dine-luxe/)
+[![Production App](https://img.shields.io/badge/Production_App-Live_on_Vercel-10b981?style=flat-square&logo=vercel&logoColor=white)](https://frontend-ten-phi-hzgzlmvvm9.vercel.app)
+[![Interactive Preview](https://img.shields.io/badge/Interactive_Preview-GitHub_Pages-0891b2?style=flat-square&logo=googlechrome&logoColor=white)](https://ronitgupta138.github.io/dine-luxe/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0891b2?style=flat-square)](LICENSE)
 
 </div>
@@ -209,10 +210,12 @@ npm test
 
 ---
 
-## 🌐 Live Demo
+## 🌐 Live Deployments & Interactive Demos
 
-Experience the real-time table reservation, Redis concurrency mutex simulation, menu browsing, and Kitchen Display System directly in your browser:  
-👉 **[https://ronitgupta138.github.io/dine-luxe/](https://ronitgupta138.github.io/dine-luxe/)**
+* **🚀 Production Full-Stack Next.js 15 Web App (Vercel)**:  
+  👉 **[`https://frontend-ten-phi-hzgzlmvvm9.vercel.app`](https://frontend-ten-phi-hzgzlmvvm9.vercel.app)** — Production restaurant operating system featuring customer booking, staff kitchen display system (KDS), and cashier floor maps.
+* **⚡ Standalone Interactive Mutex Simulator (GitHub Pages)**:  
+  👉 **[`https://ronitgupta138.github.io/dine-luxe/`](https://ronitgupta138.github.io/dine-luxe/)** — Browser-based simulation of high-concurrency Redis mutex locks, live table state machine, and race condition prevention.
 
 ---
 

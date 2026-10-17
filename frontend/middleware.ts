@@ -51,6 +51,7 @@ export async function middleware(request: NextRequest) {
   if (process.env.NODE_ENV !== 'production') return response;
 
   if (
+    pathname === "/" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -59,20 +60,17 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  if (demoAuthEnabled() && request.cookies.get("dineluxe_demo_session")?.value === "1") {
-    const demoRole = request.cookies.get("dineluxe_demo_role")?.value;
-    const requiredRoles = getRoleRequirement(pathname);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (requiredRoles && demoRole && !requiredRoles.includes(demoRole)) {
-      return NextResponse.redirect(new URL(dashboardForRole(demoRole), request.url));
-    }
-
+  if (!supabaseUrl || !supabaseKey || supabaseKey === "anon-key") {
+    // Demo / Standalone Mode when Supabase credentials are not injected
     return response;
   }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseKey,
     {
       cookies: {
         getAll() { return request.cookies.getAll(); },

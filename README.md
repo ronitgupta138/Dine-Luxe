@@ -21,7 +21,7 @@
 [![Redis](https://img.shields.io/badge/Redis-7_ioredis-0891b2?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS3-0891b2?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-0891b2?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/ronitgupta138/dine-luxe/actions)
-[![Production App](https://img.shields.io/badge/Production_App-Live_on_Vercel-10b981?style=flat-square&logo=vercel&logoColor=white)](https://frontend-eight-phi-lsjllkbnrk.vercel.app)
+[![Production App](https://img.shields.io/badge/Production_App-Live_on_Vercel-10b981?style=flat-square&logo=vercel&logoColor=white)](https://dine-luxe.vercel.app)
 [![Live Backend](https://img.shields.io/badge/Live_Backend-Online_200_OK-0891b2?style=flat-square&logo=render&logoColor=white)](https://dineluxe-backend.onrender.com/health)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0891b2?style=flat-square)](LICENSE)
 
@@ -213,7 +213,7 @@ npm test
 ## 🌐 Live Production Deployment
 
 * **🚀 Frontend Web Application (Vercel)**:  
-  👉 **[`https://frontend-eight-phi-lsjllkbnrk.vercel.app`](https://frontend-eight-phi-lsjllkbnrk.vercel.app)** — Production restaurant operating system featuring customer table reservation, staff kitchen display system (KDS), cashier billing, and floor maps.
+  👉 **[`https://dine-luxe.vercel.app`](https://dine-luxe.vercel.app)** — Production restaurant operating system featuring customer table reservation, staff kitchen display system (KDS), cashier billing, and floor maps.
 * **⚡ Backend REST API (Render)**:  
   👉 **[`https://dineluxe-backend.onrender.com/health`](https://dineluxe-backend.onrender.com/health)** — High-throughput Node.js/Express REST API connected to managed PostgreSQL 16 (`dineluxe_db`).
 

@@ -12,3 +12,5 @@ backend.zip
 *.docx
 generated/
 group11-verify-output.txt
+.vercel
+.env*

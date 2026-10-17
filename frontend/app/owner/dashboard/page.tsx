@@ -78,65 +78,48 @@ export default function OwnerDashboardPage() {
     <PageWrapper title="Dashboard" subtitle="Overview of your restaurant performance">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpiData.map((kpi, index) => (
-          <motion.div
-            key={kpi.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <KPICard {...kpi} />
-          </motion.div>
+        {kpiData.map((kpi) => (
+          <KPICard key={kpi.title} {...kpi} />
         ))}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-md border border-gray-100 p-6"
-        >
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Orders</h2>
-            <Link href="/owner/bookings" className="text-sm text-brand-primary hover:underline">View All</Link>
+            <h2 className="text-lg font-bold text-gray-950">Recent Orders</h2>
+            <Link href="/owner/bookings" className="text-sm font-semibold text-brand-primary hover:underline">View All &rarr;</Link>
           </div>
           <div className="space-y-3">
             {recentOrders.map((order) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                className="flex items-center justify-between p-3.5 bg-gray-50/80 rounded-xl border border-gray-100"
               >
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{order.customer}</p>
-                  <p className="text-xs text-gray-500">{order.items} items - {order.time}</p>
+                  <p className="font-semibold text-gray-950 text-sm">{order.customer}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{order.items} items &bull; {order.time}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold text-gray-900">Rs {order.total}</span>
+                  <span className="font-bold text-gray-950">Rs {order.total.toLocaleString('en-IN')}</span>
                   <StatusBadge status={order.status} size="sm" />
                 </div>
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Top Items */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-md border border-gray-100 p-6"
-        >
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Top Selling Items</h2>
-            <Link href="/owner/menu" className="text-sm text-brand-primary hover:underline">View All</Link>
+            <h2 className="text-lg font-bold text-gray-950">Top Selling Items</h2>
+            <Link href="/owner/menu" className="text-sm font-semibold text-brand-primary hover:underline">View All &rarr;</Link>
           </div>
           <div className="space-y-3">
             {topItems.map((item, index) => (
               <div
                 key={item.name}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                className="flex items-center justify-between p-3.5 bg-gray-50/80 rounded-xl border border-gray-100"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-brand-primary/10 rounded-lg flex items-center justify-center text-brand-primary font-bold text-sm">
@@ -144,52 +127,47 @@ export default function OwnerDashboardPage() {
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 text-sm">{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.orders} orders</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.orders} orders</p>
                   </div>
                 </div>
-                <span className="font-semibold text-gray-900">Rs {item.revenue}</span>
+                <span className="font-bold text-gray-950">Rs {item.revenue.toLocaleString('en-IN')}</span>
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Staff Performance */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-white rounded-md border border-gray-100 p-6"
-      >
+      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Staff Performance</h2>
-          <Link href="/owner/staff" className="text-sm text-brand-primary hover:underline">View All</Link>
+          <h2 className="text-lg font-bold text-gray-950">Staff Performance</h2>
+          <Link href="/owner/staff" className="text-sm font-semibold text-brand-primary hover:underline">View All &rarr;</Link>
         </div>
         <div className="grid sm:grid-cols-3 gap-4">
           {staffPerformance.map((staff) => (
             <div
               key={staff.name}
-              className="p-4 bg-gray-50 rounded-xl text-center"
+              className="p-4 bg-gray-50/80 rounded-xl border border-gray-100 text-center"
             >
               <div className="w-12 h-12 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
                 <Users size={20} className="text-brand-primary" />
               </div>
-              <p className="font-medium text-gray-900 text-sm">{staff.name}</p>
+              <p className="font-semibold text-gray-950 text-sm mt-1">{staff.name}</p>
               <p className="text-xs text-gray-500 capitalize">{staff.role}</p>
               <div className="flex items-center justify-center gap-4 mt-3">
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{staff.orders}</p>
+                  <p className="text-lg font-bold text-gray-950">{staff.orders}</p>
                   <p className="text-xs text-gray-500">Orders</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-gray-900">{staff.rating}</p>
+                  <p className="text-lg font-bold text-gray-950">{staff.rating}</p>
                   <p className="text-xs text-gray-500">Rating</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </PageWrapper>
   )
 }

@@ -77,7 +77,17 @@ export function Sidebar() {
   }, [])
 
 
-  const filteredNavItems = role ? navItems.filter((item) => item.roles.includes(role)) : []
+  const currentRole = role || (
+    pathname.startsWith("/admin") ? "super_admin" :
+    pathname.startsWith("/owner") ? "owner" :
+    pathname.startsWith("/staff/host") ? "host" :
+    pathname.startsWith("/staff/chef") ? "chef" :
+    pathname.startsWith("/staff/cashier") ? "cashier" :
+    pathname.startsWith("/staff/waiter") ? "waiter" :
+    pathname.startsWith("/staff/manager") ? "manager" : "owner"
+  );
+
+  const filteredNavItems = navItems.filter((item) => item.roles.includes(currentRole));
 
   const handleLogout = async () => {
     await signOut()

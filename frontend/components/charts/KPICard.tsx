@@ -28,9 +28,8 @@ export function KPICard({
   sparklineData,
   className 
 }: KPICardProps) {
-  const [displayValue, setDisplayValue] = useState(0)
+  const [displayValue, setDisplayValue] = useState(value)
   const ref = useRef<HTMLDivElement>(null)
-  const isInView = useInView(ref, { once: true })
 
   const percentChange = previousValue !== undefined 
     ? ((value - previousValue) / previousValue) * 100 
@@ -47,61 +46,34 @@ export function KPICard({
   }
 
   useEffect(() => {
-    if (!isInView) return
-
-    const duration = 800
-    const startTime = Date.now()
-    const startValue = 0
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
-      const current = startValue + (value - startValue) * eased
-      
-      setDisplayValue(current)
-
-      if (progress < 1) {
-        requestAnimationFrame(animate)
-      }
-    }
-
-    requestAnimationFrame(animate)
-  }, [isInView, value])
+    setDisplayValue(value)
+  }, [value])
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, y: 20 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5 }}
       className={cn(
-        "bg-white rounded-xl border border-gray-100 p-5 shadow-sm",
+        "bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow",
         className
       )}
     >
-      <p className="text-sm text-gray-500 font-medium">{title}</p>
+      <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">{title}</p>
       
-      <div className="flex items-end justify-between mt-2">
+      <div className="flex items-end justify-between mt-3">
         <div className="flex items-baseline gap-1">
-          {prefix && <span className="text-lg text-gray-400">{prefix}</span>}
-          <motion.span 
-            className="text-3xl font-bold text-gray-900"
-            key={value}
-          >
+          {prefix && <span className="text-xl font-bold text-gray-700">{prefix}</span>}
+          <span className="text-3xl font-extrabold text-gray-950 tracking-tight">
             {formatValue(displayValue)}
-          </motion.span>
-          {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
+          </span>
+          {suffix && <span className="text-sm font-semibold text-gray-500">{suffix}</span>}
         </div>
 
         {percentChange !== undefined && (
           <div className={cn(
-            "flex items-center gap-1 text-sm font-medium",
-            percentChange > 0 ? "text-green-600" : 
-            percentChange < 0 ? "text-red-600" : "text-gray-500"
+            "flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
+            percentChange >= 0 ? "text-emerald-700 bg-emerald-50" : "text-rose-700 bg-rose-50"
           )}>
-            {percentChange > 0 ? <TrendingUp size={16} /> : 
-             percentChange < 0 ? <TrendingDown size={16} /> : <Minus size={16} />}
+            {percentChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
             <span>{Math.abs(percentChange).toFixed(1)}%</span>
           </div>
         )}
@@ -130,6 +102,6 @@ export function KPICard({
           </svg>
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }

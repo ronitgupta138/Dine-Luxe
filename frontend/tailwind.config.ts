@@ -12,13 +12,13 @@ const config: Config = {
 		extend: {
 			colors: {
 				// Brand colors
-				ink: 'rgb(var(--ink) / <alpha-value>)',
-				muted: 'rgb(var(--muted) / <alpha-value>)',
-				paper: 'rgb(var(--paper) / <alpha-value>)',
-				surface: 'rgb(var(--surface) / <alpha-value>)',
-				accent: 'rgb(var(--accent) / <alpha-value>)',
-				accent2: 'rgb(var(--accent-2) / <alpha-value>)',
-				accent3: 'rgb(var(--accent-3) / <alpha-value>)',
+				ink: 'var(--ink, #111827)',
+				muted: 'var(--muted, #4B5563)',
+				paper: 'var(--paper, #FFFFFF)',
+				surface: 'var(--surface, #F3F4F6)',
+				accent: 'var(--brand-primary, #1A3C5E)',
+				accent2: 'var(--brand-secondary, #E8A020)',
+				accent3: '#2980B9',
 				
 				// Semantic status colors from design system
 				brand: {

@@ -28,7 +28,11 @@ function authenticate(req, res, next) {
     }
     catch (err) {
         if (err instanceof jsonwebtoken_1.default.TokenExpiredError) {
-            res.status(403).json((0, response_1.error)('TOKEN_EXPIRED', 'Access token has expired'));
+            // 401 = needs re-authentication. Using 403 here was wrong because it
+            // short-circuits before RBAC runs, making role-check tests return 403
+            // TOKEN_EXPIRED instead of 403 FORBIDDEN (two different 403 meanings
+            // that confuse clients). Clients must re-login on 401.
+            res.status(401).json((0, response_1.error)('TOKEN_EXPIRED', 'Access token has expired'));
             return;
         }
         res.status(401).json((0, response_1.error)('INVALID_TOKEN', 'Invalid access token'));

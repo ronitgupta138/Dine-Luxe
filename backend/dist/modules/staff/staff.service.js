@@ -1,7 +1,4 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getByBranch = getByBranch;
 exports.create = create;
@@ -9,14 +6,12 @@ exports.getById = getById;
 exports.update = update;
 exports.toggleAccess = toggleAccess;
 exports.getPerformance = getPerformance;
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const supabase_1 = require("../../config/supabase");
 const redis_1 = require("../../config/redis");
 const employee_id_1 = require("../../utils/employee-id");
 const password_1 = require("../../utils/password");
 const audit_log_1 = require("../../utils/audit-log");
 const send_1 = require("../../email/send");
-const env_1 = require("../../config/env");
 // ─── Get All Staff for a Branch ───────────────────────────────────────────────
 async function getByBranch(branchId, restaurantId) {
     const { data, error } = await supabase_1.supabaseAdmin
@@ -35,8 +30,6 @@ async function getByBranch(branchId, restaurantId) {
 }
 // ─── Create Staff ─────────────────────────────────────────────────────────────
 async function create(input, restaurantId, actorId, actorBranchId, actorRole, ipAddress) {
-    // Normalise email once — used for both Supabase Auth and the DB row.
-    const staffEmail = input.email.toLowerCase().trim();
     // Manager can only create staff for their OWN branch
     if (actorRole === 'manager' && input.branch_id !== actorBranchId) {
         throw new Error('Managers can only create staff for their own branch');
@@ -48,18 +41,13 @@ async function create(input, restaurantId, actorId, actorBranchId, actorRole, ip
         .eq('id', input.branch_id)
         .eq('restaurant_id', restaurantId)
         .single();
-    if (branchErr || !branch) {
-        throw new Error(`Branch not found or unauthorized. Verify branch_id "${input.branch_id}" belongs to your restaurant.`);
-    }
+    if (branchErr || !branch)
+        throw new Error('Branch not found or unauthorized');
     // Generate default password from DOB (format: DDMMYYYY)
     const defaultPassword = (0, password_1.generateDefaultPassword)(new Date(input.dob));
-    // BUG FIX: hash the default password so it is stored in users.password_hash.
-    // Without this, login's bcrypt.compare(password, null) throws
-    // "Illegal arguments: string, object" — same issue that affected restaurant owners.
-    const hashedPassword = await bcryptjs_1.default.hash(defaultPassword, env_1.config.BCRYPT_SALT_ROUNDS);
     // Create Supabase Auth user
     const { data: authData, error: authError } = await supabase_1.supabaseAdmin.auth.admin.createUser({
-        email: staffEmail,
+        email: input.email,
         password: defaultPassword,
         email_confirm: true, // auto-confirm staff emails
     });
@@ -76,12 +64,11 @@ async function create(input, restaurantId, actorId, actorBranchId, actorRole, ip
             .insert({
             id: staffId,
             name: `${input.first_name} ${input.last_name}`.trim(),
-            email: staffEmail,
+            email: input.email,
             phone: input.phone,
             dob: input.dob,
             gender: input.gender,
             role: input.role,
-            password_hash: hashedPassword,
             restaurant_id: restaurantId,
             branch_id: input.branch_id,
             employee_id: employeeId,
@@ -97,7 +84,7 @@ async function create(input, restaurantId, actorId, actorBranchId, actorRole, ip
             throw new Error(`Profile creation failed: ${profileError.message}`);
         // Send credentials email (fire and forget — never await in request handler)
         (0, send_1.sendEmail)({
-            to: staffEmail,
+            to: input.email,
             templateName: 'welcome',
             data: {
                 name: input.first_name,
@@ -172,7 +159,10 @@ async function update(staffId, restaurantId, input) {
         .update(updateData)
         .eq('id', staffId)
         .eq('restaurant_id', restaurantId)
-        .select()
+        // BUG FIX: was .select() (all columns) which returned password_hash in the
+        // response body — a security leak visible in curl output and API logs.
+        // Explicitly list only safe fields.
+        .select('id, name, email, phone, dob, gender, role, employee_id, profile_pic_url, branch_id, restaurant_id, is_active, force_password_change, created_by_restaurant, created_at, updated_at')
         .single();
     if (error)
         throw new Error(`Update failed: ${error.message}`);

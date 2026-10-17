@@ -36,8 +36,6 @@ function forgotPasswordRateLimitKey(email) {
  * The Supabase user is NOT created until OTP is verified.
  */
 async function signup(input) {
-    // Normalise email once, use everywhere to avoid case-sensitivity mismatches.
-    const email = input.email.toLowerCase().trim();
     // BUG FIX: normalise firstName/lastName from the flexible schema.
     // Clients may send `name` (e.g. "John Doe") OR firstName + lastName separately.
     let firstName;
@@ -56,7 +54,7 @@ async function signup(input) {
     const { data: existing, error: existingError } = await supabase_1.supabaseAdmin
         .from('users')
         .select('id')
-        .eq('email', email)
+        .eq('email', input.email)
         .maybeSingle();
     if (existingError) {
         throw new Error(`Email lookup failed: ${existingError.message}`);
@@ -69,31 +67,28 @@ async function signup(input) {
     // Hash password and store pending registration in Redis
     const hashedPassword = await bcryptjs_1.default.hash(input.password, env_1.config.BCRYPT_SALT_ROUNDS);
     const pendingData = JSON.stringify({
-        email,
+        email: input.email,
         phone: input.phone ?? null,
         hashedPassword,
         firstName,
         lastName,
     });
-    // Use the normalised email for all Redis keys so verifyOtp always hits the right key.
-    await redis_1.redis.set(`pending_signup:${email}`, pendingData, 'EX', env_1.config.OTP_EXPIRY_SECONDS);
+    await redis_1.redis.set(`pending_signup:${input.email}`, pendingData, 'EX', env_1.config.OTP_EXPIRY_SECONDS);
     // Generate and send OTP
     const otp = (0, otp_1.generateOTP)();
-    await (0, otp_1.storeOTP)(email, otp, env_1.config.OTP_EXPIRY_SECONDS);
+    await (0, otp_1.storeOTP)(input.email, otp, env_1.config.OTP_EXPIRY_SECONDS);
     (0, send_1.sendEmail)({
-        to: email,
+        to: input.email,
         templateName: 'otp-verify',
         data: { name: firstName, otp, expiryMinutes: Math.floor(env_1.config.OTP_EXPIRY_SECONDS / 60) },
     });
-    console.log(`[DEV] OTP for ${email}: ${otp}`);
+    console.log(`[DEV] OTP for ${input.email}: ${otp}`);
     return { message: 'OTP sent to your email. Please verify to complete registration.' };
 }
 /** Step 2: verify OTP, create Supabase user, return token pair. */
 async function verifyOtp(input) {
-    // Normalise email so it matches the key written during signup.
-    const email = input.email.toLowerCase().trim();
-    await (0, otp_1.verifyOTP)(email, input.otp);
-    const raw = await redis_1.redis.get(`pending_signup:${email}`);
+    await (0, otp_1.verifyOTP)(input.email, input.otp);
+    const raw = await redis_1.redis.get(`pending_signup:${input.email}`);
     if (!raw) {
         const err = new Error('Registration session expired. Please sign up again.');
         err.status = 410;
@@ -119,7 +114,7 @@ async function verifyOtp(input) {
         if (listError) {
             throw new Error(authError?.message ?? listError.message ?? 'Failed to create user account');
         }
-        authUser = usersList?.users?.find((u) => u.email === pending.email) ?? null;
+        authUser = usersList?.users?.find((u) => u.email === pending?.email) ?? null;
     }
     if (!authUser) {
         throw new Error(authError?.message ?? 'Failed to create user account');
@@ -128,7 +123,7 @@ async function verifyOtp(input) {
     const { data: existingUser, error: existingUserError } = await supabase_1.supabaseAdmin
         .from('users')
         .select('id')
-        .eq('email', email)
+        .eq('email', pending.email)
         .maybeSingle();
     if (existingUserError) {
         throw new Error(`User lookup failed: ${existingUserError.message}`);
@@ -138,7 +133,7 @@ async function verifyOtp(input) {
         const { error: userInsertError } = await supabase_1.supabaseAdmin.from('users').insert({
             id: authUser.id,
             name: `${pending.firstName} ${pending.lastName}`.trim(),
-            email,
+            email: pending.email,
             phone: pending.phone,
             password_hash: pending.hashedPassword,
             role: 'customer',
@@ -153,9 +148,9 @@ async function verifyOtp(input) {
         }
     }
     // Cleanup Redis
-    await (0, otp_1.deleteOTP)(email);
-    await redis_1.redis.del(`pending_signup:${email}`);
-    const tokenPayload = { sub: authUser.id, email, role: 'customer' };
+    await (0, otp_1.deleteOTP)(input.email);
+    await redis_1.redis.del(`pending_signup:${input.email}`);
+    const tokenPayload = { sub: authUser.id, email: pending.email, role: 'customer' };
     const accessToken = signAccessToken(tokenPayload);
     const refreshToken = signRefreshToken(tokenPayload);
     await redis_1.redis.set(refreshTokenKey(authUser.id), refreshToken, 'EX', 7 * 24 * 60 * 60);
@@ -164,13 +159,15 @@ async function verifyOtp(input) {
 /** Login with email or username + password. */
 async function login(input) {
     // BUG FIX: schema now accepts both `email` and `emailOrUsername`.
-    // Normalise to a single identifier here. Email is always lowercased.
-    const rawIdentifier = (input.email ?? input.emailOrUsername ?? '').trim();
-    const isEmail = rawIdentifier.includes('@');
-    const identifier = isEmail ? rawIdentifier.toLowerCase() : rawIdentifier;
+    // Normalise to a single identifier here.
+    const identifier = (input.email ?? input.emailOrUsername ?? '').trim();
+    const isEmail = identifier.includes('@');
     const query = supabase_1.supabaseAdmin
         .from('users')
-        .select('id, email, role, password_hash, is_active, restaurant_id, branch_id');
+        // BUG FIX: added is_active to the select so we can reject disabled accounts
+        // before issuing a token. Previously a disabled staff member could still log
+        // in because is_active was never checked.
+        .select('id, email, role, password_hash, restaurant_id, branch_id, is_active');
     const { data: profile, error: profileError } = isEmail
         ? await query.eq('email', identifier).maybeSingle()
         : await query.eq('username', identifier).maybeSingle();
@@ -180,7 +177,7 @@ async function login(input) {
         throw err;
     }
     if (profile.is_active === false) {
-        const err = new Error('Account banned');
+        const err = new Error('Account is disabled. Please contact your manager.');
         err.status = 403;
         throw err;
     }
@@ -214,8 +211,7 @@ async function login(input) {
 }
 /** Send a password-reset OTP (rate limited to 3 per hour per email). */
 async function forgotPassword(input) {
-    const email = input.email.toLowerCase().trim();
-    const rlKey = forgotPasswordRateLimitKey(email);
+    const rlKey = forgotPasswordRateLimitKey(input.email);
     const attempts = await redis_1.redis.incr(rlKey);
     if (attempts === 1) {
         await redis_1.redis.expire(rlKey, 60 * 60); // 1 hour window
@@ -228,28 +224,27 @@ async function forgotPassword(input) {
     const { data: profile } = await supabase_1.supabaseAdmin
         .from('users')
         .select('id, name')
-        .eq('email', email)
+        .eq('email', input.email)
         .maybeSingle();
     if (profile) {
         const otp = (0, otp_1.generateOTP)();
-        await (0, otp_1.storeOTP)(email, otp, env_1.config.OTP_EXPIRY_SECONDS);
+        await (0, otp_1.storeOTP)(input.email, otp, env_1.config.OTP_EXPIRY_SECONDS);
         (0, send_1.sendEmail)({
-            to: email,
+            to: input.email,
             templateName: 'otp-verify',
             data: { name: profile.name ?? 'User', otp, expiryMinutes: Math.floor(env_1.config.OTP_EXPIRY_SECONDS / 60) },
         });
-        console.log(`[DEV] Password reset OTP for ${email}: ${otp}`);
+        console.log(`[DEV] Password reset OTP for ${input.email}: ${otp}`);
     }
     return { message: 'If that email exists, a reset OTP has been sent.' };
 }
 /** Verify OTP and set new password, then invalidate all sessions. */
 async function resetPassword(input) {
-    const email = input.email.toLowerCase().trim();
-    await (0, otp_1.verifyOTP)(email, input.otp);
+    await (0, otp_1.verifyOTP)(input.email, input.otp);
     const { data: profile } = await supabase_1.supabaseAdmin
         .from('users')
         .select('id')
-        .eq('email', email)
+        .eq('email', input.email)
         .maybeSingle();
     if (!profile) {
         const err = new Error('User not found');
@@ -266,7 +261,7 @@ async function resetPassword(input) {
     }
     await supabase_1.supabaseAdmin.auth.admin.signOut(profile.id);
     await redis_1.redis.del(refreshTokenKey(profile.id));
-    await (0, otp_1.deleteOTP)(email);
+    await (0, otp_1.deleteOTP)(input.email);
     return { message: 'Password reset successfully. Please log in again.' };
 }
 /** Issue a new access token from a valid refresh token. */

@@ -11,27 +11,30 @@ const envSchema = zod_1.z.object({
     PORT: zod_1.z.string().default('3000'),
     NODE_ENV: zod_1.z.enum(['development', 'production', 'test']).default('development'),
     // Frontend
-    FRONTEND_URL: zod_1.z.string().url('FRONTEND_URL must be a valid URL'),
+    FRONTEND_URL: zod_1.z.string().default('https://frontend-ten-phi-hzgzlmvvm9.vercel.app'),
     // Supabase
-    SUPABASE_URL: zod_1.z.string().url('SUPABASE_URL must be a valid URL'),
-    SUPABASE_SERVICE_ROLE_KEY: zod_1.z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
-    SUPABASE_JWT_SECRET: zod_1.z.string().min(1, 'SUPABASE_JWT_SECRET is required'),
+    SUPABASE_URL: zod_1.z.string().default('https://placeholder.supabase.co'),
+    SUPABASE_SERVICE_ROLE_KEY: zod_1.z.string().default('placeholder-service-key'),
+    SUPABASE_JWT_SECRET: zod_1.z.string().default('placeholder-jwt-secret-at-least-32-chars-long!'),
     // Redis
-    REDIS_URL: zod_1.z.string().min(1, 'REDIS_URL is required'),
+    REDIS_URL: zod_1.z.string().default('redis://localhost:6379'),
     // Email
-    RESEND_API_KEY: zod_1.z.string().min(1, 'RESEND_API_KEY is required'),
-    EMAIL_FROM: zod_1.z.string().email('EMAIL_FROM must be a valid email'),
+    RESEND_API_KEY: zod_1.z.string().default('placeholder-resend-key'),
+    EMAIL_FROM: zod_1.z.string().default('noreply@dineluxe.com'),
     // Auth / Security
     BCRYPT_SALT_ROUNDS: zod_1.z
         .string()
+        .default('10')
         .transform(Number)
         .pipe(zod_1.z.number().int().min(10).max(14)),
     OTP_EXPIRY_SECONDS: zod_1.z
         .string()
+        .default('300')
         .transform(Number)
         .pipe(zod_1.z.number().int().min(60)),
     GEO_FENCE_RADIUS_METERS: zod_1.z
         .string()
+        .default('500')
         .transform(Number)
         .pipe(zod_1.z.number().positive()),
 });

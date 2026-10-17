@@ -4,13 +4,13 @@ export declare const initiateSchema: z.ZodObject<{
     payment_method: z.ZodEnum<["upi", "card", "cash", "wallet"]>;
     split_with: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
-    order_id: string;
-    payment_method: "upi" | "card" | "cash" | "wallet";
-    split_with?: string[] | undefined;
+    order_id?: string;
+    payment_method?: "upi" | "card" | "cash" | "wallet";
+    split_with?: string[];
 }, {
-    order_id: string;
-    payment_method: "upi" | "card" | "cash" | "wallet";
-    split_with?: string[] | undefined;
+    order_id?: string;
+    payment_method?: "upi" | "card" | "cash" | "wallet";
+    split_with?: string[];
 }>;
 export declare const verifySchema: z.ZodObject<{
     payment_id: z.ZodString;
@@ -18,15 +18,15 @@ export declare const verifySchema: z.ZodObject<{
     status: z.ZodEnum<["success", "failed", "pending"]>;
     gateway_signature: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: "failed" | "pending" | "success";
-    payment_id: string;
-    gateway_payment_id?: string | undefined;
-    gateway_signature?: string | undefined;
+    status?: "failed" | "pending" | "success";
+    payment_id?: string;
+    gateway_payment_id?: string;
+    gateway_signature?: string;
 }, {
-    status: "failed" | "pending" | "success";
-    payment_id: string;
-    gateway_payment_id?: string | undefined;
-    gateway_signature?: string | undefined;
+    status?: "failed" | "pending" | "success";
+    payment_id?: string;
+    gateway_payment_id?: string;
+    gateway_signature?: string;
 }>;
 export declare const splitSchema: z.ZodObject<{
     order_id: z.ZodString;
@@ -35,38 +35,38 @@ export declare const splitSchema: z.ZodObject<{
         amount: z.ZodNumber;
         payment_method: z.ZodEnum<["upi", "card", "cash", "wallet"]>;
     }, "strip", z.ZodTypeAny, {
-        amount: number;
-        label: string;
-        payment_method: "upi" | "card" | "cash" | "wallet";
+        amount?: number;
+        label?: string;
+        payment_method?: "upi" | "card" | "cash" | "wallet";
     }, {
-        amount: number;
-        label: string;
-        payment_method: "upi" | "card" | "cash" | "wallet";
+        amount?: number;
+        label?: string;
+        payment_method?: "upi" | "card" | "cash" | "wallet";
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
-    order_id: string;
-    splits: {
-        amount: number;
-        label: string;
-        payment_method: "upi" | "card" | "cash" | "wallet";
+    order_id?: string;
+    splits?: {
+        amount?: number;
+        label?: string;
+        payment_method?: "upi" | "card" | "cash" | "wallet";
     }[];
 }, {
-    order_id: string;
-    splits: {
-        amount: number;
-        label: string;
-        payment_method: "upi" | "card" | "cash" | "wallet";
+    order_id?: string;
+    splits?: {
+        amount?: number;
+        label?: string;
+        payment_method?: "upi" | "card" | "cash" | "wallet";
     }[];
 }>;
 export declare const upiQRSchema: z.ZodObject<{
     order_id: z.ZodString;
     amount: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    order_id: string;
-    amount?: number | undefined;
+    amount?: number;
+    order_id?: string;
 }, {
-    order_id: string;
-    amount?: number | undefined;
+    amount?: number;
+    order_id?: string;
 }>;
 export declare const webhookSchema: z.ZodObject<{
     event: z.ZodString;
@@ -76,19 +76,19 @@ export declare const webhookSchema: z.ZodObject<{
     amount: z.ZodOptional<z.ZodNumber>;
     gateway_signature: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: string;
-    payment_id: string;
-    event: string;
-    amount?: number | undefined;
-    order_id?: string | undefined;
-    gateway_signature?: string | undefined;
+    status?: string;
+    amount?: number;
+    order_id?: string;
+    payment_id?: string;
+    gateway_signature?: string;
+    event?: string;
 }, {
-    status: string;
-    payment_id: string;
-    event: string;
-    amount?: number | undefined;
-    order_id?: string | undefined;
-    gateway_signature?: string | undefined;
+    status?: string;
+    amount?: number;
+    order_id?: string;
+    payment_id?: string;
+    gateway_signature?: string;
+    event?: string;
 }>;
 export type InitiateInput = z.infer<typeof initiateSchema>;
 export type VerifyInput = z.infer<typeof verifySchema>;

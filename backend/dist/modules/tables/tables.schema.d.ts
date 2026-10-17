@@ -13,51 +13,51 @@ export declare const createTableSchema: z.ZodObject<{
     x_pos: z.ZodOptional<z.ZodNumber>;
     y_pos: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    branch_id: string;
-    shape: "round" | "square" | "rectangle" | "booth";
-    capacity: number;
-    label: string;
-    zone: string;
-    floor_number: number;
-    photo_url?: string | undefined;
-    x_pos?: number | undefined;
-    y_pos?: number | undefined;
+    branch_id?: string;
+    shape?: "round" | "square" | "rectangle" | "booth";
+    capacity?: number;
+    label?: string;
+    x_pos?: number;
+    y_pos?: number;
+    floor_number?: number;
+    zone?: string;
+    photo_url?: string;
 }, {
-    branch_id: string;
-    capacity: number;
-    label: string;
-    shape?: "round" | "square" | "rectangle" | "booth" | undefined;
-    zone?: string | undefined;
-    photo_url?: string | undefined;
-    floor_number?: number | undefined;
-    x_pos?: number | undefined;
-    y_pos?: number | undefined;
+    branch_id?: string;
+    shape?: "round" | "square" | "rectangle" | "booth";
+    capacity?: number;
+    label?: string;
+    x_pos?: number;
+    y_pos?: number;
+    floor_number?: number;
+    zone?: string;
+    photo_url?: string;
 }>;
 export declare const updateStatusSchema: z.ZodObject<{
     new_status: z.ZodEnum<["free", "reserved", "occupied", "cleaning", "maintenance"]>;
     reason: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    new_status: "free" | "occupied" | "cleaning" | "reserved" | "maintenance";
-    reason?: string | undefined;
+    reason?: string;
+    new_status?: "free" | "occupied" | "cleaning" | "reserved" | "maintenance";
 }, {
-    new_status: "free" | "occupied" | "cleaning" | "reserved" | "maintenance";
-    reason?: string | undefined;
+    reason?: string;
+    new_status?: "free" | "occupied" | "cleaning" | "reserved" | "maintenance";
 }>;
 export declare const mergeSchema: z.ZodEffects<z.ZodObject<{
     table_id_1: z.ZodString;
     table_id_2: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    table_id_1: string;
-    table_id_2: string;
+    table_id_1?: string;
+    table_id_2?: string;
 }, {
-    table_id_1: string;
-    table_id_2: string;
+    table_id_1?: string;
+    table_id_2?: string;
 }>, {
-    table_id_1: string;
-    table_id_2: string;
+    table_id_1?: string;
+    table_id_2?: string;
 }, {
-    table_id_1: string;
-    table_id_2: string;
+    table_id_1?: string;
+    table_id_2?: string;
 }>;
 export type CreateTableInput = z.infer<typeof createTableSchema>;
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;

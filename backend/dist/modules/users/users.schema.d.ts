@@ -13,46 +13,46 @@ export declare const updateProfileSchema: z.ZodObject<{
         state: z.ZodOptional<z.ZodString>;
         pincode: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        city?: string | undefined;
-        state?: string | undefined;
-        pincode?: string | undefined;
-        line1?: string | undefined;
-        line2?: string | undefined;
+        city?: string;
+        state?: string;
+        pincode?: string;
+        line1?: string;
+        line2?: string;
     }, {
-        city?: string | undefined;
-        state?: string | undefined;
-        pincode?: string | undefined;
-        line1?: string | undefined;
-        line2?: string | undefined;
+        city?: string;
+        state?: string;
+        pincode?: string;
+        line1?: string;
+        line2?: string;
     }>>;
 }, "strip", z.ZodTypeAny, {
-    phone?: string | undefined;
-    first_name?: string | undefined;
-    last_name?: string | undefined;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
     address?: {
-        city?: string | undefined;
-        state?: string | undefined;
-        pincode?: string | undefined;
-        line1?: string | undefined;
-        line2?: string | undefined;
-    } | undefined;
-    dob?: string | undefined;
-    gender?: "male" | "female" | "other" | "prefer_not_to_say" | undefined;
-    avatar_url?: string | undefined;
+        city?: string;
+        state?: string;
+        pincode?: string;
+        line1?: string;
+        line2?: string;
+    };
+    dob?: string;
+    gender?: "male" | "female" | "other" | "prefer_not_to_say";
+    avatar_url?: string;
 }, {
-    phone?: string | undefined;
-    first_name?: string | undefined;
-    last_name?: string | undefined;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
     address?: {
-        city?: string | undefined;
-        state?: string | undefined;
-        pincode?: string | undefined;
-        line1?: string | undefined;
-        line2?: string | undefined;
-    } | undefined;
-    dob?: string | undefined;
-    gender?: "male" | "female" | "other" | "prefer_not_to_say" | undefined;
-    avatar_url?: string | undefined;
+        city?: string;
+        state?: string;
+        pincode?: string;
+        line1?: string;
+        line2?: string;
+    };
+    dob?: string;
+    gender?: "male" | "female" | "other" | "prefer_not_to_say";
+    avatar_url?: string;
 }>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 //# sourceMappingURL=users.schema.d.ts.map

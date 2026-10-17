@@ -9,23 +9,23 @@ export declare const createStaffSchema: z.ZodObject<{
     role: z.ZodEnum<["manager", "host", "waiter", "chef", "cashier"]>;
     branch_id: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
-    role: "host" | "manager" | "waiter" | "chef" | "cashier";
-    branch_id: string;
-    phone: string;
-    first_name: string;
-    last_name: string;
-    dob: string;
-    gender: "male" | "female" | "other" | "prefer_not_to_say";
+    email?: string;
+    role?: "host" | "manager" | "waiter" | "chef" | "cashier";
+    branch_id?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    dob?: string;
+    gender?: "male" | "female" | "other" | "prefer_not_to_say";
 }, {
-    email: string;
-    role: "host" | "manager" | "waiter" | "chef" | "cashier";
-    branch_id: string;
-    phone: string;
-    first_name: string;
-    last_name: string;
-    dob: string;
-    gender: "male" | "female" | "other" | "prefer_not_to_say";
+    email?: string;
+    role?: "host" | "manager" | "waiter" | "chef" | "cashier";
+    branch_id?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    dob?: string;
+    gender?: "male" | "female" | "other" | "prefer_not_to_say";
 }>;
 export declare const updateStaffSchema: z.ZodObject<{
     first_name: z.ZodOptional<z.ZodString>;
@@ -35,19 +35,19 @@ export declare const updateStaffSchema: z.ZodObject<{
     branch_id: z.ZodOptional<z.ZodString>;
     avatar_url: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    role?: "host" | "manager" | "waiter" | "chef" | "cashier" | undefined;
-    branch_id?: string | undefined;
-    phone?: string | undefined;
-    first_name?: string | undefined;
-    last_name?: string | undefined;
-    avatar_url?: string | undefined;
+    role?: "host" | "manager" | "waiter" | "chef" | "cashier";
+    branch_id?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
 }, {
-    role?: "host" | "manager" | "waiter" | "chef" | "cashier" | undefined;
-    branch_id?: string | undefined;
-    phone?: string | undefined;
-    first_name?: string | undefined;
-    last_name?: string | undefined;
-    avatar_url?: string | undefined;
+    role?: "host" | "manager" | "waiter" | "chef" | "cashier";
+    branch_id?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
 }>;
 export type CreateStaffInput = z.infer<typeof createStaffSchema>;
 export type UpdateStaffInput = z.infer<typeof updateStaffSchema>;

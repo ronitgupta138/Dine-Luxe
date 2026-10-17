@@ -32,11 +32,28 @@ export declare function getById(staffId: string, restaurantId: string): Promise<
         name: any;
     }[];
 }>;
-export declare function update(staffId: string, restaurantId: string, input: UpdateStaffInput): Promise<any>;
+export declare function update(staffId: string, restaurantId: string, input: UpdateStaffInput): Promise<{
+    id: any;
+    name: any;
+    email: any;
+    phone: any;
+    dob: any;
+    gender: any;
+    role: any;
+    employee_id: any;
+    profile_pic_url: any;
+    branch_id: any;
+    restaurant_id: any;
+    is_active: any;
+    force_password_change: any;
+    created_by_restaurant: any;
+    created_at: any;
+    updated_at: any;
+}>;
 export declare function toggleAccess(staffId: string, restaurantId: string, actorId: string, ipAddress: string): Promise<any>;
 export declare function getPerformance(staffId: string, restaurantId: string): Promise<{
     orders_today: number;
-    avg_branch_rating_this_week: number | null;
+    avg_branch_rating_this_week: number;
     rating_count: number;
     tables_served_this_week: number;
 }>;

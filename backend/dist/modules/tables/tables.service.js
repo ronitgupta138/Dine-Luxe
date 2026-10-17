@@ -32,9 +32,12 @@ async function createTable(input) {
     if (existing) {
         throw Object.assign(new Error(`Label "${input.label}" already exists in this branch`), { statusCode: 409 });
     }
+    // BUG FIX: inserting raw `input` omits created_at/updated_at which are
+    // NOT NULL in the schema — add timestamps explicitly.
+    const now = new Date().toISOString();
     const { data, error } = await supabase_1.supabaseAdmin
         .from('tables')
-        .insert(input)
+        .insert({ ...input, created_at: now, updated_at: now })
         .select()
         .single();
     if (error)

@@ -10,63 +10,63 @@ export declare const createOrderSchema: z.ZodObject<{
             addon_id: z.ZodString;
             quantity: z.ZodDefault<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
-            quantity: number;
-            addon_id: string;
+            quantity?: number;
+            addon_id?: string;
         }, {
-            addon_id: string;
-            quantity?: number | undefined;
+            quantity?: number;
+            addon_id?: string;
         }>, "many">>>;
     }, "strip", z.ZodTypeAny, {
-        quantity: number;
-        menu_item_id: string;
-        addons: {
-            quantity: number;
-            addon_id: string;
-        }[];
-        notes?: string | undefined;
-    }, {
-        quantity: number;
-        menu_item_id: string;
-        notes?: string | undefined;
+        quantity?: number;
+        notes?: string;
+        menu_item_id?: string;
         addons?: {
-            addon_id: string;
-            quantity?: number | undefined;
-        }[] | undefined;
+            quantity?: number;
+            addon_id?: string;
+        }[];
+    }, {
+        quantity?: number;
+        notes?: string;
+        menu_item_id?: string;
+        addons?: {
+            quantity?: number;
+            addon_id?: string;
+        }[];
     }>, "many">;
     special_instructions: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    items: {
-        quantity: number;
-        menu_item_id: string;
-        addons: {
-            quantity: number;
-            addon_id: string;
-        }[];
-        notes?: string | undefined;
-    }[];
-    table_id: string;
-    order_type: "delivery" | "dine_in" | "takeaway";
-    special_instructions?: string | undefined;
-}, {
-    items: {
-        quantity: number;
-        menu_item_id: string;
-        notes?: string | undefined;
+    items?: {
+        quantity?: number;
+        notes?: string;
+        menu_item_id?: string;
         addons?: {
-            addon_id: string;
-            quantity?: number | undefined;
-        }[] | undefined;
+            quantity?: number;
+            addon_id?: string;
+        }[];
     }[];
-    table_id: string;
-    order_type: "delivery" | "dine_in" | "takeaway";
-    special_instructions?: string | undefined;
+    table_id?: string;
+    order_type?: "delivery" | "dine_in" | "takeaway";
+    special_instructions?: string;
+}, {
+    items?: {
+        quantity?: number;
+        notes?: string;
+        menu_item_id?: string;
+        addons?: {
+            quantity?: number;
+            addon_id?: string;
+        }[];
+    }[];
+    table_id?: string;
+    order_type?: "delivery" | "dine_in" | "takeaway";
+    special_instructions?: string;
 }>;
 export declare const cancelOrderSchema: z.ZodObject<{
     reason: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    reason?: string | undefined;
+    reason?: string;
 }, {
-    reason?: string | undefined;
+    reason?: string;
 }>;
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type CancelOrderInput = z.infer<typeof cancelOrderSchema>;

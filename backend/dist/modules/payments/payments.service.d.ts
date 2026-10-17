@@ -11,7 +11,7 @@ export declare function initiatePayment(input: InitiateInput, branchId: string, 
     payment_id: any;
     amount: any;
     status: string;
-    gateway_order_id: null;
+    gateway_order_id: string;
 }>;
 export declare function verifyPayment(input: VerifyInput, branchId: string): Promise<any>;
 export declare function generateUPIQR(input: UPIQRInput, branchId: string): Promise<{

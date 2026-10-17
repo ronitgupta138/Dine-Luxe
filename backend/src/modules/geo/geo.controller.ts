@@ -15,7 +15,7 @@ export async function checkArrival(req: Request, res: Response, next: NextFuncti
     if (!parsed.success) {
       return res.status(400).json(error('VALIDATION_ERROR', 'Validation failed'));
     }
-    const data = await arrivalCheck(parsed.data, req.user!.id);
+    const data = await arrivalCheck(parsed.data as any, req.user!.id);
     res.json(success(data));
   } catch (err: any) {
     if (err.statusCode) return res.status(err.statusCode).json(error('GEO_ERROR', err.message));

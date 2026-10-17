@@ -9,7 +9,7 @@ export declare function getInventoryByBranch(branchId: string, page: number, lim
         name: string;
         quantity: number;
         min_threshold: number;
-        cost_per_unit: number | null;
+        cost_per_unit: number;
         id: string;
         branch_id: string;
         ingredient_name: string;
@@ -19,7 +19,7 @@ export declare function getInventoryByBranch(branchId: string, page: number, lim
         last_updated?: string;
         updated_by?: string | null;
     }[];
-    count: number | null;
+    count: number;
 }>;
 export declare function createInventoryItem(payload: {
     branch_id: string;
@@ -32,7 +32,7 @@ export declare function createInventoryItem(payload: {
     name: string;
     quantity: number;
     min_threshold: number;
-    cost_per_unit: number | null;
+    cost_per_unit: number;
     id: string;
     branch_id: string;
     ingredient_name: string;
@@ -54,7 +54,7 @@ export declare function updateInventoryItem(id: string, payload: {
     name: string;
     quantity: number;
     min_threshold: number;
-    cost_per_unit: number | null;
+    cost_per_unit: number;
     id: string;
     branch_id: string;
     ingredient_name: string;
@@ -69,7 +69,7 @@ export declare function deduct(branchId: string | undefined, items: DeductItem[]
         name: string;
         quantity: number;
         min_threshold: number;
-        cost_per_unit: number | null;
+        cost_per_unit: number;
         id: string;
         branch_id: string;
         ingredient_name: string;
@@ -84,7 +84,7 @@ export declare function getAlerts(branchId: string): Promise<{
     name: string;
     quantity: number;
     min_threshold: number;
-    cost_per_unit: number | null;
+    cost_per_unit: number;
     id: string;
     branch_id: string;
     ingredient_name: string;

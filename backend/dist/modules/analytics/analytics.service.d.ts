@@ -1,16 +1,11 @@
 export declare function getMenuSuggestions(branchId: string): Promise<any>;
 export declare function getBundleOpportunities(branchId: string): Promise<any>;
-export declare function getDemandForecast(branchId: string): Promise<{
-    date: string;
-    day: string;
-    predicted_orders: number;
-    confidence: string;
-}[]>;
+export declare function getDemandForecast(branchId: string): Promise<any[]>;
 export declare function getStaffingRecommendation(branchId: string): Promise<{
-    date: string;
-    day: string;
-    predicted_orders: number;
-    confidence: string;
+    date: any;
+    day: any;
+    predicted_orders: any;
+    confidence: any;
     recommended_waiters: number;
     recommended_chefs: number;
     scheduled_waiters: number;

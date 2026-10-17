@@ -6,17 +6,17 @@ export declare const createAdminSchema: z.ZodObject<{
     last_name: z.ZodString;
     phone: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    email: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-    phone?: string | undefined;
+    email?: string;
+    phone?: string;
+    password?: string;
+    first_name?: string;
+    last_name?: string;
 }, {
-    email: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-    phone?: string | undefined;
+    email?: string;
+    phone?: string;
+    password?: string;
+    first_name?: string;
+    last_name?: string;
 }>;
 export type CreateAdminInput = z.infer<typeof createAdminSchema>;
 //# sourceMappingURL=admin.schema.d.ts.map

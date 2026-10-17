@@ -15,6 +15,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ============================================================
@@ -453,7 +454,7 @@ model Booking {
   table_id                  String?       @db.Uuid         // Assigned on confirmation
   people_count              Int
   arrival_time              DateTime
-(now())   status                    BookingStatus @default(pending)
+  status                    BookingStatus @default(pending)
   source                    BookingSource @default(app)
   special_requests          String?       @db.Text
   preferred_table_remembered Boolean      @default(false)

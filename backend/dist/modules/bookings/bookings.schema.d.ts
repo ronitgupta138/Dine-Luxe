@@ -6,24 +6,24 @@ export declare const createBookingSchema: z.ZodObject<{
     table_id: z.ZodOptional<z.ZodString>;
     special_requests: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    branch_id: string;
-    people_count: number;
-    arrival_time: string;
-    table_id?: string | undefined;
-    special_requests?: string | undefined;
+    branch_id?: string;
+    people_count?: number;
+    arrival_time?: string;
+    table_id?: string;
+    special_requests?: string;
 }, {
-    branch_id: string;
-    people_count: number;
-    arrival_time: string;
-    table_id?: string | undefined;
-    special_requests?: string | undefined;
+    branch_id?: string;
+    people_count?: number;
+    arrival_time?: string;
+    table_id?: string;
+    special_requests?: string;
 }>;
 export declare const cancelBookingSchema: z.ZodObject<{
     reason: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    reason?: string | undefined;
+    reason?: string;
 }, {
-    reason?: string | undefined;
+    reason?: string;
 }>;
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 export type CancelBookingInput = z.infer<typeof cancelBookingSchema>;

@@ -140,7 +140,7 @@ export async function verifyOtp(input: OtpInput): Promise<{ accessToken: string;
       throw new Error(authError?.message ?? listError.message ?? 'Failed to create user account');
     }
 
-    authUser = usersList?.users?.find((u) => u.email === pending.email) ?? null;
+    authUser = (usersList as any)?.users?.find((u: any) => u.email === (pending as any)?.email) ?? null;
   }
 
   if (!authUser) {

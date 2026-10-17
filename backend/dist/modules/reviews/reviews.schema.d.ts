@@ -9,57 +9,57 @@ export declare const createReviewSchema: z.ZodObject<{
             order_item_id: z.ZodString;
             rating: z.ZodNumber;
         }, "strip", z.ZodTypeAny, {
-            rating: number;
-            order_item_id: string;
+            order_item_id?: string;
+            rating?: number;
         }, {
-            rating: number;
-            order_item_id: string;
+            order_item_id?: string;
+            rating?: number;
         }>, "many">>;
         photos: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
-        restaurant_id: string;
-        order_id: string;
-        overall_rating: number;
-        text_review?: string | undefined;
-        photos?: string[] | undefined;
+        restaurant_id?: string;
+        order_id?: string;
+        overall_rating?: number;
+        text_review?: string;
+        photos?: string[];
         item_ratings?: {
-            rating: number;
-            order_item_id: string;
-        }[] | undefined;
+            order_item_id?: string;
+            rating?: number;
+        }[];
     }, {
-        restaurant_id: string;
-        order_id: string;
-        overall_rating: number;
-        text_review?: string | undefined;
-        photos?: string[] | undefined;
+        restaurant_id?: string;
+        order_id?: string;
+        overall_rating?: number;
+        text_review?: string;
+        photos?: string[];
         item_ratings?: {
-            rating: number;
-            order_item_id: string;
-        }[] | undefined;
+            order_item_id?: string;
+            rating?: number;
+        }[];
     }>;
 }, "strip", z.ZodTypeAny, {
-    body: {
-        restaurant_id: string;
-        order_id: string;
-        overall_rating: number;
-        text_review?: string | undefined;
-        photos?: string[] | undefined;
+    body?: {
+        restaurant_id?: string;
+        order_id?: string;
+        overall_rating?: number;
+        text_review?: string;
+        photos?: string[];
         item_ratings?: {
-            rating: number;
-            order_item_id: string;
-        }[] | undefined;
+            order_item_id?: string;
+            rating?: number;
+        }[];
     };
 }, {
-    body: {
-        restaurant_id: string;
-        order_id: string;
-        overall_rating: number;
-        text_review?: string | undefined;
-        photos?: string[] | undefined;
+    body?: {
+        restaurant_id?: string;
+        order_id?: string;
+        overall_rating?: number;
+        text_review?: string;
+        photos?: string[];
         item_ratings?: {
-            rating: number;
-            order_item_id: string;
-        }[] | undefined;
+            order_item_id?: string;
+            rating?: number;
+        }[];
     };
 }>;
 //# sourceMappingURL=reviews.schema.d.ts.map

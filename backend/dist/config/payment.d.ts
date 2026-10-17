@@ -7,7 +7,7 @@
  * Install: npm install razorpay   (for Razorpay)
  *          npm install stripe      (for Stripe)
  */
-export declare const paymentGateway: null;
+export declare const paymentGateway: any;
 /**
  * Verify Razorpay webhook signature
  * TODO: Call this in payments.service.ts handleGatewayWebhook before processing

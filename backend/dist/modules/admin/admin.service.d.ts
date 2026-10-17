@@ -16,7 +16,7 @@ export declare function getDetailedHealth(): Promise<{
 }>;
 export declare function getRestaurants(page: number, limit: number, status?: string): Promise<{
     data: any[];
-    count: number | null;
+    count: number;
 }>;
 export declare function updateRestaurantStatus(id: string, status: string): Promise<any>;
 export declare function getCustomers(page: number, limit: number, status?: string): Promise<{
@@ -28,12 +28,12 @@ export declare function getCustomers(page: number, limit: number, status?: strin
         is_active: any;
         created_at: any;
     }[];
-    count: number | null;
+    count: number;
 }>;
 export declare function updateCustomerStatus(id: string, status: string): Promise<any>;
 export declare function getFeedback(page: number, limit: number): Promise<{
     data: any[];
-    count: number | null;
+    count: number;
 }>;
 export declare function createAdmin(input: {
     email: string;
@@ -45,7 +45,7 @@ export declare function createAdmin(input: {
     id: string;
     email: string;
     name: string;
-    phone: string | null;
+    phone: string;
     role: "super_admin";
 }>;
 export declare function createSuperAdmin(input: {
@@ -58,7 +58,7 @@ export declare function createSuperAdmin(input: {
     id: string;
     email: string;
     name: string;
-    phone: string | null;
+    phone: string;
     role: "super_admin";
 }>;
 //# sourceMappingURL=admin.service.d.ts.map

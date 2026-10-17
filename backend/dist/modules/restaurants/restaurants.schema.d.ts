@@ -8,19 +8,19 @@ export declare const registerSchema: z.ZodObject<{
         dob: z.ZodString;
         password: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        email: string;
-        phone: string;
-        password: string;
-        first_name: string;
-        last_name: string;
-        dob: string;
+        email?: string;
+        phone?: string;
+        password?: string;
+        first_name?: string;
+        last_name?: string;
+        dob?: string;
     }, {
-        email: string;
-        phone: string;
-        password: string;
-        first_name: string;
-        last_name: string;
-        dob: string;
+        email?: string;
+        phone?: string;
+        password?: string;
+        first_name?: string;
+        last_name?: string;
+        dob?: string;
     }>;
     restaurant: z.ZodObject<{
         name: z.ZodString;
@@ -31,21 +31,21 @@ export declare const registerSchema: z.ZodObject<{
         contact_phone: z.ZodOptional<z.ZodString>;
         website: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        name: string;
-        cuisine_types: string[];
-        description?: string | undefined;
-        gst_number?: string | undefined;
-        contact_email?: string | undefined;
-        contact_phone?: string | undefined;
-        website?: string | undefined;
+        name?: string;
+        description?: string;
+        cuisine_types?: string[];
+        gst_number?: string;
+        contact_email?: string;
+        contact_phone?: string;
+        website?: string;
     }, {
-        name: string;
-        cuisine_types: string[];
-        description?: string | undefined;
-        gst_number?: string | undefined;
-        contact_email?: string | undefined;
-        contact_phone?: string | undefined;
-        website?: string | undefined;
+        name?: string;
+        description?: string;
+        cuisine_types?: string[];
+        gst_number?: string;
+        contact_email?: string;
+        contact_phone?: string;
+        website?: string;
     }>;
     branch: z.ZodObject<{
         name: z.ZodString;
@@ -57,79 +57,79 @@ export declare const registerSchema: z.ZodObject<{
         phone: z.ZodOptional<z.ZodString>;
         seating_capacity: z.ZodNumber;
     }, "strip", z.ZodTypeAny, {
-        name: string;
-        city: string;
-        address_line1: string;
-        state: string;
-        pincode: string;
-        seating_capacity: number;
-        phone?: string | undefined;
-        address_line2?: string | undefined;
+        name?: string;
+        phone?: string;
+        city?: string;
+        address_line1?: string;
+        address_line2?: string;
+        state?: string;
+        pincode?: string;
+        seating_capacity?: number;
     }, {
-        name: string;
-        city: string;
-        address_line1: string;
-        state: string;
-        pincode: string;
-        seating_capacity: number;
-        phone?: string | undefined;
-        address_line2?: string | undefined;
+        name?: string;
+        phone?: string;
+        city?: string;
+        address_line1?: string;
+        address_line2?: string;
+        state?: string;
+        pincode?: string;
+        seating_capacity?: number;
     }>;
 }, "strip", z.ZodTypeAny, {
-    restaurant: {
-        name: string;
-        cuisine_types: string[];
-        description?: string | undefined;
-        gst_number?: string | undefined;
-        contact_email?: string | undefined;
-        contact_phone?: string | undefined;
-        website?: string | undefined;
+    restaurant?: {
+        name?: string;
+        description?: string;
+        cuisine_types?: string[];
+        gst_number?: string;
+        contact_email?: string;
+        contact_phone?: string;
+        website?: string;
     };
-    branch: {
-        name: string;
-        city: string;
-        address_line1: string;
-        state: string;
-        pincode: string;
-        seating_capacity: number;
-        phone?: string | undefined;
-        address_line2?: string | undefined;
+    branch?: {
+        name?: string;
+        phone?: string;
+        city?: string;
+        address_line1?: string;
+        address_line2?: string;
+        state?: string;
+        pincode?: string;
+        seating_capacity?: number;
     };
-    owner: {
-        email: string;
-        phone: string;
-        password: string;
-        first_name: string;
-        last_name: string;
-        dob: string;
+    owner?: {
+        email?: string;
+        phone?: string;
+        password?: string;
+        first_name?: string;
+        last_name?: string;
+        dob?: string;
     };
 }, {
-    restaurant: {
-        name: string;
-        cuisine_types: string[];
-        description?: string | undefined;
-        gst_number?: string | undefined;
-        contact_email?: string | undefined;
-        contact_phone?: string | undefined;
-        website?: string | undefined;
+    restaurant?: {
+        name?: string;
+        description?: string;
+        cuisine_types?: string[];
+        gst_number?: string;
+        contact_email?: string;
+        contact_phone?: string;
+        website?: string;
     };
-    branch: {
-        name: string;
-        city: string;
-        address_line1: string;
-        state: string;
-        pincode: string;
-        seating_capacity: number;
-        phone?: string | undefined;
-        address_line2?: string | undefined;
+    branch?: {
+        name?: string;
+        phone?: string;
+        city?: string;
+        address_line1?: string;
+        address_line2?: string;
+        state?: string;
+        pincode?: string;
+        seating_capacity?: number;
     };
-    owner: {
-        email: string;
-        phone: string;
-        password: string;
-        first_name: string;
-        last_name: string;
-        dob: string;
+    owner?: {
+        email?: string;
+        phone?: string;
+        password?: string;
+        first_name?: string;
+        last_name?: string;
+        dob?: string;
     };
 }>;
 export type RegisterInput = z.infer<typeof registerSchema>;
@@ -142,31 +142,31 @@ export declare const updateRestaurantSchema: z.ZodObject<{
     contact_phone: z.ZodOptional<z.ZodString>;
     website: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    name?: string | undefined;
-    description?: string | undefined;
-    cuisine_types?: string[] | undefined;
-    gst_number?: string | undefined;
-    contact_email?: string | undefined;
-    contact_phone?: string | undefined;
-    website?: string | undefined;
+    name?: string;
+    description?: string;
+    cuisine_types?: string[];
+    gst_number?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    website?: string;
 }, {
-    name?: string | undefined;
-    description?: string | undefined;
-    cuisine_types?: string[] | undefined;
-    gst_number?: string | undefined;
-    contact_email?: string | undefined;
-    contact_phone?: string | undefined;
-    website?: string | undefined;
+    name?: string;
+    description?: string;
+    cuisine_types?: string[];
+    gst_number?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    website?: string;
 }>;
 export declare const updateStatusSchema: z.ZodObject<{
     status: z.ZodEnum<["pending", "active", "suspended", "inactive"]>;
     reason: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    status: "active" | "inactive" | "pending" | "suspended";
-    reason?: string | undefined;
+    status?: "active" | "inactive" | "pending" | "suspended";
+    reason?: string;
 }, {
-    status: "active" | "inactive" | "pending" | "suspended";
-    reason?: string | undefined;
+    status?: "active" | "inactive" | "pending" | "suspended";
+    reason?: string;
 }>;
 export type UpdateRestaurantInput = z.infer<typeof updateRestaurantSchema>;
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;

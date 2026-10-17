@@ -26,6 +26,42 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.43.0
         version: 2.105.1
+      '@types/bcrypt':
+        specifier: ^5.0.2
+        version: 5.0.2
+      '@types/compression':
+        specifier: ^1.7.5
+        version: 1.8.1
+      '@types/cors':
+        specifier: ^2.8.17
+        version: 2.8.19
+      '@types/express':
+        specifier: ^4.17.21
+        version: 4.17.25
+      '@types/hpp':
+        specifier: ^0.2.6
+        version: 0.2.7
+      '@types/json2csv':
+        specifier: ^5.0.7
+        version: 5.0.7
+      '@types/jsonwebtoken':
+        specifier: ^9.0.6
+        version: 9.0.10
+      '@types/morgan':
+        specifier: ^1.9.9
+        version: 1.9.10
+      '@types/multer':
+        specifier: ^2.1.0
+        version: 2.1.0
+      '@types/node':
+        specifier: ^20.14.0
+        version: 20.19.39
+      '@types/pdfkit':
+        specifier: ^0.17.6
+        version: 0.17.6
+      '@types/qrcode':
+        specifier: ^1.5.6
+        version: 1.5.6
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1
@@ -83,6 +119,9 @@ importers:
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
       uuid:
         specifier: ^14.0.0
         version: 14.0.0
@@ -93,42 +132,6 @@ importers:
         specifier: ^3.23.8
         version: 3.24.4
     devDependencies:
-      '@types/bcrypt':
-        specifier: ^5.0.2
-        version: 5.0.2
-      '@types/compression':
-        specifier: ^1.7.5
-        version: 1.8.1
-      '@types/cors':
-        specifier: ^2.8.17
-        version: 2.8.19
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.25
-      '@types/hpp':
-        specifier: ^0.2.6
-        version: 0.2.7
-      '@types/json2csv':
-        specifier: ^5.0.7
-        version: 5.0.7
-      '@types/jsonwebtoken':
-        specifier: ^9.0.6
-        version: 9.0.10
-      '@types/morgan':
-        specifier: ^1.9.9
-        version: 1.9.10
-      '@types/multer':
-        specifier: ^2.1.0
-        version: 2.1.0
-      '@types/node':
-        specifier: ^20.14.0
-        version: 20.19.39
-      '@types/pdfkit':
-        specifier: ^0.17.6
-        version: 0.17.6
-      '@types/qrcode':
-        specifier: ^1.5.6
-        version: 1.5.6
       '@types/sharp':
         specifier: ^0.31.1
         version: 0.31.1
@@ -138,9 +141,6 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.39)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.4.5
-        version: 5.9.3
 
   frontend:
     dependencies:

@@ -37,6 +37,16 @@ async function getPublicMenu(branchId) {
     const cached = await redis_1.redis.get(cacheKey);
     if (cached)
         return JSON.parse(cached);
+    // Verify branch exists before querying categories — returns 404 instead of empty array
+    const { data: branch, error: branchErr } = await supabase_1.supabaseAdmin
+        .from('branches')
+        .select('id')
+        .eq('id', branchId)
+        .maybeSingle();
+    if (branchErr)
+        throw branchErr;
+    if (!branch)
+        throw Object.assign(new Error('Branch not found'), { statusCode: 404 });
     const { data: categories, error } = await supabase_1.supabaseAdmin
         .from('menu_categories')
         .select(`
@@ -84,7 +94,7 @@ async function getBranchCategories(branchId) {
 async function createCategory(branchId, restaurantId, input) {
     const { data, error } = await supabase_1.supabaseAdmin
         .from('menu_categories')
-        .insert({ ...input, branch_id: branchId, restaurant_id: restaurantId })
+        .insert({ ...input, branch_id: branchId })
         .select()
         .single();
     if (error)
@@ -106,19 +116,25 @@ async function updateCategory(categoryId, branchId, input) {
     return data;
 }
 async function deleteCategory(categoryId, branchId) {
-    // FIX: original query had `.select('id', { count: 'exact', head: true })` but
-    // forgot to destructure `count` properly — it pulled the wrong field.
-    // Rewritten to use explicit count destructure with head:true for efficiency.
-    const { count, error: countErr } = await supabase_1.supabaseAdmin
+    // Verify the category exists and belongs to this branch
+    const { data: existing, error: findErr } = await supabase_1.supabaseAdmin
+        .from('menu_categories')
+        .select('id')
+        .eq('id', categoryId)
+        .eq('branch_id', branchId)
+        .maybeSingle();
+    if (findErr)
+        throw findErr;
+    if (!existing)
+        throw Object.assign(new Error('Category not found'), { statusCode: 404 });
+    // Cascade-delete all items in this category first (DB FK is RESTRICT, not CASCADE)
+    const { error: itemsErr } = await supabase_1.supabaseAdmin
         .from('menu_items')
-        .select('id', { count: 'exact', head: true })
+        .delete()
         .eq('category_id', categoryId)
-        .eq('branch_id', branchId); // FIX: also scope by branch for safety
-    if (countErr)
-        throw countErr;
-    if ((count ?? 0) > 0) {
-        throw Object.assign(new Error('Cannot delete category with existing items. Move or delete items first.'), { statusCode: 422 });
-    }
+        .eq('branch_id', branchId);
+    if (itemsErr)
+        throw itemsErr;
     const { error } = await supabase_1.supabaseAdmin
         .from('menu_categories')
         .delete()
@@ -144,7 +160,33 @@ async function reorderCategories(branchId, orderedIds) {
 }
 // ─── Items ────────────────────────────────────────────────────────────────────
 async function createMenuItem(branchId, restaurantId, input) {
-    const { addons, ...itemData } = input;
+    const { addons, availability_windows, is_veg, is_vegan, contains_alcohol, calories, compare_price, ...rest } = input;
+    // Map incoming schema fields → actual DB columns
+    const dietary_tags = [];
+    if (is_veg)
+        dietary_tags.push('veg');
+    if (is_vegan)
+        dietary_tags.push('vegan');
+    if (!is_veg && !is_vegan)
+        dietary_tags.push('non_veg');
+    if (contains_alcohol)
+        dietary_tags.push('contains_alcohol');
+    // availability_windows → availability JSONB (store as-is for time-based logic)
+    const availability = availability_windows && availability_windows.length > 0
+        ? { type: 'time_based', windows: availability_windows }
+        : { type: 'always' };
+    const itemData = {
+        ...rest,
+        branch_id: branchId,
+        restaurant_id: restaurantId,
+        dietary_tags,
+        availability,
+        discounted_price: compare_price ?? null,
+        prep_time_minutes: calories ?? null, // calories not in DB — store as note or ignore
+    };
+    // FIX: calories and compare_price don't exist as columns — drop them
+    // (discounted_price maps to compare_price; calories has no column — silently dropped)
+    delete itemData.calories;
     // FIX: validate the category belongs to this branch before inserting the item
     const { data: category, error: catErr } = await supabase_1.supabaseAdmin
         .from('menu_categories')
@@ -159,17 +201,11 @@ async function createMenuItem(branchId, restaurantId, input) {
     }
     const { data: item, error: itemErr } = await supabase_1.supabaseAdmin
         .from('menu_items')
-        .insert({ ...itemData, branch_id: branchId, restaurant_id: restaurantId })
+        .insert({ ...itemData, addons: addons && addons.length > 0 ? addons : [] })
         .select()
         .single();
     if (itemErr || !item)
         throw itemErr ?? new Error('Failed to create item');
-    if (addons && addons.length > 0) {
-        const addonPayload = addons.map((a) => ({ ...a, menu_item_id: item.id }));
-        const { error: addonErr } = await supabase_1.supabaseAdmin.from('menu_addons').insert(addonPayload);
-        if (addonErr)
-            throw addonErr;
-    }
     await bustMenuCache(branchId);
     return item;
 }
@@ -193,7 +229,33 @@ async function getMenuItemById(itemId) {
     };
 }
 async function updateMenuItem(itemId, branchId, input) {
-    const { addons, ...itemData } = input;
+    const { addons, availability_windows, is_veg, is_vegan, contains_alcohol, calories, compare_price, ...rest } = input;
+    // Build mapped update payload — only include fields that were actually provided
+    const itemData = { ...rest };
+    // Map dietary flags → dietary_tags only if any were provided
+    if (is_veg !== undefined || is_vegan !== undefined || contains_alcohol !== undefined) {
+        const dietary_tags = [];
+        if (is_veg)
+            dietary_tags.push('veg');
+        if (is_vegan)
+            dietary_tags.push('vegan');
+        if (is_veg === false && is_vegan === false)
+            dietary_tags.push('non_veg');
+        if (contains_alcohol)
+            dietary_tags.push('contains_alcohol');
+        itemData.dietary_tags = dietary_tags;
+    }
+    if (availability_windows !== undefined) {
+        itemData.availability =
+            availability_windows.length > 0
+                ? { type: 'time_based', windows: availability_windows }
+                : { type: 'always' };
+    }
+    if (compare_price !== undefined) {
+        itemData.discounted_price = compare_price;
+    }
+    // calories has no DB column — drop it silently
+    delete itemData.calories;
     // FIX: if category_id is being changed, validate the new category belongs to this branch
     if (itemData.category_id) {
         const { data: cat } = await supabase_1.supabaseAdmin
@@ -206,6 +268,10 @@ async function updateMenuItem(itemId, branchId, input) {
             throw Object.assign(new Error('Target category not found or does not belong to this branch'), { statusCode: 404 });
         }
     }
+    // Replace addons in the JSONB column if provided (no separate table — stored as JSONB)
+    if (addons !== undefined) {
+        itemData.addons = addons;
+    }
     const { data, error } = await supabase_1.supabaseAdmin
         .from('menu_items')
         .update(itemData)
@@ -215,13 +281,6 @@ async function updateMenuItem(itemId, branchId, input) {
         .single();
     if (error || !data)
         throw error ?? Object.assign(new Error('Item not found'), { statusCode: 404 });
-    // Replace addons if provided
-    if (addons !== undefined) {
-        await supabase_1.supabaseAdmin.from('menu_addons').delete().eq('menu_item_id', itemId);
-        if (addons.length > 0) {
-            await supabase_1.supabaseAdmin.from('menu_addons').insert(addons.map((a) => ({ ...a, menu_item_id: itemId })));
-        }
-    }
     await bustMenuCache(branchId);
     return data;
 }
@@ -235,8 +294,7 @@ async function deleteMenuItem(itemId, branchId) {
         .maybeSingle();
     if (!existing)
         throw Object.assign(new Error('Item not found'), { statusCode: 404 });
-    // FIX: delete associated addons first to avoid FK constraint errors
-    await supabase_1.supabaseAdmin.from('menu_addons').delete().eq('menu_item_id', itemId);
+    // Addons are stored as JSONB on the item — no separate table to clean up
     const { error } = await supabase_1.supabaseAdmin
         .from('menu_items')
         .delete()

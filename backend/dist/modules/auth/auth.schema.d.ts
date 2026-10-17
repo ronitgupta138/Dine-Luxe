@@ -8,91 +8,91 @@ export declare const signupSchema: z.ZodEffects<z.ZodObject<{
     lastName: z.ZodOptional<z.ZodString>;
     name: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    email: string;
-    password: string;
-    name?: string | undefined;
-    phone?: string | undefined;
-    firstName?: string | undefined;
-    lastName?: string | undefined;
+    email?: string;
+    name?: string;
+    phone?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
 }, {
-    email: string;
-    password: string;
-    name?: string | undefined;
-    phone?: string | undefined;
-    firstName?: string | undefined;
-    lastName?: string | undefined;
+    email?: string;
+    name?: string;
+    phone?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
 }>, {
-    email: string;
-    password: string;
-    name?: string | undefined;
-    phone?: string | undefined;
-    firstName?: string | undefined;
-    lastName?: string | undefined;
+    email?: string;
+    name?: string;
+    phone?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
 }, {
-    email: string;
-    password: string;
-    name?: string | undefined;
-    phone?: string | undefined;
-    firstName?: string | undefined;
-    lastName?: string | undefined;
+    email?: string;
+    name?: string;
+    phone?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
 }>;
 export declare const loginSchema: z.ZodEffects<z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
     emailOrUsername: z.ZodOptional<z.ZodString>;
     password: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    password: string;
-    email?: string | undefined;
-    emailOrUsername?: string | undefined;
+    email?: string;
+    password?: string;
+    emailOrUsername?: string;
 }, {
-    password: string;
-    email?: string | undefined;
-    emailOrUsername?: string | undefined;
+    email?: string;
+    password?: string;
+    emailOrUsername?: string;
 }>, {
-    password: string;
-    email?: string | undefined;
-    emailOrUsername?: string | undefined;
+    email?: string;
+    password?: string;
+    emailOrUsername?: string;
 }, {
-    password: string;
-    email?: string | undefined;
-    emailOrUsername?: string | undefined;
+    email?: string;
+    password?: string;
+    emailOrUsername?: string;
 }>;
 export declare const otpSchema: z.ZodObject<{
     email: z.ZodString;
     otp: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
-    otp: string;
+    email?: string;
+    otp?: string;
 }, {
-    email: string;
-    otp: string;
+    email?: string;
+    otp?: string;
 }>;
 export declare const resetPasswordSchema: z.ZodObject<{
     email: z.ZodString;
     otp: z.ZodString;
     newPassword: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
-    otp: string;
-    newPassword: string;
+    email?: string;
+    otp?: string;
+    newPassword?: string;
 }, {
-    email: string;
-    otp: string;
-    newPassword: string;
+    email?: string;
+    otp?: string;
+    newPassword?: string;
 }>;
 export declare const forgotPasswordSchema: z.ZodObject<{
     email: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
+    email?: string;
 }, {
-    email: string;
+    email?: string;
 }>;
 export declare const refreshTokenSchema: z.ZodObject<{
     refreshToken: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    refreshToken: string;
+    refreshToken?: string;
 }, {
-    refreshToken: string;
+    refreshToken?: string;
 }>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

@@ -12,7 +12,7 @@ export declare function getAll(page?: number, limit?: number, status?: string): 
         gst_number: any;
         created_at: any;
     }[];
-    total: number | null;
+    total: number;
     page: number;
     limit: number;
 }>;
@@ -25,7 +25,7 @@ export declare function getById(restaurantId: string): Promise<{
         banner_url: any;
         app_name_display: any;
         tagline: any;
-    } | null;
+    };
     branches: {
         id: any;
         name: any;

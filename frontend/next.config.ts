@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: "http://localhost:4000/api/v1/:path*",
+        destination: "https://dineluxe-backend.onrender.com/api/v1/:path*",
       },
     ];
   },

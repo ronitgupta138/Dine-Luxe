@@ -12,7 +12,7 @@
 ### **Dine Luxe — Full-Stack Restaurant Operating System & Real-Time Booking Platform**
 #### *With Redis Distributed Mutex Locking & PostgreSQL Concurrency Defense*
 
-[![GitHub Stars](https://badgen.net/github/stars/ronitgupta138/dine-luxe?icon=github&color=0891b2)](https://github.com/ronitgupta138/dine-luxe/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/ronitgupta138/Dine-Luxe?style=flat-square&logo=github&color=0891b2)](https://github.com/ronitgupta138/Dine-Luxe/stargazers)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-0891b2?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-4.19-0891b2?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
 [![Next.js](https://img.shields.io/badge/Next.js-14_App_Router-0891b2?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org/)

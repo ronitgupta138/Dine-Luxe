@@ -22,7 +22,6 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS3-0891b2?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![CI](https://img.shields.io/badge/CI-GitHub_Actions-0891b2?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/ronitgupta138/dine-luxe/actions)
 [![Production App](https://img.shields.io/badge/Production_App-Live_on_Vercel-10b981?style=flat-square&logo=vercel&logoColor=white)](https://frontend-ten-phi-hzgzlmvvm9.vercel.app)
-[![Interactive Preview](https://img.shields.io/badge/Interactive_Preview-GitHub_Pages-0891b2?style=flat-square&logo=googlechrome&logoColor=white)](https://ronitgupta138.github.io/dine-luxe/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0891b2?style=flat-square)](LICENSE)
 
 </div>
@@ -210,12 +209,10 @@ npm test
 
 ---
 
-## 🌐 Live Deployments & Interactive Demos
+## 🌐 Live Production Deployment
 
-* **🚀 Production Full-Stack Next.js 15 Web App (Vercel)**:  
-  👉 **[`https://frontend-ten-phi-hzgzlmvvm9.vercel.app`](https://frontend-ten-phi-hzgzlmvvm9.vercel.app)** — Production restaurant operating system featuring customer booking, staff kitchen display system (KDS), and cashier floor maps.
-* **⚡ Standalone Interactive Mutex Simulator (GitHub Pages)**:  
-  👉 **[`https://ronitgupta138.github.io/dine-luxe/`](https://ronitgupta138.github.io/dine-luxe/)** — Browser-based simulation of high-concurrency Redis mutex locks, live table state machine, and race condition prevention.
+* **🚀 Full-Stack Next.js 15 Web Application (Vercel)**:  
+  👉 **[`https://frontend-ten-phi-hzgzlmvvm9.vercel.app`](https://frontend-ten-phi-hzgzlmvvm9.vercel.app)** — Production restaurant operating system featuring customer table reservation, staff kitchen display system (KDS), cashier billing, and floor maps.
 
 ---
 

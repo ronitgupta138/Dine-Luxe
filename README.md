@@ -209,14 +209,10 @@ npm test
 
 ---
 
-## 🌐 Live Demo & Cloud Deployment
+## 🌐 Live Demo
 
-### 1. Interactive Web Demo (Live Now)
 Experience the real-time table reservation, Redis concurrency mutex simulation, menu browsing, and Kitchen Display System directly in your browser:  
 👉 **[https://ronitgupta138.github.io/dine-luxe/](https://ronitgupta138.github.io/dine-luxe/)**
-
-### 2. 1-Click Deploy to Vercel (Frontend)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fronitgupta138%2Fdine-luxe&root-directory=frontend)
 
 ---
 

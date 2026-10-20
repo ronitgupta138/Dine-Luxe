@@ -22,10 +22,12 @@
     "lint": "turbo run lint",
     "test": "node tests/reservation.test.js"
   },
-  "devDependencies": {
+  "dependencies": {
     "express": "^4.19.2",
     "ioredis": "^5.4.1",
-    "pg": "^8.11.5",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
     "turbo": "^2.9.8"
   }
 }

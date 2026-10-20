@@ -7,7 +7,7 @@ settings:
 importers:
 
   .:
-    devDependencies:
+    dependencies:
       express:
         specifier: ^4.19.2
         version: 4.22.1
@@ -17,6 +17,7 @@ importers:
       pg:
         specifier: ^8.11.5
         version: 8.23.1
+    devDependencies:
       turbo:
         specifier: ^2.9.8
         version: 2.9.8

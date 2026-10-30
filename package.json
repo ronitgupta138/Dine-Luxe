@@ -23,7 +23,7 @@
     "test": "node tests/reservation.test.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "express": "^5.3.0",
     "ioredis": "^5.4.1",
     "pg": "^8.11.5"
   },

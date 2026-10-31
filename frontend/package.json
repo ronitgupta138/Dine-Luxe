@@ -35,7 +35,7 @@
     "react-easy-crop": "^5.5.7",
     "react-hook-form": "^7.56.4",
     "react-intersection-observer": "^10.0.3",
-    "react-leaflet": "^4.2.1",
+    "react-leaflet": "^5.0.0",
     "recharts": "^2.15.3",
     "socket.io-client": "^4.8.1",
     "sonner": "^2.0.3",

@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.18",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "^15.5.28"
   }
 }

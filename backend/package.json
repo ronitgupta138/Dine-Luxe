@@ -26,7 +26,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "multer": "^2.1.1",
-    "pdfkit": "^0.18.0",
+    "pdfkit": "^0.20.2",
     "qrcode": "^1.5.4",
     "rate-limit-redis": "^4.2.0",
     "resend": "^3.2.0",

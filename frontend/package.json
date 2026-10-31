@@ -42,7 +42,7 @@
     "tailwind-merge": "^3.3.0",
     "use-debounce": "^10.1.1",
     "zod": "^3.24.4",
-    "zustand": "^5.0.4",
+    "zustand": "^5.0.16",
     "@tailwindcss/postcss": "^4.1.0",
     "autoprefixer": "^10.4.20",
     "typescript": "^5",

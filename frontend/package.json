@@ -45,7 +45,7 @@
     "zustand": "^5.0.4",
     "@tailwindcss/postcss": "^4.1.0",
     "autoprefixer": "^10.4.20",
-    "typescript": "^5",
+    "typescript": "^7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19"

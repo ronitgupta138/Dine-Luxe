@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "ioredis": "^5.4.1",
+    "ioredis": "^6.0.0",
     "pg": "^8.11.5"
   },
   "devDependencies": {
